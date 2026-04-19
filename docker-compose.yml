@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  # Nom du service : maalem-backend
+  maalem-backend:
+    # On indique à Docker d'aller chercher le Dockerfile dans le dossier maalem_server
+    build: 
+      context: ./maalem_server
+      dockerfile: Dockerfile
+    
+    # On lie le port 8080 du conteneur au port 8080 de ton PC
+    ports:
+      - "8081:8081"
+    
+    # On demande au serveur de redémarrer automatiquement s'il plante
+    restart: always
+    
+    # Nom du conteneur pour le retrouver facilement dans Docker Desktop
+    container_name: maalem_api_server

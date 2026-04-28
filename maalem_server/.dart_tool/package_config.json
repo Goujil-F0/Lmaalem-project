@@ -8,22 +8,28 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "archive",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/archive-3.6.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "args",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/args-2.7.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.3"
-    },
-    {
       "name": "async",
       "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/async-2.13.1",
       "packageUri": "lib/",
       "languageVersion": "3.4"
+    },
+    {
+      "name": "bcrypt",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/bcrypt-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "buffer",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/buffer-1.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "charcode",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/charcode-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
     },
     {
       "name": "clock",
@@ -62,52 +68,10 @@
       "languageVersion": "2.12"
     },
     {
-      "name": "firedart",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/firedart-0.9.8",
-      "packageUri": "lib/",
-      "languageVersion": "2.18"
-    },
-    {
       "name": "fixnum",
       "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/fixnum-1.1.1",
       "packageUri": "lib/",
       "languageVersion": "3.1"
-    },
-    {
-      "name": "google_identity_services_web",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/google_identity_services_web-0.3.3+1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "googleapis_auth",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/googleapis_auth-1.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
-      "name": "grpc",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/grpc-3.2.4",
-      "packageUri": "lib/",
-      "languageVersion": "3.0"
-    },
-    {
-      "name": "http",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/http-1.6.0",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
-    },
-    {
-      "name": "http2",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/http2-2.3.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.2"
-    },
-    {
-      "name": "http_parser",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/http_parser-4.1.2",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "js",
@@ -134,40 +98,34 @@
       "languageVersion": "3.2"
     },
     {
-      "name": "protobuf",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/protobuf-3.1.0",
+      "name": "pool",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/pool-1.5.2",
       "packageUri": "lib/",
-      "languageVersion": "2.19"
+      "languageVersion": "3.4"
     },
     {
-      "name": "source_span",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/source_span-1.10.2",
+      "name": "postgres",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/postgres-3.5.9",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.9"
     },
     {
-      "name": "string_scanner",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/string_scanner-1.4.1",
+      "name": "stack_trace",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/stack_trace-1.12.1",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.4"
     },
     {
-      "name": "term_glyph",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/term_glyph-1.2.2",
+      "name": "stream_channel",
+      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/stream_channel-2.1.4",
       "packageUri": "lib/",
-      "languageVersion": "3.1"
+      "languageVersion": "3.3"
     },
     {
       "name": "typed_data",
       "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.4.0",
       "packageUri": "lib/",
       "languageVersion": "3.5"
-    },
-    {
-      "name": "web",
-      "rootUri": "file:///C:/Users/dell/AppData/Local/Pub/Cache/hosted/pub.dev/web-1.1.1",
-      "packageUri": "lib/",
-      "languageVersion": "3.4"
     },
     {
       "name": "maalem_server",

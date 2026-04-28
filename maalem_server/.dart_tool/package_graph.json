@@ -7,11 +7,24 @@
       "name": "maalem_server",
       "version": "1.0.0",
       "dependencies": [
+        "bcrypt",
         "crypto",
         "dart_jsonwebtoken",
-        "firedart"
+        "postgres"
       ],
       "devDependencies": []
+    },
+    {
+      "name": "bcrypt",
+      "version": "1.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
     },
     {
       "name": "dart_jsonwebtoken",
@@ -26,20 +39,25 @@
       ]
     },
     {
-      "name": "crypto",
-      "version": "3.0.7",
+      "name": "postgres",
+      "version": "3.5.9",
       "dependencies": [
-        "typed_data"
+        "async",
+        "buffer",
+        "charcode",
+        "collection",
+        "crypto",
+        "meta",
+        "pool",
+        "stack_trace",
+        "stream_channel"
       ]
     },
     {
-      "name": "firedart",
-      "version": "0.9.8",
+      "name": "typed_data",
+      "version": "1.4.0",
       "dependencies": [
-        "fixnum",
-        "grpc",
-        "http",
-        "protobuf"
+        "collection"
       ]
     },
     {
@@ -79,51 +97,49 @@
       ]
     },
     {
-      "name": "typed_data",
-      "version": "1.4.0",
+      "name": "pool",
+      "version": "1.5.2",
       "dependencies": [
-        "collection"
+        "async",
+        "stack_trace"
       ]
     },
     {
-      "name": "fixnum",
-      "version": "1.1.1",
+      "name": "meta",
+      "version": "1.18.2",
       "dependencies": []
     },
     {
-      "name": "protobuf",
-      "version": "3.1.0",
+      "name": "charcode",
+      "version": "1.4.0",
+      "dependencies": []
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
       "dependencies": [
         "collection",
-        "fixnum",
         "meta"
       ]
     },
     {
-      "name": "grpc",
-      "version": "3.2.4",
+      "name": "stream_channel",
+      "version": "2.1.4",
       "dependencies": [
-        "archive",
-        "async",
-        "clock",
-        "crypto",
-        "fixnum",
-        "googleapis_auth",
-        "http",
-        "http2",
-        "meta",
-        "protobuf"
+        "async"
       ]
     },
     {
-      "name": "http",
-      "version": "1.6.0",
+      "name": "stack_trace",
+      "version": "1.12.1",
       "dependencies": [
-        "async",
-        "http_parser",
-        "meta",
-        "web"
+        "path"
       ]
+    },
+    {
+      "name": "buffer",
+      "version": "1.2.3",
+      "dependencies": []
     },
     {
       "name": "adaptive_number",
@@ -138,94 +154,13 @@
       "dependencies": []
     },
     {
-      "name": "meta",
-      "version": "1.18.2",
-      "dependencies": []
-    },
-    {
-      "name": "http2",
-      "version": "2.3.1",
-      "dependencies": []
-    },
-    {
-      "name": "googleapis_auth",
-      "version": "1.6.0",
-      "dependencies": [
-        "args",
-        "crypto",
-        "google_identity_services_web",
-        "http",
-        "http_parser"
-      ]
-    },
-    {
-      "name": "async",
-      "version": "2.13.1",
-      "dependencies": [
-        "collection",
-        "meta"
-      ]
-    },
-    {
-      "name": "archive",
-      "version": "3.6.1",
-      "dependencies": [
-        "crypto",
-        "path"
-      ]
-    },
-    {
-      "name": "web",
-      "version": "1.1.1",
-      "dependencies": []
-    },
-    {
-      "name": "http_parser",
-      "version": "4.1.2",
-      "dependencies": [
-        "collection",
-        "source_span",
-        "string_scanner",
-        "typed_data"
-      ]
-    },
-    {
-      "name": "google_identity_services_web",
-      "version": "0.3.3+1",
-      "dependencies": [
-        "meta",
-        "web"
-      ]
-    },
-    {
-      "name": "args",
-      "version": "2.7.0",
-      "dependencies": []
-    },
-    {
       "name": "path",
       "version": "1.9.1",
       "dependencies": []
     },
     {
-      "name": "string_scanner",
-      "version": "1.4.1",
-      "dependencies": [
-        "source_span"
-      ]
-    },
-    {
-      "name": "source_span",
-      "version": "1.10.2",
-      "dependencies": [
-        "collection",
-        "path",
-        "term_glyph"
-      ]
-    },
-    {
-      "name": "term_glyph",
-      "version": "1.2.2",
+      "name": "fixnum",
+      "version": "1.1.1",
       "dependencies": []
     }
   ],

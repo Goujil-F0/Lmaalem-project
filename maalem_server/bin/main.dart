@@ -1,12 +1,16 @@
 import 'dart:io';
 import 'dart:convert';
+import '../lib/database/db.dart';
+import '../lib/routes/auth_routes.dart';
 
 void main() async {
+  // Test connexion DB
+  await Database.connection;
+
   var server = await HttpServer.bind(InternetAddress.anyIPv4, 8081);
   print('🚀 Serveur Maalem lancé sur le port ${server.port}');
 
   await for (HttpRequest request in server) {
-    // Autoriser les requêtes depuis Flutter
     request.response.headers.add('Access-Control-Allow-Origin', '*');
     request.response.headers.add('Content-Type', 'application/json');
 
@@ -26,20 +30,4 @@ void main() async {
         ..close();
     }
   }
-}
-
-Future<void> handleRegister(HttpRequest request) async {
-  // On va remplir cette fonction ensemble
-  request.response
-    ..statusCode = HttpStatus.ok
-    ..write(jsonEncode({'message': 'Register - bientôt disponible'}))
-    ..close();
-}
-
-Future<void> handleLogin(HttpRequest request) async {
-  // On va remplir cette fonction ensemble
-  request.response
-    ..statusCode = HttpStatus.ok
-    ..write(jsonEncode({'message': 'Login - bientôt disponible'}))
-    ..close();
 }

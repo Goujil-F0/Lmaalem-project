@@ -1,12 +1,13 @@
 name: maalem_server
-ports:
-  - "8081:8081"
 description: Backend API pour la plateforme Maalem.
 version: 1.0.0
-publish_to: 'none' # Empêche la publication accidentelle sur pub.dev
+publish_to: 'none'
 
 environment:
-  sdk: '>=3.0.0 <4.0.0' # C'est ICI que se trouvait l'erreur
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
-  firedart: ^0.9.0 # Pour communiquer avec Firestore
+  postgres: ^3.3.2
+  dart_jsonwebtoken: ^2.7.1
+  crypto: ^3.0.3
+  bcrypt: ^1.1.3

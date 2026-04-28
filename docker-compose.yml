@@ -1,19 +1,39 @@
 version: '3.8'
 
 services:
-  # Nom du service : maalem-backend
+
+  # Base de données PostgreSQL
+  maalem-db:
+    image: postgres:15
+    container_name: maalem_database
+    restart: always
+    environment:
+      POSTGRES_DB: maalem_db
+      POSTGRES_USER: maalem_user
+      POSTGRES_PASSWORD: maalem_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Serveur Dart
   maalem-backend:
-    # On indique à Docker d'aller chercher le Dockerfile dans le dossier maalem_server
-    build: 
+    build:
       context: ./maalem_server
       dockerfile: Dockerfile
-    
-    # On lie le port 8080 du conteneur au port 8080 de ton PC
+    container_name: maalem_api_server
+    restart: always
     ports:
       - "8081:8081"
-    
-    # On demande au serveur de redémarrer automatiquement s'il plante
-    restart: always
-    
-    # Nom du conteneur pour le retrouver facilement dans Docker Desktop
-    container_name: maalem_api_server
+    environment:
+      DB_HOST: maalem-db
+      DB_PORT: 5432
+      DB_NAME: maalem_db
+      DB_USER: maalem_user
+      DB_PASSWORD: maalem_pass
+      JWT_SECRET: maalem_super_secret_key
+    depends_on:
+      - maalem-db
+
+volumes:
+  postgres_data:

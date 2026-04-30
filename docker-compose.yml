@@ -2,7 +2,6 @@ version: '3.8'
 
 services:
 
-  # Base de données PostgreSQL
   maalem-db:
     image: postgres:15
     container_name: maalem_database
@@ -15,8 +14,8 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql 
 
-  # Serveur Dart
   maalem-backend:
     build:
       context: ./maalem_server

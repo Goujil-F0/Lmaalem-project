@@ -58,6 +58,9 @@ CREATE TABLE IF NOT EXISTS users (
     role          VARCHAR(20) NOT NULL CHECK (role IN ('client', 'artisan')),
     phone         VARCHAR(20),
     city          VARCHAR(100),
+    neighborhood  VARCHAR(100),
+    latitude      DOUBLE PRECISION,
+    longitude     DOUBLE PRECISION,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

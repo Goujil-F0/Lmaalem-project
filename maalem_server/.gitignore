@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Env
+.env
+.env.local
+
+# Logs
+npm-debug.log*
+
+# Uploads utilisateurs
+uploads/
+
+# OS
+.DS_Store

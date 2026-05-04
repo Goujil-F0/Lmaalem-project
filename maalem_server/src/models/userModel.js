@@ -1,6 +1,5 @@
 const pool = require('./db');
 
-// Créer un utilisateur
 const createUser = async (full_name, email, password_hash, role, phone, city, neighborhood, latitude, longitude) => {
   const client = await pool.connect();
   try {
@@ -17,16 +16,25 @@ const createUser = async (full_name, email, password_hash, role, phone, city, ne
 
     const user = userResult.rows[0];
 
-    // 2. Si artisan → créer automatiquement son profil
+    // 2. Si artisan → créer profil et le retourner
+    let resultData = user;
     if (role === 'artisan') {
       await client.query(
         `INSERT INTO artisan_profiles (user_id) VALUES ($1)`,
         [user.id]
       );
+      const profileResult = await client.query(
+        'SELECT * FROM artisan_profiles WHERE user_id = $1',
+        [user.id]
+      );
+      resultData = {
+        ...user,
+        profile: profileResult.rows[0]
+      };
     }
 
     await client.query('COMMIT');
-    return user;
+    return resultData;
 
   } catch (error) {
     await client.query('ROLLBACK');
@@ -36,7 +44,6 @@ const createUser = async (full_name, email, password_hash, role, phone, city, ne
   }
 };
 
-// Trouver par email
 const findUserByEmail = async (email) => {
   const result = await pool.query(
     'SELECT * FROM users WHERE email = $1',

@@ -12,7 +12,15 @@ app.use(express.json());
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const reviewRoutes = require('./routes/reviewRoutes'); 
+const complaintRoutes = require('./routes/complaintRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes'); 
+
 app.use('/auth', authRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+ 
 
 // Route de test
 app.get('/', (req, res) => {

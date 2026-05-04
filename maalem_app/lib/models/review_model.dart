@@ -1,53 +1,52 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class ReviewModel {
-  final String id;
-  final String artisanId;
-  final String clientId;
+  final int? id;           // int, nullable car pas encore créé côté client
+  final int artisanId;     // int (FK integer dans la DB)
+  final int clientId;      // int (FK integer dans la DB)
   final String clientName;
   final String clientPhotoUrl;
-  final double rating; 
+  final int rating;        // int (CHECK 1-5 dans la DB)
   final String comment;
-  final DateTime createdAt;
-  final String? bookingId; 
+  final DateTime? createdAt;
+  final int? bookingId;    // int (FK integer dans la DB)
 
   ReviewModel({
-    required this.id,
+    this.id,
     required this.artisanId,
     required this.clientId,
     required this.clientName,
     this.clientPhotoUrl = '',
     required this.rating,
     required this.comment,
-    required this.createdAt,
+    this.createdAt,
     this.bookingId,
   });
 
-  factory ReviewModel.fromFirestore(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
+  // Remplace fromFirestore — lit la réponse JSON du serveur Dart
+  factory ReviewModel.fromMap(Map<String, dynamic> map) {
     return ReviewModel(
-      id: doc.id,
-      artisanId: data['artisanId'] ?? '',
-      clientId: data['clientId'] ?? '',
-      clientName: data['clientName'] ?? 'Anonyme',
-      clientPhotoUrl: data['clientPhotoUrl'] ?? '',
-      rating: (data['rating'] ?? 0).toDouble(),
-      comment: data['comment'] ?? '',
-      createdAt: (data['createdAt'] as Timestamp).toDate(),
-      bookingId: data['bookingId'],
+      id            : map['id'],
+      artisanId     : map['artisan_id'],
+      clientId      : map['client_id'],
+      clientName    : map['client_name'] ?? 'Anonyme',
+      clientPhotoUrl: map['client_photo_url'] ?? '',
+      rating        : map['rating'],
+      comment       : map['comment'] ?? '',
+      createdAt     : map['created_at'] != null
+                        ? DateTime.parse(map['created_at'])
+                        : null,
+      bookingId     : map['booking_id'],
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
-      'artisanId': artisanId,
-      'clientId': clientId,
-      'clientName': clientName,
-      'clientPhotoUrl': clientPhotoUrl,
-      'rating': rating,
-      'comment': comment,
-      'createdAt': Timestamp.fromDate(createdAt),
-      'bookingId': bookingId,
+      'artisan_id'       : artisanId,
+      'client_id'        : clientId,
+      'client_name'      : clientName,
+      'client_photo_url' : clientPhotoUrl,
+      'rating'           : rating,
+      'comment'          : comment,
+      'booking_id'       : bookingId,
     };
   }
 }

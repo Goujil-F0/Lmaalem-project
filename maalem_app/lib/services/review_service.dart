@@ -1,108 +1,66 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import '../models/review_model.dart';
 
 class ReviewService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final String _collection = 'reviews';
+  static const String _baseUrl = 'http://10.0.2.2:8081';
 
-
-  Future<void> addReview(ReviewModel review) async {
-    // Vérifie qu'un client n'a pas déjà laissé un avis pour cet artisan
-    final existing = await _firestore
-        .collection(_collection)
-        .where('artisanId', isEqualTo: review.artisanId)
-        .where('clientId', isEqualTo: review.clientId)
-        .get();
-
-    if (existing.docs.isNotEmpty) {
-      throw Exception('Vous avez déjà laissé un avis pour cet artisan.');
+  Future<ReviewModel> addReview({
+    required int clientId,
+    required int artisanId,
+    required int bookingId,
+    required int rating,
+    String? commentaire,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_baseUrl/reviews/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'client_id'  : clientId,
+        'artisan_id' : artisanId,
+        'booking_id' : bookingId,
+        'rating'     : rating,
+        'commentaire': commentaire,
+      }),
+    );
+    if (response.statusCode == 201) {
+      final data = jsonDecode(response.body);
+      return ReviewModel.fromMap(data['review']);
     }
-
-    final docRef = _firestore.collection(_collection).doc();
-    await docRef.set(review.toMap());
-
-    // Mettre à jour la note moyenne de l'artisan
-    await _updateArtisanRating(review.artisanId);
+    final error = jsonDecode(response.body)['error'];
+    throw Exception('Erreur : $error');
   }
 
-
-  Future<void> updateReview(String reviewId, double newRating, String newComment) async {
-    final doc = await _firestore.collection(_collection).doc(reviewId).get();
-    if (!doc.exists) throw Exception('Avis introuvable.');
-
-    await _firestore.collection(_collection).doc(reviewId).update({
-      'rating': newRating,
-      'comment': newComment,
-    });
-
-    final data = doc.data() as Map<String, dynamic>;
-    await _updateArtisanRating(data['artisanId']);
-  }
-
-
-  Future<void> deleteReview(String reviewId) async {
-    final doc = await _firestore.collection(_collection).doc(reviewId).get();
-    if (!doc.exists) throw Exception('Avis introuvable.');
-
-    final data = doc.data() as Map<String, dynamic>;
-    final artisanId = data['artisanId'];
-
-    await _firestore.collection(_collection).doc(reviewId).delete();
-    await _updateArtisanRating(artisanId);
-  }
-  Stream<List<ReviewModel>> getReviewsForArtisan(String artisanId) {
-    return _firestore
-        .collection(_collection)
-        .where('artisanId', isEqualTo: artisanId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map(ReviewModel.fromFirestore).toList());
-  }
-
-
-  Stream<List<ReviewModel>> getReviewsByClient(String clientId) {
-    return _firestore
-        .collection(_collection)
-        .where('clientId', isEqualTo: clientId)
-        .orderBy('createdAt', descending: true)
-        .snapshots()
-        .map((snap) => snap.docs.map(ReviewModel.fromFirestore).toList());
-  }
-
- 
-  Future<bool> hasReviewed(String clientId, String artisanId) async {
-    final snap = await _firestore
-        .collection(_collection)
-        .where('artisanId', isEqualTo: artisanId)
-        .where('clientId', isEqualTo: clientId)
-        .get();
-    return snap.docs.isNotEmpty;
-  }
-
-  
-  Future<void> _updateArtisanRating(String artisanId) async {
-    final reviewsSnap = await _firestore
-        .collection(_collection)
-        .where('artisanId', isEqualTo: artisanId)
-        .get();
-
-    if (reviewsSnap.docs.isEmpty) {
-      await _firestore.collection('artisans').doc(artisanId).update({
-        'averageRating': 0,
-        'totalReviews': 0,
-      });
-      return;
+  // ── Récupérer les avis d'un artisan ──────────────────────────
+  Future<List<ReviewModel>> getReviewsForArtisan(int artisanId) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/reviews/artisan/$artisanId'),
+    );
+    if (response.statusCode == 200) {
+      final List data = jsonDecode(response.body)['reviews'];
+      return data.map((r) => ReviewModel.fromMap(r)).toList();
     }
+    throw Exception('Impossible de charger les avis');
+  }
 
-    final ratings = reviewsSnap.docs
-        .map((d) => (d['rating'] as num).toDouble())
-        .toList();
+  // ── Vérifier si le client a déjà noté cet artisan ────────────
+  Future<bool> hasReviewed(int clientId, int artisanId) async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/reviews/check?client_id=$clientId&artisan_id=$artisanId'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['has_reviewed'] as bool;
+    }
+    return false;
+  }
 
-    final average = ratings.reduce((a, b) => a + b) / ratings.length;
-
-    await _firestore.collection('artisans').doc(artisanId).update({
-      'averageRating': double.parse(average.toStringAsFixed(1)),
-      'totalReviews': ratings.length,
-    });
+  // ── Supprimer un avis ─────────────────────────────────────────
+  Future<void> deleteReview(int reviewId) async {
+    final response = await http.delete(
+      Uri.parse('$_baseUrl/reviews/$reviewId'),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Impossible de supprimer l\'avis');
+    }
   }
 }

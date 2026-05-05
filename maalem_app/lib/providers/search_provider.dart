@@ -3,33 +3,58 @@ import '../data/models/artisan_model.dart';
 import '../data/services/artisan_service.dart';
 
 class SearchProvider with ChangeNotifier {
-  // On crée une instance de notre service
   final ArtisanService _artisanService = ArtisanService();
 
-  // Variables privées
-  List<ArtisanModel> _artisans = [];
+  List<ArtisanModel> _allArtisans = [];
+  List<ArtisanModel> _filteredArtisans = [];
   bool _isLoading = false;
   String _errorMessage = '';
 
-  // Getters pour accéder aux variables depuis les écrans (sans les modifier)
-  List<ArtisanModel> get artisans => _artisans;
+  List<ArtisanModel> get artisans => _filteredArtisans;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
+  bool get hasError => _errorMessage.isNotEmpty;
 
-  // LA MÉTHODE CLÉ : Charger les artisans
   Future<void> loadArtisans() async {
+    // Guard : évite un double-appel pendant le chargement
+    if (_isLoading) return;
+
     _isLoading = true;
     _errorMessage = '';
-    notifyListeners(); // On prévient l'UI qu'on commence à charger (pour afficher un spinner)
+    notifyListeners();
 
     try {
-      // On appelle le service qu'on a testé tout à l'heure
-      _artisans = await _artisanService.fetchAllArtisans();
+      final results = await _artisanService.fetchAllArtisans();
+      _allArtisans = results;
+      _filteredArtisans = results;
     } catch (e) {
-      _errorMessage = "Erreur : Impossible de récupérer les artisans.";
+      _errorMessage =
+          'Impossible de récupérer les artisans. Vérifiez votre connexion.';
+      debugPrint('[SearchProvider] Erreur: $e');
     } finally {
       _isLoading = false;
-      notifyListeners(); // On prévient l'UI que c'est fini (pour afficher la carte)
+      notifyListeners();
     }
+  }
+
+  /// Filtre par nom ET par disponibilité (extensible : spécialité, ville…)
+  void filterArtisans(String query, {bool? availableOnly}) {
+    _filteredArtisans = _allArtisans.where((artisan) {
+      final matchesName =
+          query.isEmpty ||
+          artisan.fullName.toLowerCase().contains(query.toLowerCase());
+
+      final matchesAvailability =
+          availableOnly == null || artisan.isAvailable == availableOnly;
+
+      return matchesName && matchesAvailability;
+    }).toList();
+
+    notifyListeners();
+  }
+
+  void resetFilters() {
+    _filteredArtisans = _allArtisans;
+    notifyListeners();
   }
 }

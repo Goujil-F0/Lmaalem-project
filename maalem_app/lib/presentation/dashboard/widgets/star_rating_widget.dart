@@ -10,7 +10,7 @@ class StarRatingWidget extends StatelessWidget {
     super.key,
     required this.rating,
     this.size = 20,
-    this.activeColor = const Color(0xFFFFB300),
+    this.activeColor = const Color(0xFFE67E22),
     this.inactiveColor = const Color(0xFFE0E0E0),
   });
 
@@ -73,7 +73,7 @@ class _StarRatingInputState extends State<StarRatingInput> {
             child: Icon(
               filled ? Icons.star : Icons.star_border,
               key: ValueKey('$index-$filled'),
-              color: filled ? const Color(0xFFFFB300) : const Color(0xFFBDBDBD),
+              color: filled ? const Color(0xFFE67E22) : const Color(0xFFBDBDBD),
               size: widget.size,
             ),
           ),

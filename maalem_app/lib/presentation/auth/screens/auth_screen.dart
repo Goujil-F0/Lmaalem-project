@@ -1,23 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 
-class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+class AuthScreen extends StatelessWidget {
+  const AuthScreen({super.key});
 
-  @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
-}
-
-class _RegisterScreenState extends State<RegisterScreen> {
-  bool isArtisan = false;
-
-  void _openLogin() {
+  void _openRegister(BuildContext context) {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const AuthScreen(),
+        pageBuilder: (_, __, ___) => const RegisterScreen(),
         transitionsBuilder: (_, animation, __, child) {
           final slideUp = Tween<Offset>(
             begin: const Offset(0, 1),
@@ -31,6 +24,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _enterApp(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const _AppEntryScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -40,62 +40,47 @@ class _RegisterScreenState extends State<RegisterScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
           child: Column(
             children: [
-              const SizedBox(height: 34),
-              const _RegisterLogo(),
-              const SizedBox(height: 18),
+              const SizedBox(height: 42),
+              const _AuthLogo(),
+              const SizedBox(height: 22),
+              const Text(
+                "Bon retour",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 8),
               Text(
-                "Rejoignez la communaute Lmaalem",
+                "Connectez-vous a votre compte Lmaalem",
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.navy.withValues(alpha: 0.62),
                   fontSize: 15,
                 ),
               ),
-              const SizedBox(height: 34),
-              _RoleSwitcher(
-                isArtisan: isArtisan,
-                onChanged: (value) => setState(() => isArtisan = value),
-              ),
-              const SizedBox(height: 28),
-              const _RegisterInput(hintText: "Nom complet", icon: Icons.person),
-              const SizedBox(height: 16),
-              const _RegisterInput(
+              const SizedBox(height: 54),
+              const _AuthInput(
                 hintText: "E-mail",
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
               ),
-              const SizedBox(height: 16),
-              const _RegisterInput(
+              const SizedBox(height: 18),
+              const _AuthInput(
                 hintText: "Mot de passe",
                 icon: Icons.lock,
                 isPassword: true,
               ),
-              const SizedBox(height: 16),
-              const _RegisterInput(
-                hintText: "Confirmer le mot de passe",
-                icon: Icons.lock,
-                isPassword: true,
+              const SizedBox(height: 36),
+              _PrimaryAuthButton(
+                text: "Se connecter",
+                onPressed: () => _enterApp(context),
               ),
-              if (isArtisan) ...[
-                const SizedBox(height: 16),
-                const _RegisterInput(
-                  hintText: "Telephone",
-                  icon: Icons.call,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 16),
-                const _UploadCinBox(),
-              ],
-              const SizedBox(height: 34),
-              _PrimaryRegisterButton(
-                text: isArtisan ? "Devenir Artisan Lmaalem" : "S'inscrire",
-                onPressed: () {
-                  debugPrint("Tentative d'inscription...");
-                },
-              ),
-              const SizedBox(height: 44),
+              const SizedBox(height: 80),
               TextButton(
-                onPressed: _openLogin,
+                onPressed: () => _openRegister(context),
                 child: RichText(
                   text: TextSpan(
                     style: TextStyle(
@@ -103,9 +88,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fontSize: 15,
                     ),
                     children: const [
-                      TextSpan(text: "Vous avez deja un compte ? "),
+                      TextSpan(text: "Vous n'avez pas de compte ? "),
                       TextSpan(
-                        text: "Se connecter",
+                        text: "S'inscrire",
                         style: TextStyle(
                           color: AppColors.teal,
                           fontWeight: FontWeight.w800,
@@ -124,8 +109,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 }
 
-class _RegisterLogo extends StatelessWidget {
-  const _RegisterLogo();
+class _AuthLogo extends StatelessWidget {
+  const _AuthLogo();
 
   @override
   Widget build(BuildContext context) {
@@ -163,84 +148,13 @@ class _RegisterLogo extends StatelessWidget {
   }
 }
 
-class _RoleSwitcher extends StatelessWidget {
-  final bool isArtisan;
-  final ValueChanged<bool> onChanged;
-
-  const _RoleSwitcher({required this.isArtisan, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(7),
-      decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          _RoleOption(
-            text: "Client",
-            selected: !isArtisan,
-            onTap: () => onChanged(false),
-          ),
-          const SizedBox(width: 8),
-          _RoleOption(
-            text: "Artisan",
-            selected: isArtisan,
-            onTap: () => onChanged(true),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _RoleOption extends StatelessWidget {
-  final String text;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _RoleOption({
-    required this.text,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 48,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? AppColors.teal : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Text(
-            text,
-            style: TextStyle(
-              color: selected ? Colors.white : AppColors.navy,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RegisterInput extends StatelessWidget {
+class _AuthInput extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool isPassword;
   final TextInputType? keyboardType;
 
-  const _RegisterInput({
+  const _AuthInput({
     required this.hintText,
     required this.icon,
     this.isPassword = false,
@@ -276,42 +190,11 @@ class _RegisterInput extends StatelessWidget {
   }
 }
 
-class _UploadCinBox extends StatelessWidget {
-  const _UploadCinBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 104,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.navy.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_upload, color: AppColors.navy.withValues(alpha: 0.72)),
-          const SizedBox(height: 8),
-          Text(
-            "Upload CIN Recto / Verso",
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.72),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PrimaryRegisterButton extends StatelessWidget {
+class _PrimaryAuthButton extends StatelessWidget {
   final String text;
   final VoidCallback onPressed;
 
-  const _PrimaryRegisterButton({required this.text, required this.onPressed});
+  const _PrimaryAuthButton({required this.text, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -333,6 +216,27 @@ class _PrimaryRegisterButton extends StatelessWidget {
           style: const TextStyle(
             color: Colors.white,
             fontSize: 18,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AppEntryScreen extends StatelessWidget {
+  const _AppEntryScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.beige,
+      body: Center(
+        child: Text(
+          "Bienvenue dans Lmaalem",
+          style: TextStyle(
+            color: AppColors.navy,
+            fontSize: 26,
             fontWeight: FontWeight.w800,
           ),
         ),

@@ -6,10 +6,10 @@ const createReview = async (req, res) => {
   if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
   try {
-    const { bookingId, artisanId, rating, comment } = req.body;
-    const clientId = req.user.id;
+    const { booking_id, artisan_id, rating, comment } = req.body;
+    const client_id = req.user.id;
 
-    const review = await ReviewModel.createReview(bookingId, clientId, artisanId, rating, comment);
+    const review = await ReviewModel.createReview(booking_id, client_id, artisan_id, rating, comment);
     res.status(201).json(review);
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });

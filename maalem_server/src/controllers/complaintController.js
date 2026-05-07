@@ -1,41 +1,51 @@
-const ComplaintModel = require('../models/Complaint');
-const pool = require('../models/db'); // Chemin corrigé : on va le chercher dans models
+const pool = require('../models/db');
 const { validationResult } = require('express-validator');
 
-// POST /api/complaints — Déposer une réclamation
 const createComplaint = async (req, res) => {
   const errors = validationResult(req);
-  if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
 
   try {
-    const { bookingId, artisanId, description } = req.body;
-    const clientId = req.user.id;
+    const { booking_id, artisan_id, description } = req.body;
+    const client_id = req.user.id;
 
-    const complaint = await ComplaintModel.createComplaint(bookingId, clientId, artisanId, description);
-    res.status(201).json(complaint);
+    const result = await pool.query(
+      `INSERT INTO complaints (booking_id, client_id, artisan_id, description)
+       VALUES ($1, $2, $3, $4) RETURNING *`,
+      [booking_id, client_id, artisan_id, description]
+    );
+
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
-// GET /api/complaints — Lister les réclamations (Admin)
 const getComplaints = async (req, res) => {
   try {
-    const complaints = await ComplaintModel.getAllComplaints();
-    res.status(200).json(complaints);
+    const result = await pool.query(
+      `SELECT c.*, 
+        u1.full_name as client_name, 
+        u2.full_name as artisan_name
+       FROM complaints c
+       JOIN users u1 ON c.client_id = u1.id
+       JOIN users u2 ON c.artisan_id = u2.id
+       ORDER BY c.created_at DESC`
+    );
+    res.status(200).json(result.rows);
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
   }
 };
 
-// PUT /api/complaints/:id/resolve — Résoudre une réclamation (Admin)
 const resolveComplaint = async (req, res) => {
   try {
-    const { id } = req.params;
-    
     const result = await pool.query(
-      "UPDATE complaints SET status = 'resolved' WHERE id = $1 RETURNING *",
-      [id]
+      `UPDATE complaints SET status = 'resolved' 
+       WHERE id = $1 RETURNING *`,
+      [req.params.id]
     );
 
     if (result.rows.length === 0) {

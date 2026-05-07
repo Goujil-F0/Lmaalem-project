@@ -1,20 +1,18 @@
-const pool = require('../models/db'); // On utilise la connexion PostgreSQL
+const pool = require('../models/db');
 
-// GET /api/dashboard/artisan/:id — Stats pour un artisan
 const getArtisanDashboard = async (req, res) => {
   try {
     const artisanId = req.params.id;
 
-    // 1. Note moyenne et total d'avis
     const statsQuery = await pool.query(
-      "SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE artisan_id = $1",
+      `SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews 
+       FROM reviews WHERE artisan_id = $1`,
       [artisanId]
     );
-    
+
     const averageRating = Math.round(parseFloat(statsQuery.rows[0].avg_rating || 0) * 10) / 10;
     const totalReviews = parseInt(statsQuery.rows[0].total_reviews);
 
-    // 2. Les 5 derniers avis avec le nom du client
     const recentReviewsQuery = await pool.query(
       `SELECT r.*, u.full_name as client_name 
        FROM reviews r 
@@ -34,10 +32,8 @@ const getArtisanDashboard = async (req, res) => {
   }
 };
 
-// GET /api/dashboard/admin — Stats globales pour l'admin
 const getAdminDashboard = async (req, res) => {
   try {
-    // 1. Comptages globaux
     const counts = await pool.query(`
       SELECT 
         (SELECT COUNT(*) FROM reviews) as total_reviews,
@@ -45,7 +41,6 @@ const getAdminDashboard = async (req, res) => {
         (SELECT COUNT(*) FROM complaints WHERE status = 'open') as open_complaints
     `);
 
-    // 2. Top 5 des artisans par note
     const topArtisans = await pool.query(`
       SELECT u.full_name, AVG(r.rating) as average, COUNT(r.id) as review_count
       FROM reviews r

@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:maalem_app/presentation/dashboard/screens/review_screen.dart';
-import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
-import 'package:maalem_app/presentation/dashboard/screens/complaint_screen.dart';
-import 'package:maalem_app/presentation/auth/screens/splash_screen.dart'; // Vérifie le chemin !
+import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 
 void main() {
   // On s'assure que les widgets sont initialisés

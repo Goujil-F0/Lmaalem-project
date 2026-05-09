@@ -7,14 +7,17 @@ class ReviewService {
 
   ReviewService({this.token});
 
-  // RÉCUPÉRER les avis
   Future<List<dynamic>> getArtisanReviews(int artisanId) async {
-    final response = await http.get(Uri.parse('$baseUrl/$artisanId'));
+    final response = await http.get(
+      Uri.parse('$baseUrl/$artisanId'),
+      headers: {
+        if (token != null) 'Authorization': 'Bearer $token',
+      },
+    );
     if (response.statusCode == 200) return json.decode(response.body);
     throw Exception('Erreur chargement avis');
   }
 
-  // AJOUTER un avis (C'est cette méthode qui manquait !)
   Future<void> addReview({
     required int bookingId,
     required int artisanId,
@@ -28,8 +31,8 @@ class ReviewService {
         if (token != null) 'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
-        'bookingId': bookingId,
-        'artisanId': artisanId,
+        'booking_id': bookingId,
+        'artisan_id': artisanId,
         'rating': rating,
         'comment': comment,
       }),

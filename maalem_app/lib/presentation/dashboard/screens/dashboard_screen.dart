@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 
@@ -40,6 +41,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           _dashboardData = jsonDecode(response.body);
           _isLoading = false;
         });
+      } else {
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       setState(() => _isLoading = false);
@@ -49,15 +52,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEDEDCE),
+      backgroundColor: AppColors.beige,
       appBar: AppBar(
         title: const Text('Mon Dashboard'),
-        backgroundColor: const Color(0xFF0C2C55),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.navy,
+        foregroundColor: AppColors.white,
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF296374)))
+              child: CircularProgressIndicator(color: AppColors.teal))
           : _dashboardData == null
               ? const Center(child: Text('Erreur de chargement'))
               : SingleChildScrollView(
@@ -80,7 +83,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               icon: Icons.rate_review,
                               title: 'Total Avis',
                               value: '${_dashboardData!['totalReviews'] ?? 0}',
-                              color: const Color(0xFF629FAD),
+                              color: AppColors.lightBlue,
                             ),
                           ),
                         ],
@@ -91,7 +94,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Color(0xFF0C2C55),
+                          color: AppColors.navy,
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -115,7 +118,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                         review['client_name'] ?? 'Client',
                                         style: const TextStyle(
                                           fontWeight: FontWeight.bold,
-                                          color: Color(0xFF0C2C55),
+                                          color: AppColors.navy,
                                         ),
                                       ),
                                       StarRatingWidget(
@@ -128,8 +131,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     const SizedBox(height: 8),
                                     Text(
                                       review['comment'],
-                                      style: const TextStyle(
-                                          color: Colors.grey),
+                                      style: const TextStyle(color: Colors.grey),
                                     ),
                                   ],
                                 ],

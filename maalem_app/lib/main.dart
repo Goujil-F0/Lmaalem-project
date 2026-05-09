@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 
@@ -12,17 +14,20 @@ class MaalemApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Maalem',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.navy,
-          primary: AppColors.navy,
+    return ChangeNotifierProvider(
+      create: (_) => AuthProvider(),
+      child: MaterialApp(
+        title: 'Maalem',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: AppColors.navy,
+            primary: AppColors.navy,
+          ),
         ),
+        home: const SplashScreen(),
       ),
-      home: const SplashScreen(),
     );
   }
 }

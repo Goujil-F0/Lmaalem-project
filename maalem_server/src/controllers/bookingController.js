@@ -47,9 +47,28 @@ const seedTestUsers = async (req, res) => {
     }
 };
 
-// N'oublie pas de l'exporter avec l'autre fonction !
+const getBookingHistory = async (req, res) => {
+    try {
+        // On récupère l'ID et le rôle depuis l'URL (ex: /api/bookings/history/1/client)
+        const { userId, role } = req.params;
+
+        const bookings = await BookingModel.getBookingsByUser(userId, role);
+
+        res.status(200).json({
+            success: true,
+            count: bookings.length,
+            data: bookings
+        });
+    } catch (error) {
+        console.error("Erreur lors de la récupération de l'historique:", error);
+        res.status(500).json({ success: false, message: "Erreur interne du serveur." });
+    }
+};
+
+// Exporte-la en bas
 module.exports = {
     createNewBooking,
-    seedTestUsers
+    seedTestUsers,
+    getBookingHistory
 };
 

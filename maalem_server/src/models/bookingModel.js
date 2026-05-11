@@ -13,6 +13,26 @@ const createBooking = async (clientId, artisanId, description, agreedPrice, book
     return rows[0]; // On retourne la réservation nouvellement créée
 };
 
+const getBookingsByUser = async (userId, role) => {
+    let query = '';
+    
+    // Si c'est un client, on cherche ses réservations
+    if (role === 'client') {
+        query = `SELECT * FROM bookings WHERE client_id = $1 ORDER BY created_at DESC;`;
+    } 
+    // Si c'est un artisan, on cherche les siennes
+    else if (role === 'artisan') {
+        query = `SELECT * FROM bookings WHERE artisan_id = $1 ORDER BY created_at DESC;`;
+    } else {
+        throw new Error("Rôle invalide");
+    }
+
+    const { rows } = await pool.query(query, [userId]);
+    return rows;
+};
+
+// N'oublie pas d'exporter la nouvelle fonction !
 module.exports = {
-    createBooking
+    createBooking,
+    getBookingsByUser
 };

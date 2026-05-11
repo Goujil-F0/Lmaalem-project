@@ -65,10 +65,37 @@ const getBookingHistory = async (req, res) => {
     }
 };
 
-// Exporte-la en bas
+const updateStatus = async (req, res) => {
+    try {
+        const { id } = req.params; // L'ID de la réservation dans l'URL
+        const { status } = req.body; // Le nouveau statut envoyé dans le corps de la requête
+
+        if (!status) {
+            return res.status(400).json({ success: false, message: "Le nouveau statut est requis." });
+        }
+
+        const updatedBooking = await BookingModel.updateBookingStatus(id, status);
+
+        if (!updatedBooking) {
+            return res.status(404).json({ success: false, message: "Réservation introuvable." });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: `Réservation ${id} passée au statut : ${status}`,
+            data: updatedBooking
+        });
+    } catch (error) {
+        console.error("Erreur lors de la mise à jour du statut:", error);
+        res.status(500).json({ success: false, message: "Erreur interne du serveur." });
+    }
+};
+
+// Mets à jour ton export à la fin du fichier
 module.exports = {
     createNewBooking,
     seedTestUsers,
-    getBookingHistory
+    getBookingHistory,
+    updateStatus
 };
 

@@ -31,8 +31,20 @@ const getBookingsByUser = async (userId, role) => {
     return rows;
 };
 
-// N'oublie pas d'exporter la nouvelle fonction !
+const updateBookingStatus = async (bookingId, newStatus) => {
+    const query = `
+        UPDATE bookings 
+        SET status = $1 
+        WHERE id = $2 
+        RETURNING *;
+    `;
+    const { rows } = await pool.query(query, [newStatus, bookingId]);
+    return rows[0]; // Retourne la réservation modifiée
+};
+
+// Mets à jour ton export à la fin du fichier
 module.exports = {
     createBooking,
-    getBookingsByUser
+    getBookingsByUser,
+    updateBookingStatus
 };

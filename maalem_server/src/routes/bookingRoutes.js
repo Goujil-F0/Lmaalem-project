@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { createNewBooking, seedTestUsers, getBookingHistory } = require('../controllers/bookingController');
+const { createNewBooking, seedTestUsers, getBookingHistory, updateStatus } = require('../controllers/bookingController');
+
 
 // Route de test
 router.get('/seed', seedTestUsers);
@@ -8,6 +9,9 @@ router.get('/seed', seedTestUsers);
 // Route pour l'historique (GET /api/bookings/history/:userId/:role)
 // Important : à placer AVANT les routes avec des ID dynamiques
 router.get('/history/:userId/:role', getBookingHistory);
+
+// Nouvelle route pour modifier le statut (PATCH /api/bookings/:id/status)
+router.patch('/:id/status', updateStatus);
 
 // Route pour créer (POST /api/bookings)
 router.post('/', createNewBooking);

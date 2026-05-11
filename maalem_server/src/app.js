@@ -15,12 +15,14 @@ const authRoutes = require('./routes/authRoutes');
 const reviewRoutes = require('./routes/reviewRoutes'); 
 const complaintRoutes = require('./routes/complaintRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes'); 
+const bookingRoutes = require('./routes/bookingRoutes');
+
 
 app.use('/auth', authRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/complaints', complaintRoutes);
 app.use('/api/dashboard', dashboardRoutes);
- 
+app.use('/api/bookings', bookingRoutes);
 
 // Route de test
 app.get('/', (req, res) => {

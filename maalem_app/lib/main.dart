@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/booking_provider.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
+import 'presentation/booking/screens/history_screen.dart';
 
 void main() {
   // On s'assure que les widgets sont initialisés
@@ -30,7 +31,8 @@ class MaalemApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         // Tu pourras ajouter ici ton AppTheme plus tard
       ),
-      home: SplashScreen(), // L'écran de départ est l'écran d'authentification
+      // home: SplashScreen(), <-- commente temporairement cette ligne
+      home: const HistoryScreen(), // <-- ajoute cette ligne
     );
   }
 }

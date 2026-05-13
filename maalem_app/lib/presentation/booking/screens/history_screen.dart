@@ -224,8 +224,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // Création d'une carte de réservation (Design inspiré de tes maquettes)
-  // Version finale de la carte avec Navigation
+  // Version finale de la carte avec Navigation ET Paiement Espèces
   Widget _buildBookingCard(
       Booking booking, Color titleColor, Color priceColor) {
     return GestureDetector(
@@ -268,8 +267,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       fontSize: 18,
                       color: titleColor),
                 ),
-                // L'icône des 3 petits points
-                Icon(Icons.more_horiz, color: Colors.grey.shade400),
+
+                // --- LE NOUVEAU MENU DES 3 POINTS ---
+                if (booking.status == 'pending' || booking.status == 'accepted')
+                  PopupMenuButton<String>(
+                    icon: Icon(Icons.more_horiz, color: Colors.grey.shade400),
+                    onSelected: (value) async {
+                      if (value == 'pay_cash') {
+                        // 1. Appel du Provider pour passer au statut "completed"
+                        await Provider.of<BookingProvider>(context,
+                                listen: false)
+                            .changeBookingStatus(booking.id!, 'completed');
+
+                        // 2. Affichage d'un petit message de succès en bas de l'écran
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content:
+                                Text("Paiement validé. Projet terminé ! ✅"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      }
+                    },
+                    itemBuilder: (BuildContext context) =>
+                        <PopupMenuEntry<String>>[
+                      const PopupMenuItem<String>(
+                        value: 'pay_cash',
+                        child: Row(
+                          children: [
+                            Icon(Icons.payments_outlined, color: Colors.green),
+                            SizedBox(width: 8),
+                            Text('Paiement en espèces'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                else
+                  // Si le projet est annulé ou terminé, on ne met rien à la place des 3 points
+                  const SizedBox(width: 24, height: 24),
               ],
             ),
             const SizedBox(height: 8),

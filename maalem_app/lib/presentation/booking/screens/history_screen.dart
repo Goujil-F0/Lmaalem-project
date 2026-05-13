@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../data/models/booking_model.dart';
+import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -224,58 +225,74 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   // Création d'une carte de réservation (Design inspiré de tes maquettes)
+  // Version finale de la carte avec Navigation
   Widget _buildBookingCard(
       Booking booking, Color titleColor, Color priceColor) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+    return GestureDetector(
+      onTap: () {
+        // Navigation fluide vers le chat au clic sur la carte
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ChatScreen(
+              bookingId: booking.id!,
+              currentUserId: 1, // ID temporaire pour le test
+            ),
           ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'Service #${booking.id}',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    color: titleColor),
-              ),
-              Icon(Icons.more_horiz, color: Colors.grey.shade400),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(booking.description, style: const TextStyle(fontSize: 15)),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                booking.bookingDate.toString().substring(0, 10),
-                style: TextStyle(color: Colors.grey.shade600),
-              ),
-              Text(
-                '${booking.agreedPrice.toStringAsFixed(0)} MAD',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: priceColor),
-              ),
-            ],
-          )
-        ],
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Service #${booking.id}',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                      color: titleColor),
+                ),
+                // L'icône des 3 petits points
+                Icon(Icons.more_horiz, color: Colors.grey.shade400),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(booking.description, style: const TextStyle(fontSize: 15)),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  booking.bookingDate.toString().substring(0, 10),
+                  style: TextStyle(color: Colors.grey.shade600),
+                ),
+                Text(
+                  '${booking.agreedPrice.toStringAsFixed(0)} MAD',
+                  style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: priceColor),
+                ),
+              ],
+            )
+          ],
+        ),
       ),
     );
   }

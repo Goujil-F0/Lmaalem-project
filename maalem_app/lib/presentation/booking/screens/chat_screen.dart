@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/chat_provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends StatefulWidget {
   final int bookingId;
@@ -59,6 +60,23 @@ class _ChatScreenState extends State<ChatScreen> {
         title: Text('Chat - Réservation #${widget.bookingId}'),
         backgroundColor: primaryDarkBlue,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.phone),
+            onPressed: () async {
+              // Plus tard, on récupérera le vrai numéro de l'artisan depuis la BDD.
+              // Pour le test, on met un faux numéro marocain.
+              final Uri callUri = Uri.parse('tel:+212600000000');
+              if (await canLaunchUrl(callUri)) {
+                await launchUrl(callUri);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Impossible de lancer l'appel")),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [

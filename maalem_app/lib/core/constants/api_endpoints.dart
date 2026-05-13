@@ -8,4 +8,10 @@ class ApiEndpoints {
   static const String baseUrl = 'http://localhost:8081/api';
 
   static const String bookings = '$baseUrl/bookings';
+
+  // URL de base pour la connexion WebSocket (On enlève le '/api' à la fin)
+  static const String socketUrl = 'http://localhost:8081';
+
+  // URL pour récupérer l'historique des messages
+  static const String messages = '$baseUrl/messages';
 }

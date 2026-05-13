@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'providers/booking_provider.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 
 void main() {
   // On s'assure que les widgets sont initialisés
   WidgetsFlutterBinding.ensureInitialized();
-  
-  runApp(const MaalemApp());
+
+  runApp(
+    // MultiProvider permet d'ajouter plusieurs providers facilement plus tard
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+      ],
+      child: const MaalemApp(),
+    ),
+  );
 }
 
 class MaalemApp extends StatelessWidget {

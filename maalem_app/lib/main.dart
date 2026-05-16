@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
-// ✅ AJOUT : Import de ton écran d'authentification
 import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 
 void main() async {
@@ -43,6 +43,9 @@ class MaalemApp extends StatelessWidget {
 
           // 2. SI L'UTILISATEUR EST CONNECTÉ -> DIRECTION LA MAP
           if (auth.token != null) {
+            if (auth.user?.isArtisan == true && auth.user?.profile == null) {
+              return const UploadCinScreen(); // Redirection forcée vers l'upload
+            }
             // On met un Scaffold pour éviter le fond noir et le texte rouge
             return const Scaffold(
               body: Center(

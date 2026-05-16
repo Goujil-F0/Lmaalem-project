@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 
 class AuthService {
@@ -90,6 +92,49 @@ class AuthService {
         'success': false, 
         'error': 'Erreur de connexion au serveur : $e'
       };
+    }
+  }
+
+  // 3. Upload CIN
+  Future<Map<String, dynamic>> uploadCin({
+    required XFile rectoFile,
+    required XFile versoFile,
+    required String token,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/auth/upload-cin'),
+      );
+
+      request.headers['Authorization'] = 'Bearer $token';
+
+      // Pour le web — utilise fromBytes
+      final rectoBytes = await rectoFile.readAsBytes();
+      final versoBytes = await versoFile.readAsBytes();
+
+      request.files.add(http.MultipartFile.fromBytes(
+        'cin_recto',
+        rectoBytes,
+        filename: rectoFile.name,
+      ));
+      request.files.add(http.MultipartFile.fromBytes(
+        'cin_verso',
+        versoBytes,
+        filename: versoFile.name,
+      ));
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      } else {
+        return {'success': false, 'error': data['error'] ?? 'Erreur upload'};
+      }
+    } catch (e) {
+      return {'success': false, 'error': 'Erreur : $e'};
     }
   }
 }

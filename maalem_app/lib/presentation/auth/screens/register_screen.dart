@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 
@@ -64,8 +65,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
     final result = await authProvider.register(userData);
 
     if (result['success']) {
-      _showSnackBar("Inscription réussie ! Connectez-vous maintenant.");
-      _openLogin();
+      // ✅ ON NE FAIT PLUS DE NAVIGATOR.push ICI !
+      // On affiche juste un message. Le main.dart s'occupe du reste.
+      _showSnackBar(isArtisan 
+        ? "Compte créé ! Redirection vers l'upload CIN..." 
+        : "Inscription réussie ! Bienvenue sur Maalem.");
     } else {
       _showSnackBar(result['error'] ?? "Une erreur est survenue");
     }

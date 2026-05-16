@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/shared/models/user_model.dart';
 import '../data/services/auth_service.dart';
 import '../core/utils/storage_helper.dart';
@@ -90,6 +91,17 @@ class AuthProvider with ChangeNotifier {
         latitude: userData['latitude'],
         longitude: userData['longitude'],
       );
+       if (result['success']) {
+        // ✅ AJOUT : Sauvegarder le token et l'utilisateur dès l'inscription
+        final data = result['data'];
+        if (data['token'] != null) {
+          _token = data['token'];
+          await StorageHelper.saveToken(_token!);
+        }
+        if (data['user'] != null) {
+          _user = User.fromJson(data['user']);
+        }
+      }
 
       _isLoading = false;
       notifyListeners();
@@ -109,5 +121,23 @@ class AuthProvider with ChangeNotifier {
       _token = null;
       await StorageHelper.clearToken(); // Efface le token du téléphone
       notifyListeners(); // L'UI redirige automatiquement vers l'écran Login
+    }
+
+    // ---------------------------------------------------------------------------
+    // 4. UploadCIN
+    // ---------------------------------------------------------------------------
+    Future<Map<String, dynamic>> uploadCin(XFile recto, XFile verso) async {
+      _isLoading = true;
+      notifyListeners();
+
+      final result = await _authService.uploadCin(
+        rectoFile: recto,
+        versoFile: verso,
+        token: _token!,
+      );
+
+      _isLoading = false;
+      notifyListeners();
+      return result;
     }
   }

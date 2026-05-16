@@ -14,6 +14,8 @@ dependencies:
   http: ^1.2.0
   provider: ^6.1.1          # Pour la gestion d'état/session
   shared_preferences: ^2.2.2 # Pour sauvegarder le token JWT
+  image_picker: ^1.1.2
+  dotted_border: ^2.1.0
 
 dev_dependencies:
   flutter_test:

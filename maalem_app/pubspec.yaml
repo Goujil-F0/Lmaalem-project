@@ -12,6 +12,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   http: ^1.2.0
+  provider: ^6.1.1          # Pour la gestion d'état/session
+  shared_preferences: ^2.2.2 # Pour sauvegarder le token JWT
 
 dev_dependencies:
   flutter_test:

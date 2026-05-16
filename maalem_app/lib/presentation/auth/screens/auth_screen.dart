@@ -1,11 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // AJOUTÉ
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/providers/auth_provider.dart'; // AJOUTÉ
 import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 
-class AuthScreen extends StatelessWidget {
+class AuthScreen extends StatefulWidget {
+  // CHANGÉ : StatefulWidget
   const AuthScreen({super.key});
 
-  void _openRegister(BuildContext context) {
+  @override
+  State<AuthScreen> createState() => _AuthScreenState();
+}
+
+class _AuthScreenState extends State<AuthScreen> {
+  // 1. AJOUT : Contrôleurs pour récupérer le texte
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  void _openRegister() {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -16,23 +35,44 @@ class AuthScreen extends StatelessWidget {
             begin: const Offset(0, 1),
             end: Offset.zero,
           ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-          );
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
           return SlideTransition(position: slideUp, child: child);
         },
       ),
     );
   }
 
-  void _enterApp(BuildContext context) {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const _AppEntryScreen()),
-    );
+  // 2. LOGIQUE DE CONNEXION
+  void _handleLogin() async {
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Veuillez remplir tous les champs"),
+            backgroundColor: Colors.red),
+      );
+      return;
+    }
+
+    bool success = await authProvider.login(
+        _emailController.text, _passwordController.text);
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Email ou mot de passe incorrect"),
+            backgroundColor: Colors.red),
+      );
+    }
+    // Note: Si success est true, le main.dart redirigera automatiquement vers la Map !
   }
 
   @override
   Widget build(BuildContext context) {
+    // On écoute l'état de chargement pour afficher un loader sur le bouton
+    final isLoading = context.watch<AuthProvider>().isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.beige,
       body: SafeArea(
@@ -62,25 +102,35 @@ class AuthScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 54),
-              const _AuthInput(
+
+              // MODIFICATION : Utilisation du controller
+              _AuthInput(
+                controller: _emailController, // AJOUTÉ
                 hintText: "E-mail",
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 18),
-              const _AuthInput(
+              _AuthInput(
+                controller: _passwordController, // AJOUTÉ
                 hintText: "Mot de passe",
                 icon: Icons.lock,
                 isPassword: true,
               ),
               const SizedBox(height: 36),
-              _PrimaryAuthButton(
-                text: "Se connecter",
-                onPressed: () => _enterApp(context),
-              ),
+
+              // MODIFICATION : Loader sur le bouton
+              isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.teal))
+                  : _PrimaryAuthButton(
+                      text: "Se connecter",
+                      onPressed: _handleLogin, // APPEL DE LA LOGIQUE
+                    ),
+
               const SizedBox(height: 80),
               TextButton(
-                onPressed: () => _openRegister(context),
+                onPressed: _openRegister,
                 child: RichText(
                   text: TextSpan(
                     style: TextStyle(
@@ -108,6 +158,54 @@ class AuthScreen extends StatelessWidget {
     );
   }
 }
+
+// --- MODIFICATION DU WIDGET INPUT POUR ACCEPTER LE CONTROLLER ---
+class _AuthInput extends StatelessWidget {
+  final String hintText;
+  final IconData icon;
+  final bool isPassword;
+  final TextInputType? keyboardType;
+  final TextEditingController controller; // AJOUTÉ
+
+  const _AuthInput({
+    required this.hintText,
+    required this.icon,
+    required this.controller, // AJOUTÉ
+    this.isPassword = false,
+    this.keyboardType,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller, // LIÉ ICI
+      obscureText: isPassword,
+      keyboardType: keyboardType,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
+        prefixIcon: Icon(icon, color: AppColors.navy.withValues(alpha: 0.72)),
+        filled: true,
+        fillColor: AppColors.navy.withValues(alpha: 0.08),
+        contentPadding: const EdgeInsets.symmetric(vertical: 20),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: AppColors.navy.withValues(alpha: 0.03)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.teal, width: 1.4),
+        ),
+      ),
+    );
+  }
+}
+
+// Garde le reste des widgets (_AuthLogo, _PrimaryAuthButton, etc.) tel quel...
 
 class _AuthLogo extends StatelessWidget {
   const _AuthLogo();
@@ -144,48 +242,6 @@ class _AuthLogo extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _AuthInput extends StatelessWidget {
-  final String hintText;
-  final IconData icon;
-  final bool isPassword;
-  final TextInputType? keyboardType;
-
-  const _AuthInput({
-    required this.hintText,
-    required this.icon,
-    this.isPassword = false,
-    this.keyboardType,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return TextField(
-      obscureText: isPassword,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
-        prefixIcon: Icon(icon, color: AppColors.navy.withValues(alpha: 0.72)),
-        filled: true,
-        fillColor: AppColors.navy.withValues(alpha: 0.08),
-        contentPadding: const EdgeInsets.symmetric(vertical: 20),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: BorderSide(color: AppColors.navy.withValues(alpha: 0.03)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(20),
-          borderSide: const BorderSide(color: AppColors.teal, width: 1.4),
-        ),
-      ),
     );
   }
 }

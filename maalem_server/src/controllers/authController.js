@@ -87,4 +87,39 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+
+// ─── UploadCIN ──────────────────────────────────────────────
+const uploadCinHandler = async (req, res) => {
+  try {
+    // 1. Vérifier que les deux fichiers sont présents
+    if (!req.files?.cin_recto || !req.files?.cin_verso) {
+      return res.status(400).json({ 
+        error: 'Les deux côtés de la CIN sont obligatoires' 
+      });
+    }
+
+    const rectoUrl = `/uploads/cin/${req.files.cin_recto[0].filename}`;
+    const versoUrl = `/uploads/cin/${req.files.cin_verso[0].filename}`;
+
+    // 2. Mettre à jour artisan_profiles
+    const db = require('../models/db');
+    await db.query(
+      `UPDATE artisan_profiles 
+       SET cin_url = $1, cin_verified = false
+       WHERE user_id = $2`,
+      [`${rectoUrl}|${versoUrl}`, req.user.id]
+    );
+
+    res.status(200).json({
+      message: 'CIN uploadée avec succès',
+      cin_recto: rectoUrl,
+      cin_verso: versoUrl,
+    });
+
+  } catch (error) {
+    console.error('Upload CIN error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+module.exports = { register, login, uploadCinHandler };

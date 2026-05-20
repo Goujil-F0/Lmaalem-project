@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 
 class AuthService {
@@ -24,23 +23,18 @@ class AuthService {
 
       if (response.statusCode == 200) {
         // Le serveur renvoie : { "token": "...", "user": { ... } }
-        return {
-          'success': true, 
-          'data': jsonDecode(response.body)
-        };
+        return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         // On récupère le message d'erreur envoyé par Node.js (ex: "Email ou mot de passe incorrect")
         final errorData = jsonDecode(response.body);
         return {
-          'success': false, 
-          'error': errorData['error'] ?? 'Une erreur est survenue lors de la connexion'
+          'success': false,
+          'error': errorData['error'] ??
+              'Une erreur est survenue lors de la connexion'
         };
       }
     } catch (e) {
-      return {
-        'success': false, 
-        'error': 'Erreur de connexion au serveur : $e'
-      };
+      return {'success': false, 'error': 'Erreur de connexion au serveur : $e'};
     }
   }
 
@@ -76,29 +70,24 @@ class AuthService {
       );
 
       if (response.statusCode == 201) {
-        return {
-          'success': true, 
-          'data': jsonDecode(response.body)
-        };
+        return {'success': true, 'data': jsonDecode(response.body)};
       } else {
         final errorData = jsonDecode(response.body);
         return {
-          'success': false, 
-          'error': errorData['error'] ?? 'Une erreur est survenue lors de l\'inscription'
+          'success': false,
+          'error': errorData['error'] ??
+              'Une erreur est survenue lors de l\'inscription'
         };
       }
     } catch (e) {
-      return {
-        'success': false, 
-        'error': 'Erreur de connexion au serveur : $e'
-      };
+      return {'success': false, 'error': 'Erreur de connexion au serveur : $e'};
     }
   }
 
   // 3. Upload CIN
   Future<Map<String, dynamic>> uploadCin({
-    required XFile rectoFile,
-    required XFile versoFile,
+    required File rectoFile,
+    required File versoFile,
     required String token,
   }) async {
     try {
@@ -109,20 +98,21 @@ class AuthService {
 
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Pour le web — utilise fromBytes
-      final rectoBytes = await rectoFile.readAsBytes();
-      final versoBytes = await versoFile.readAsBytes();
-
-      request.files.add(http.MultipartFile.fromBytes(
-        'cin_recto',
-        rectoBytes,
-        filename: rectoFile.name,
-      ));
-      request.files.add(http.MultipartFile.fromBytes(
-        'cin_verso',
-        versoBytes,
-        filename: versoFile.name,
-      ));
+      // Utilise fromPath pour File — plus simple et correct
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'cin_recto',
+          rectoFile.path,
+          filename: rectoFile.path.split('/').last, // ← extrait le nom du fichier
+        ),
+      );
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'cin_verso',
+          versoFile.path,
+          filename: versoFile.path.split('/').last,
+        ),
+      );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
@@ -137,4 +127,5 @@ class AuthService {
       return {'success': false, 'error': 'Erreur : $e'};
     }
   }
+
 }

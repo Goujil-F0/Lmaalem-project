@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
-import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 
@@ -166,7 +165,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
-                const _UploadCinBox(),
               ],
               const SizedBox(height: 34),
               
@@ -365,37 +363,6 @@ class _RegisterInput extends StatelessWidget {
   }
 }
 
-class _UploadCinBox extends StatelessWidget {
-  const _UploadCinBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 104,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.navy.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_upload,
-              color: AppColors.navy.withValues(alpha: 0.72)),
-          const SizedBox(height: 8),
-          Text(
-            "Upload CIN Recto / Verso",
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.72),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _PrimaryRegisterButton extends StatelessWidget {
   final String text;

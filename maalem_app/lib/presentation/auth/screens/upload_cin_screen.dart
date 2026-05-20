@@ -1,10 +1,10 @@
-import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/presentation/auth/widgets/cin_upload_card.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/presentation/auth/widgets/cin_upload_card.dart';
+
 
 class UploadCinScreen extends StatefulWidget {
   const UploadCinScreen({super.key});
@@ -14,38 +14,63 @@ class UploadCinScreen extends StatefulWidget {
 }
 
 class _UploadCinScreenState extends State<UploadCinScreen> {
+  // Fichiers pour le recto et le verso
   XFile? _rectoFile;
   XFile? _versoFile;
-  Uint8List? _rectoBytes;
-  Uint8List? _versoBytes;
   bool _isLoading = false;
 
+  // FONCTION PRINCIPALE : Sélection de l'image (Galerie ou Scanner)
   Future<void> _pickImage(bool isRecto) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
+    // 1. Affichage du menu de choix (Bottom Sheet)
+    final ImageSource? source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const SizedBox(height: 20),
+          ListTile(
+            leading: const Icon(Icons.camera_alt, color: AppColors.teal),
+            title: const Text("Scanner la CIN (Caméra)"),
+            onTap: () => Navigator.pop(context, ImageSource.camera),
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library, color: AppColors.teal),
+            title: const Text("Choisir dans la galerie"),
+            onTap: () => Navigator.pop(context, ImageSource.gallery),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
     );
 
+    if (source == null) return;
+    final ImagePicker picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(
+      source: source, // galerie ou caméra directement
+      imageQuality: 80,
+    );
     if (picked != null) {
-      final bytes = await picked.readAsBytes();
       setState(() {
         if (isRecto) {
           _rectoFile = picked;
-          _rectoBytes = bytes;
         } else {
           _versoFile = picked;
-          _versoBytes = bytes;
         }
       });
     }
+      
   }
 
+  // FONCTION D'ENVOI AU SERVEUR
   Future<void> _handleUpload() async {
+    // 1. Validation : Les deux fichiers sont-ils présents ?
     if (_rectoFile == null || _versoFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Les deux côtés de la CIN sont obligatoires'),
+          content: Text('Le recto et le verso de la CIN sont obligatoires'),
           backgroundColor: Colors.redAccent,
         ),
       );
@@ -54,26 +79,40 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
 
     setState(() => _isLoading = true);
 
-    final auth = Provider.of<AuthProvider>(context, listen: false);
-    final result = await auth.uploadCin(_rectoFile!, _versoFile!);
-
-    setState(() => _isLoading = false);
-
-    if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('CIN uploadée avec succès !'),
-          backgroundColor: Colors.green,
-        ),
+    try {
+      // Accès au provider sans écouter (listen: false)
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      
+      // Appel du service d'upload
+      final result = await authProvider.uploadCin(
+        _rectoFile!, 
+        _versoFile!,
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['error'] ?? 'Erreur'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+
+      if (result['success']) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('CIN uploadée avec succès ! Votre profil est en cours de vérification.'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        
+        // Redirection vers la Map ou le Profil après succès
+        // Navigator.pushReplacementNamed(context, '/map'); 
+      } else {
+        _showError(result['error'] ?? 'Une erreur est survenue lors de l\'upload');
+      }
+    } catch (e) {
+      _showError("Erreur critique : $e");
+    } finally {
+      setState(() => _isLoading = false);
     }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
   }
 
   @override
@@ -89,7 +128,10 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
         ),
         title: const Text(
           "Maalem",
-          style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w900),
+          style: TextStyle(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w900,
+          ),
         ),
         centerTitle: true,
       ),
@@ -98,6 +140,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
+              // Header
               const Text(
                 "Vérification d'Identité",
                 style: TextStyle(
@@ -118,23 +161,23 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Recto
+              // Carte Recto
               CinUploadCard(
                 label: "Côté Recto",
-                imageBytes: _rectoBytes,
+                imageFile: _rectoFile,
                 onTap: () => _pickImage(true),
               ),
               const SizedBox(height: 20),
 
-              // Verso
+              // Carte Verso
               CinUploadCard(
                 label: "Côté Verso",
-                imageBytes: _versoBytes,
+                imageFile: _versoFile,
                 onTap: () => _pickImage(false),
               ),
               const SizedBox(height: 24),
 
-              // Tips box
+              // Box de conseils (Tips)
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
@@ -174,8 +217,9 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
               ),
               const SizedBox(height: 32),
 
+              // Bouton de validation final
               _isLoading
-                  ? const CircularProgressIndicator(color: AppColors.teal)
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
                   : SizedBox(
                       width: double.infinity,
                       height: 62,

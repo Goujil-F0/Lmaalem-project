@@ -1,26 +1,27 @@
-import 'dart:typed_data';
+import 'dart:io';
+
 import 'package:dotted_border/dotted_border.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 
 class CinUploadCard extends StatelessWidget {
   final String label;
-  final Uint8List? imageBytes;
+  final XFile? imageFile;
   final VoidCallback onTap;
 
   const CinUploadCard({
     super.key,
     required this.label,
     required this.onTap,
-    this.imageBytes,
+    this.imageFile,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bool hasImage = imageBytes != null;
     return GestureDetector(
       onTap: onTap,
-      child: hasImage ? _buildSuccess() : _buildEmpty(),
+      child: imageFile != null ? _buildSuccess() : _buildEmpty(),
     );
   }
 
@@ -39,8 +40,8 @@ class CinUploadCard extends StatelessWidget {
             child: Stack(
               children: [
                 Positioned.fill(
-                  child: Image.memory(
-                    imageBytes!,
+                  child: Image.file(
+                    File(imageFile!.path),
                     fit: BoxFit.cover,
                     color: Colors.black.withValues(alpha: 0.3),
                     colorBlendMode: BlendMode.darken,

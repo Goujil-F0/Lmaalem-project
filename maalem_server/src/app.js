@@ -8,8 +8,8 @@ dotenv.config();
 const app = express(); // ← une seule fois
 
 // Middleware
-app.use(cors());
 app.use(express.json());
+app.use(cors());
 
 // Routes
 const authRoutes = require('./routes/authRoutes');

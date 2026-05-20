@@ -279,7 +279,8 @@ class _MapScreenState extends State<MapScreen> {
                   Container(width: 1, height: 28, color: _Colors.beigeDark),
                   _InfoChip(
                     icon: Icons.access_time_rounded,
-                    label: '${(artisan.hourlyRate ?? 0.0).toStringAsFixed(0)} MAD/h',
+                    label:
+                        '${(artisan.hourlyRate ?? 0.0).toStringAsFixed(0)} MAD/h',
                     iconColor: _Colors.blue,
                   ),
                 ],

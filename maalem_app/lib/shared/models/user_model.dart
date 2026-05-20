@@ -1,6 +1,5 @@
 import 'package:maalem_app/data/models/artisan_model.dart';
 
-
 class User {
   final int id;
   final String fullName;
@@ -34,8 +33,8 @@ class User {
       city: json['city'],
       neighborhood: json['neighborhood'],
       photoUrl: json['photo_url'],
-      profile: json['profile'] != null 
-          ? ArtisanModel.fromJson(json['profile']) 
+      profile: json['profile'] != null
+          ? ArtisanModel.fromJson(json['profile'])
           : null,
     );
   }

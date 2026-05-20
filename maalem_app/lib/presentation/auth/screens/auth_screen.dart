@@ -58,6 +58,8 @@ class _AuthScreenState extends State<AuthScreen> {
     bool success = await authProvider.login(
         _emailController.text, _passwordController.text);
 
+    if (!mounted) return;
+
     if (!success) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

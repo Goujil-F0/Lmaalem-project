@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
-import 'package:provider/provider.dart';
+import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
-
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -15,17 +15,14 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   bool isArtisan = false;
 
-  // 1. Déclaration des contrôleurs pour récupérer le texte
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  final TextEditingController _confirmPasswordController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
 
   @override
   void dispose() {
-    // Très important : libérer la mémoire
     _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
@@ -34,46 +31,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // 2. Logique d'inscription
-  void _handleRegister() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    // Validation basique
-    if (_nameController.text.isEmpty || _emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showSnackBar("Veuillez remplir les champs obligatoires");
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      _showSnackBar('Veuillez remplir les champs obligatoires');
       return;
     }
 
     if (_passwordController.text != _confirmPasswordController.text) {
-      _showSnackBar("Les mots de passe ne correspondent pas");
+      _showSnackBar('Les mots de passe ne correspondent pas');
       return;
     }
 
-    // Préparation des données pour le backend
-    Map<String, dynamic> userData = {
-      "full_name": _nameController.text,
-      "email": _emailController.text,
-      "password": _passwordController.text,
-      "role": isArtisan ? "artisan" : "client",
-      "phone": isArtisan ? _phoneController.text : null,
-    };
+    final authProvider = context.read<AuthProvider>();
+    final result = await authProvider.register({
+      'full_name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'password': _passwordController.text,
+      'role': isArtisan ? 'artisan' : 'client',
+      'phone': isArtisan ? _phoneController.text.trim() : null,
+    });
 
-    print("📦 DONNÉES À ENVOYER : $userData"); 
+    if (!mounted) return;
 
-    // Appel au provider
-    final result = await authProvider.register(userData);
-
-    if (result['success']) {
-      // ✅ ON NE FAIT PLUS DE NAVIGATOR.push ICI !
-      // On affiche juste un message. Le main.dart s'occupe du reste.
-      _showSnackBar(isArtisan 
-        ? "Compte créé ! Redirection vers l'upload CIN..." 
-        : "Inscription réussie ! Bienvenue sur Maalem.");
-    } else {
-      _showSnackBar(result['error'] ?? "Une erreur est survenue");
+    if (result['success'] != true) {
+      _showSnackBar(result['error'] ?? 'Une erreur est survenue');
+      return;
     }
-  }
 
+    if (isArtisan) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (_, __, ___) => const UploadCinScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            final slideUp = Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
+            return SlideTransition(position: slideUp, child: child);
+          },
+        ),
+      );
+      return;
+    }
+
+    _showSnackBar('Inscription reussie. Connectez-vous maintenant.');
+    _openLogin();
+  }
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -98,10 +107,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
-
-@override
+  @override
   Widget build(BuildContext context) {
-    // On écoute le provider pour savoir si on doit afficher un loader
     final isLoading = context.watch<AuthProvider>().isLoading;
 
     return Scaffold(
@@ -115,7 +122,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const _RegisterLogo(),
               const SizedBox(height: 18),
               Text(
-                "Rejoignez la communauté Lmaalem",
+                'Rejoignez la communaute Lmaalem',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.navy.withValues(alpha: 0.62),
@@ -128,54 +135,50 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onChanged: (value) => setState(() => isArtisan = value),
               ),
               const SizedBox(height: 28),
-              
-              // --- CORRECTION : Liaison des contrôleurs ---
               _RegisterInput(
-                controller: _nameController, 
-                hintText: "Nom complet", 
-                icon: Icons.person
+                controller: _nameController,
+                hintText: 'Nom complet',
+                icon: Icons.person,
               ),
               const SizedBox(height: 16),
               _RegisterInput(
-                controller: _emailController, 
-                hintText: "E-mail",
+                controller: _emailController,
+                hintText: 'E-mail',
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
               _RegisterInput(
-                controller: _passwordController, 
-                hintText: "Mot de passe",
+                controller: _passwordController,
+                hintText: 'Mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
               const SizedBox(height: 16),
               _RegisterInput(
-                controller: _confirmPasswordController, 
-                hintText: "Confirmer le mot de passe",
+                controller: _confirmPasswordController,
+                hintText: 'Confirmer le mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
               if (isArtisan) ...[
                 const SizedBox(height: 16),
                 _RegisterInput(
-                  controller: _phoneController, 
-                  hintText: "Téléphone",
+                  controller: _phoneController,
+                  hintText: 'Telephone',
                   icon: Icons.call,
                   keyboardType: TextInputType.phone,
                 ),
                 const SizedBox(height: 16),
+                const _UploadCinBox(),
               ],
               const SizedBox(height: 34),
-              
-              // --- CORRECTION : Gestion du loader et appel de la fonction ---
-              isLoading 
-                ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
-                : _PrimaryRegisterButton(
-                    text: isArtisan ? "Devenir Artisan Lmaalem" : "S'inscrire",
-                    onPressed: _handleRegister, // <--- APPEL DE LA LOGIQUE ICI
-                  ),
-              
+              isLoading
+                  ? const Center(child: CircularProgressIndicator(color: AppColors.teal))
+                  : _PrimaryRegisterButton(
+                      text: isArtisan ? 'Devenir Artisan Lmaalem' : "S'inscrire",
+                      onPressed: _handleRegister,
+                    ),
               const SizedBox(height: 44),
               TextButton(
                 onPressed: _openLogin,
@@ -186,9 +189,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fontSize: 15,
                     ),
                     children: const [
-                      TextSpan(text: "Vous avez déjà un compte ? "),
+                      TextSpan(text: 'Vous avez deja un compte ? '),
                       TextSpan(
-                        text: "Se connecter",
+                        text: 'Se connecter',
                         style: TextStyle(
                           color: AppColors.teal,
                           fontWeight: FontWeight.w800,
@@ -206,7 +209,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 }
-
 
 class _RegisterLogo extends StatelessWidget {
   const _RegisterLogo();
@@ -226,7 +228,7 @@ class _RegisterLogo extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          "Lmaalem",
+          'Lmaalem',
           style: TextStyle(
             color: AppColors.navy,
             fontSize: 34,
@@ -264,13 +266,13 @@ class _RoleSwitcher extends StatelessWidget {
       child: Row(
         children: [
           _RoleOption(
-            text: "Client",
+            text: 'Client',
             selected: !isArtisan,
             onTap: () => onChanged(false),
           ),
           const SizedBox(width: 8),
           _RoleOption(
-            text: "Artisan",
+            text: 'Artisan',
             selected: isArtisan,
             onTap: () => onChanged(true),
           ),
@@ -363,6 +365,36 @@ class _RegisterInput extends StatelessWidget {
   }
 }
 
+class _UploadCinBox extends StatelessWidget {
+  const _UploadCinBox();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 104,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.navy.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.cloud_upload, color: AppColors.navy.withValues(alpha: 0.72)),
+          const SizedBox(height: 8),
+          Text(
+            'Upload CIN Recto / Verso apres inscription',
+            style: TextStyle(
+              color: AppColors.navy.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _PrimaryRegisterButton extends StatelessWidget {
   final String text;

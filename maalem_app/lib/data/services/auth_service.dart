@@ -1,44 +1,33 @@
 import 'dart:convert';
-import 'dart:io';
+
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 
 class AuthService {
-  // On utilise l'ApiClient pour avoir l'URL de base centralisée
   final String baseUrl = ApiClient.baseUrl;
 
-  // 1. CONNEXION (Login)
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'email': email,
-          'password': password,
-        }),
+        headers: ApiClient.getHeaders(null),
+        body: jsonEncode({'email': email, 'password': password}),
       );
-
+      final data = jsonDecode(response.body);
       if (response.statusCode == 200) {
-        // Le serveur renvoie : { "token": "...", "user": { ... } }
-        return {'success': true, 'data': jsonDecode(response.body)};
-      } else {
-        // On récupère le message d'erreur envoyé par Node.js (ex: "Email ou mot de passe incorrect")
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'error': errorData['error'] ??
-              'Une erreur est survenue lors de la connexion'
-        };
+        return {'success': true, 'data': data};
       }
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Une erreur est survenue lors de la connexion',
+      };
     } catch (e) {
       return {'success': false, 'error': 'Erreur de connexion au serveur : $e'};
     }
   }
 
-  // 2. INSCRIPTION (Register)
   Future<Map<String, dynamic>> register({
     required String fullName,
     required String email,
@@ -53,9 +42,7 @@ class AuthService {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/auth/register'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: ApiClient.getHeaders(null),
         body: jsonEncode({
           'full_name': fullName,
           'email': email,
@@ -68,26 +55,22 @@ class AuthService {
           'longitude': longitude,
         }),
       );
-
+      final data = jsonDecode(response.body);
       if (response.statusCode == 201) {
-        return {'success': true, 'data': jsonDecode(response.body)};
-      } else {
-        final errorData = jsonDecode(response.body);
-        return {
-          'success': false,
-          'error': errorData['error'] ??
-              'Une erreur est survenue lors de l\'inscription'
-        };
+        return {'success': true, 'data': data};
       }
+      return {
+        'success': false,
+        'error': data['error'] ?? 'Une erreur est survenue lors de l inscription',
+      };
     } catch (e) {
       return {'success': false, 'error': 'Erreur de connexion au serveur : $e'};
     }
   }
 
-  // 3. Upload CIN
   Future<Map<String, dynamic>> uploadCin({
-    required File rectoFile,
-    required File versoFile,
+    required XFile rectoFile,
+    required XFile versoFile,
     required String token,
   }) async {
     try {
@@ -95,37 +78,61 @@ class AuthService {
         'POST',
         Uri.parse('$baseUrl/auth/upload-cin'),
       );
-
       request.headers['Authorization'] = 'Bearer $token';
 
-      // Utilise fromPath pour File — plus simple et correct
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'cin_recto',
-          rectoFile.path,
-          filename: rectoFile.path.split('/').last, // ← extrait le nom du fichier
+          await rectoFile.readAsBytes(),
+          filename: rectoFile.name,
+          contentType: _contentTypeFor(rectoFile.name),
         ),
       );
       request.files.add(
-        await http.MultipartFile.fromPath(
+        http.MultipartFile.fromBytes(
           'cin_verso',
-          versoFile.path,
-          filename: versoFile.path.split('/').last,
+          await versoFile.readAsBytes(),
+          filename: versoFile.name,
+          contentType: _contentTypeFor(versoFile.name),
         ),
       );
 
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
       final data = jsonDecode(response.body);
-
       if (response.statusCode == 200) {
         return {'success': true, 'data': data};
-      } else {
-        return {'success': false, 'error': data['error'] ?? 'Erreur upload'};
       }
+      return {'success': false, 'error': data['error'] ?? 'Erreur upload'};
     } catch (e) {
-      return {'success': false, 'error': 'Erreur : $e'};
+      return {'success': false, 'error': 'Erreur upload : $e'};
     }
   }
 
+  Future<Map<String, dynamic>> updateAvailability({
+    required bool isAvailable,
+    required String token,
+  }) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/auth/availability'),
+        headers: ApiClient.getHeaders(token),
+        body: jsonEncode({'is_available': isAvailable}),
+      );
+      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        return {'success': true, 'data': data};
+      }
+      return {'success': false, 'error': data['error'] ?? 'Erreur serveur'};
+    } catch (e) {
+      return {'success': false, 'error': 'Erreur serveur : $e'};
+    }
+  }
+
+  MediaType _contentTypeFor(String fileName) {
+    final lower = fileName.toLowerCase();
+    if (lower.endsWith('.pdf')) return MediaType('application', 'pdf');
+    if (lower.endsWith('.png')) return MediaType('image', 'png');
+    return MediaType('image', 'jpeg');
+  }
 }

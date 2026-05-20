@@ -66,5 +66,9 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>L'application a besoin d'accéder à votre galerie pour uploader votre CIN.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>L'application a besoin d'accéder à votre caméra pour prendre en photo votre CIN.</string>
 </dict>
 </plist>

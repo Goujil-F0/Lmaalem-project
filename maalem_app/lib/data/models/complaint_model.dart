@@ -1,35 +1,38 @@
-class ReviewModel {
+class ComplaintModel {
   final int? id;
   final int bookingId;
   final int clientId;
   final int artisanId;
-  final int rating;
-  final String? comment;
+  final String description;
+  final String status;
   final String? clientName;
+  final String? artisanName;
   final DateTime? createdAt;
 
-  ReviewModel({
+  ComplaintModel({
     this.id,
     required this.bookingId,
     required this.clientId,
     required this.artisanId,
-    required this.rating,
-    this.comment,
+    required this.description,
+    required this.status,
     this.clientName,
+    this.artisanName,
     this.createdAt,
   });
 
-  factory ReviewModel.fromJson(Map<String, dynamic> json) {
-    return ReviewModel(
+  factory ComplaintModel.fromJson(Map<String, dynamic> json) {
+    return ComplaintModel(
       id: json['id'],
       bookingId: json['booking_id'],
       clientId: json['client_id'],
       artisanId: json['artisan_id'],
-      rating: json['rating'],
-      comment: json['comment'],
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'open',
       clientName: json['client_name'],
+      artisanName: json['artisan_name'],
       createdAt: json['created_at'] != null
-          ? DateTime.parse(json['created_at'])
+          ? DateTime.tryParse(json['created_at'])
           : null,
     );
   }
@@ -38,8 +41,7 @@ class ReviewModel {
     return {
       'booking_id': bookingId,
       'artisan_id': artisanId,
-      'rating': rating,
-      'comment': comment,
+      'description': description,
     };
   }
 }

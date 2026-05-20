@@ -1,10 +1,11 @@
 const express = require('express');
 const dotenv = require('dotenv');
+const path = require('path');
 const cors = require('cors');
 
 dotenv.config();
 
-const app = express();
+const app = express(); // ← une seule fois
 
 // Middlewares globaux
 app.use(cors());
@@ -16,7 +17,15 @@ app.use('/api', apiLimiter);
 
 // Routes
 const authRoutes = require('./routes/authRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
+const complaintRoutes = require('./routes/complaintRoutes');
+const dashboardRoutes = require('./routes/dashboardRoutes');
+
 app.use('/auth', authRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/complaints', complaintRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 const artisanRoutes = require('./routes/artisanRoutes');
 app.use('/api', artisanRoutes);

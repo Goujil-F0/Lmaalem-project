@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
     description    TEXT,
     hourly_rate    DECIMAL(10,2),
     is_available   BOOLEAN DEFAULT TRUE,
+    profile_photo_url TEXT,
     cin_url        TEXT,
     cin_verified   BOOLEAN DEFAULT FALSE,
     average_rating DECIMAL(3,2) DEFAULT 0.00

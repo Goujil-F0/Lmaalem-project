@@ -1,25 +1,36 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'providers/search_provider.dart';
+import 'providers/auth_provider.dart';
 import 'presentation/search/screens/map_screen.dart';
+import 'presentation/auth/screens/upload_cin_screen.dart';
+import 'presentation/auth/screens/splash_screen.dart';
+import 'presentation/auth/screens/register_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => SearchProvider())],
-      child: const MyApp(),
+      providers: [
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..checkAuthStatus(),
+        ),
+      ],
+      child: const MaalemApp(),
     ),
   );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MaalemApp extends StatelessWidget {
+  const MaalemApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Lmaalem',
       debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF2C5F8A),
@@ -47,7 +58,25 @@ class MyApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const MapScreen(),
+      home: Consumer<AuthProvider>(
+        builder: (context, auth, child) {
+          // 1. ÉCRAN DE CHARGEMENT
+          if (auth.isLoading) {
+            return const SplashScreen();
+          }
+
+          // 2. SI L'UTILISATEUR EST CONNECTÉ -> DIRECTION LA MAP
+          if (auth.token != null) {
+            if (auth.user?.isArtisan == true && auth.user?.profile == null) {
+              return const UploadCinScreen();
+            }
+            return const MapScreen();
+          }
+
+          // 3. SI PAS CONNECTÉ -> DIRECTION L'ÉCRAN AUTH
+          return const RegisterScreen();
+        },
+      ),
     );
   }
 }

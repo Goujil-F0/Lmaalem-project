@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // AJOUTÉ
-import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/providers/auth_provider.dart'; // AJOUTÉ
-import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 import 'package:maalem_app/presentation/dashboard/screens/review_screen.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
 import 'package:maalem_app/presentation/dashboard/screens/complaint_screen.dart';
@@ -291,7 +289,10 @@ class _AppEntryScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final token = Provider.of<AuthProvider>(context, listen: false).token ?? '';
-    const int artisanId = 1;
+    // Données temporaires en attendant l'intégration avec la recherche et les réservations.
+    const int demoArtisanId = 1;
+    const int demoBookingId = 1;
+    const String demoArtisanName = "Ahmed le Plombier";
 
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -323,9 +324,9 @@ class _AppEntryScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ReviewScreen(
-                      bookingId: 1,
-                      artisanId: artisanId,
-                      artisanName: "Ahmed le Plombier",
+                      bookingId: demoBookingId,
+                      artisanId: demoArtisanId,
+                      artisanName: demoArtisanName,
                       token: token,
                     ),
                   ),
@@ -340,7 +341,7 @@ class _AppEntryScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => DashboardScreen(
-                      artisanId: artisanId,
+                      artisanId: demoArtisanId,
                       token: token,
                     ),
                   ),
@@ -355,7 +356,8 @@ class _AppEntryScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => ComplaintScreen(
-                      artisanId: artisanId,
+                      bookingId: demoBookingId,
+                      artisanId: demoArtisanId,
                       token: token,
                     ),
                   ),

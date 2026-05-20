@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/complaint_service.dart';
 
 class ComplaintScreen extends StatefulWidget {
+  final int bookingId;
   final int artisanId;
   final String token;
   final bool isAdmin;
 
   const ComplaintScreen({
     super.key,
+    required this.bookingId,
     required this.artisanId,
     required this.token,
     this.isAdmin = false,
@@ -23,35 +24,38 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isLoading = false;
   List<dynamic> _complaints = [];
+  late final ComplaintService _complaintService;
 
   @override
   void initState() {
     super.initState();
+    _complaintService = ComplaintService(token: widget.token);
     if (widget.isAdmin) _loadComplaints();
   }
 
   Future<void> _loadComplaints() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/complaints'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      if (response.statusCode == 200) {
+      final complaints = await _complaintService.getComplaints();
+      if (mounted) {
         setState(() {
-          _complaints = jsonDecode(response.body);
-          _isLoading = false;
+          _complaints = complaints;
         });
-      } else {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _submitComplaint() async {
-    if (_descriptionController.text.isEmpty) {
+    final description = _descriptionController.text.trim();
+    if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez écrire une description')),
       );
@@ -61,51 +65,49 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/api/complaints'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-        body: jsonEncode({
-          'booking_id': 1,
-          'artisan_id': widget.artisanId,
-          'description': _descriptionController.text,
-        }),
+      await _complaintService.createComplaint(
+        bookingId: widget.bookingId,
+        artisanId: widget.artisanId,
+        description: description,
       );
 
-      if (response.statusCode == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Réclamation envoyée avec succès !'),
-              backgroundColor: AppColors.teal,
-            ),
-          );
-          _descriptionController.clear();
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Réclamation envoyée avec succès !'),
+            backgroundColor: AppColors.teal,
+          ),
+        );
+        _descriptionController.clear();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _resolveComplaint(int complaintId) async {
     try {
-      await http.put(
-        Uri.parse('http://10.0.2.2:8081/api/complaints/$complaintId/resolve'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      _loadComplaints();
+      await _complaintService.resolveComplaint(complaintId);
+      await _loadComplaints();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -217,8 +219,8 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
                         color: complaint['status'] == 'open'
-                            ? AppColors.lightBlue.withOpacity(0.2)
-                            : Colors.green.withOpacity(0.2),
+                            ? AppColors.lightBlue.withValues(alpha: 0.2)
+                            : Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

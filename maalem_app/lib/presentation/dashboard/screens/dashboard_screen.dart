@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/dashboard_service.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 
@@ -31,21 +30,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadDashboard() async {
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/dashboard/artisan/${widget.artisanId}'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-
-      if (response.statusCode == 200) {
+      final service = DashboardService(token: widget.token);
+      final dashboardData = await service.getArtisanDashboard(widget.artisanId);
+      if (mounted) {
         setState(() {
-          _dashboardData = jsonDecode(response.body);
+          _dashboardData = dashboardData;
           _isLoading = false;
         });
-      } else {
-        setState(() => _isLoading = false);
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

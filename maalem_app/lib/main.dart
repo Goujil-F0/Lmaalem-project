@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
-import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
-import 'package:provider/provider.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
-import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 
 void main() async {

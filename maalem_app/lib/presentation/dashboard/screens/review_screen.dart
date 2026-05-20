@@ -42,7 +42,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
         bookingId: widget.bookingId,
         artisanId: widget.artisanId,
         rating: _rating.toInt(),
-        comment: _commentController.text,
+        comment: _commentController.text.trim(),
       );
 
       if (mounted) {
@@ -66,6 +66,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
@@ -82,7 +88,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
             const SizedBox(height: 20),
             CircleAvatar(
               radius: 40,
-              backgroundColor: AppColors.lightBlue.withOpacity(0.2),
+              backgroundColor: AppColors.lightBlue.withValues(alpha: 0.2),
               child: const Icon(Icons.person, size: 50, color: AppColors.teal),
             ),
             const SizedBox(height: 16),

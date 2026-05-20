@@ -1,16 +1,16 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:maalem_app/data/services/api_client.dart';
 
 class DashboardService {
-  final String baseUrl = 'http://localhost:8081/api';
   final String token;
 
   DashboardService({required this.token});
 
   Future<Map<String, dynamic>> getArtisanDashboard(int artisanId) async {
     final response = await http.get(
-      Uri.parse('$baseUrl/dashboard/artisan/$artisanId'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('${ApiClient.baseUrl}/api/dashboard/artisan/$artisanId'),
+      headers: ApiClient.getHeaders(token),
     );
 
     if (response.statusCode == 200) {
@@ -22,8 +22,8 @@ class DashboardService {
 
   Future<Map<String, dynamic>> getAdminDashboard() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/dashboard/admin'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('${ApiClient.baseUrl}/api/dashboard/admin'),
+      headers: ApiClient.getHeaders(token),
     );
 
     if (response.statusCode == 200) {

@@ -273,13 +273,13 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   _InfoChip(
                     icon: Icons.star_rounded,
-                    label: artisan.averageRating.toStringAsFixed(1),
+                    label: (artisan.averageRating ?? 0.0).toStringAsFixed(1),
                     iconColor: const Color(0xFFD4A017),
                   ),
                   Container(width: 1, height: 28, color: _Colors.beigeDark),
                   _InfoChip(
                     icon: Icons.access_time_rounded,
-                    label: '${artisan.hourlyRate.toStringAsFixed(0)} MAD/h',
+                    label: '${(artisan.hourlyRate ?? 0.0).toStringAsFixed(0)} MAD/h',
                     iconColor: _Colors.blue,
                   ),
                 ],

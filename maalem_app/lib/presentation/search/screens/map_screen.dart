@@ -100,12 +100,12 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   MarkerLayer(
                     markers: provider.artisans
-                        .where((a) => a.latitude != null && a.longitude != null)
+                        .where((a) => a.longitude != null)
                         .map(
                           (artisan) => Marker(
                             point: LatLng(
-                              artisan.latitude!,
-                              artisan.longitude!,
+                              artisan.latitude,
+                              artisan.longitude,
                             ),
                             width: 50,
                             height: 50,

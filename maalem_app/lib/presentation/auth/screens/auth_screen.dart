@@ -322,7 +322,7 @@ class _AppEntryScreen extends StatelessWidget {
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ReviewScreen(
+                    builder: (context) => const ReviewScreen(
                       bookingId: demoBookingId,
                       artisanId: demoArtisanId,
                       artisanName: demoArtisanName,
@@ -338,7 +338,7 @@ class _AppEntryScreen extends StatelessWidget {
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => DashboardScreen(
+                    builder: (context) => const DashboardScreen(
                       artisanId: demoArtisanId,
                     ),
                   ),
@@ -352,7 +352,7 @@ class _AppEntryScreen extends StatelessWidget {
                 () => Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => ComplaintScreen(
+                    builder: (context) => const ComplaintScreen(
                       bookingId: demoBookingId,
                       artisanId: demoArtisanId,
                     ),

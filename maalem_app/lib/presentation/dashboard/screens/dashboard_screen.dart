@@ -3,15 +3,15 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/dashboard_service.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int artisanId;
-  final String token;
 
   const DashboardScreen({
     super.key,
     required this.artisanId,
-    required this.token,
   });
 
   @override
@@ -30,7 +30,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _loadDashboard() async {
     try {
-      final service = DashboardService(token: widget.token);
+      final token = context.read<AuthProvider>().token;
+      if (token == null || token.isEmpty) {
+        throw Exception('Utilisateur non connecté');
+      }
+
+      final service = DashboardService(token: token);
       final dashboardData = await service.getArtisanDashboard(widget.artisanId);
       if (mounted) {
         setState(() {

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/complaint_service.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ComplaintScreen extends StatefulWidget {
   final int bookingId;
   final int artisanId;
-  final String token;
   final bool isAdmin;
 
   const ComplaintScreen({
     super.key,
     required this.bookingId,
     required this.artisanId,
-    required this.token,
     this.isAdmin = false,
   });
 
@@ -24,19 +24,25 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   bool _isLoading = false;
   List<dynamic> _complaints = [];
-  late final ComplaintService _complaintService;
 
   @override
   void initState() {
     super.initState();
-    _complaintService = ComplaintService(token: widget.token);
     if (widget.isAdmin) _loadComplaints();
+  }
+
+  ComplaintService _service() {
+    final token = context.read<AuthProvider>().token;
+    if (token == null || token.isEmpty) {
+      throw Exception('Utilisateur non connecté');
+    }
+    return ComplaintService(token: token);
   }
 
   Future<void> _loadComplaints() async {
     setState(() => _isLoading = true);
     try {
-      final complaints = await _complaintService.getComplaints();
+      final complaints = await _service().getComplaints();
       if (mounted) {
         setState(() {
           _complaints = complaints;
@@ -65,7 +71,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await _complaintService.createComplaint(
+      await _service().createComplaint(
         bookingId: widget.bookingId,
         artisanId: widget.artisanId,
         description: description,
@@ -93,7 +99,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
 
   Future<void> _resolveComplaint(int complaintId) async {
     try {
-      await _complaintService.resolveComplaint(complaintId);
+      await _service().resolveComplaint(complaintId);
       await _loadComplaints();
     } catch (e) {
       if (mounted) {

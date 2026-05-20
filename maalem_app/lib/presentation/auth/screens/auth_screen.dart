@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // AJOUTÉ
+import 'package:provider/provider.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/providers/auth_provider.dart'; // AJOUTÉ
+import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/review_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/complaint_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   // CHANGÉ : StatefulWidget
@@ -287,17 +290,99 @@ class _AppEntryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    // Données temporaires en attendant l'intégration avec la recherche et les réservations.
+    const int demoArtisanId = 1;
+    const int demoBookingId = 1;
+    const String demoArtisanName = "Ahmed le Plombier";
+
+    return Scaffold(
       backgroundColor: AppColors.beige,
+      appBar: AppBar(
+        title: const Text('Lmaalem'),
+        backgroundColor: AppColors.navy,
+        foregroundColor: AppColors.white,
+      ),
       body: Center(
-        child: Text(
-          "Bienvenue dans Lmaalem",
-          style: TextStyle(
-            color: AppColors.navy,
-            fontSize: 26,
-            fontWeight: FontWeight.w800,
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Bienvenue dans Lmaalem",
+                style: TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 40),
+              _buildMenuButton(
+                context,
+                "Laisser un Avis",
+                Icons.star,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ReviewScreen(
+                      bookingId: demoBookingId,
+                      artisanId: demoArtisanId,
+                      artisanName: demoArtisanName,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildMenuButton(
+                context,
+                "Mon Dashboard",
+                Icons.dashboard,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const DashboardScreen(
+                      artisanId: demoArtisanId,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildMenuButton(
+                context,
+                "Déposer une Réclamation",
+                Icons.report_problem,
+                () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ComplaintScreen(
+                      bookingId: demoBookingId,
+                      artisanId: demoArtisanId,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildMenuButton(BuildContext context, String title, IconData icon, VoidCallback onPressed) {
+    return SizedBox(
+      width: double.infinity,
+      height: 60,
+      child: ElevatedButton.icon(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.teal,
+          foregroundColor: AppColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        icon: Icon(icon),
+        label: Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+        onPressed: onPressed,
       ),
     );
   }

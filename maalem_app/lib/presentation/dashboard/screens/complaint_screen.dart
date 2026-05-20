@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/complaint_service.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ComplaintScreen extends StatefulWidget {
+  final int bookingId;
   final int artisanId;
-  final String token;
   final bool isAdmin;
 
   const ComplaintScreen({
     super.key,
+    required this.bookingId,
     required this.artisanId,
-    required this.token,
     this.isAdmin = false,
   });
 
@@ -29,26 +31,37 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     if (widget.isAdmin) _loadComplaints();
   }
 
+  ComplaintService _service() {
+    final token = context.read<AuthProvider>().token;
+    if (token == null || token.isEmpty) {
+      throw Exception('Utilisateur non connecté');
+    }
+    return ComplaintService(token: token);
+  }
+
   Future<void> _loadComplaints() async {
     setState(() => _isLoading = true);
     try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8081/api/complaints'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      if (response.statusCode == 200) {
+      final complaints = await _service().getComplaints();
+      if (mounted) {
         setState(() {
-          _complaints = jsonDecode(response.body);
-          _isLoading = false;
+          _complaints = complaints;
         });
       }
     } catch (e) {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _submitComplaint() async {
-    if (_descriptionController.text.isEmpty) {
+    final description = _descriptionController.text.trim();
+    if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Veuillez écrire une description')),
       );
@@ -58,60 +71,59 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:8081/api/complaints'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ${widget.token}',
-        },
-        body: jsonEncode({
-          'target_id': widget.artisanId,
-          'description': _descriptionController.text,
-        }),
+      await _service().createComplaint(
+        bookingId: widget.bookingId,
+        artisanId: widget.artisanId,
+        description: description,
       );
 
-      if (response.statusCode == 201) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Réclamation envoyée avec succès !'),
-              backgroundColor: Color(0xFF296374),
-            ),
-          );
-          _descriptionController.clear();
-        }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Réclamation envoyée avec succès !'),
+            backgroundColor: AppColors.teal,
+          ),
+        );
+        _descriptionController.clear();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _resolveComplaint(int complaintId) async {
     try {
-      await http.put(
-        Uri.parse('http://10.0.2.2:8081/api/complaints/$complaintId/resolve'),
-        headers: {'Authorization': 'Bearer ${widget.token}'},
-      );
-      _loadComplaints();
+      await _service().resolveComplaint(complaintId);
+      await _loadComplaints();
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur : $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erreur : $e')),
+        );
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEDEDCE),
+      backgroundColor: AppColors.beige,
       appBar: AppBar(
         title: Text(widget.isAdmin ? 'Réclamations' : 'Déposer une réclamation'),
-        backgroundColor: const Color(0xFF0C2C55),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.navy,
+        foregroundColor: AppColors.white,
       ),
       body: widget.isAdmin ? _buildAdminView() : _buildClientView(),
     );
@@ -128,7 +140,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0C2C55),
+              color: AppColors.navy,
             ),
           ),
           const SizedBox(height: 16),
@@ -139,13 +151,13 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
             decoration: InputDecoration(
               hintText: 'Expliquez votre réclamation...',
               filled: true,
-              fillColor: Colors.white,
+              fillColor: AppColors.white,
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF296374)),
+                borderSide: const BorderSide(color: AppColors.teal),
               ),
             ),
           ),
@@ -155,15 +167,15 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
             child: ElevatedButton(
               onPressed: _isLoading ? null : _submitComplaint,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF296374),
-                foregroundColor: Colors.white,
+                backgroundColor: AppColors.teal,
+                foregroundColor: AppColors.white,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
               child: _isLoading
-                  ? const CircularProgressIndicator(color: Colors.white)
+                  ? const CircularProgressIndicator(color: AppColors.white)
                   : const Text('Envoyer', style: TextStyle(fontSize: 16)),
             ),
           ),
@@ -175,7 +187,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   Widget _buildAdminView() {
     if (_isLoading) {
       return const Center(
-        child: CircularProgressIndicator(color: Color(0xFF296374)),
+        child: CircularProgressIndicator(color: AppColors.teal),
       );
     }
 
@@ -202,28 +214,28 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      complaint['user_name'] ?? 'Client',
+                      complaint['client_name'] ?? 'Client',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF0C2C55),
+                        color: AppColors.navy,
                       ),
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: complaint['status'] == 'pending'
-                            ? const Color(0xFF629FAD).withOpacity(0.2)
-                            : Colors.green.withOpacity(0.2),
+                        color: complaint['status'] == 'open'
+                            ? AppColors.lightBlue.withValues(alpha: 0.2)
+                            : Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        complaint['status'] == 'pending'
+                        complaint['status'] == 'open'
                             ? 'En attente'
                             : 'Résolu',
                         style: TextStyle(
-                          color: complaint['status'] == 'pending'
-                              ? const Color(0xFF296374)
+                          color: complaint['status'] == 'open'
+                              ? AppColors.teal
                               : Colors.green,
                           fontSize: 12,
                         ),
@@ -233,15 +245,15 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(complaint['description'] ?? ''),
-                if (complaint['status'] == 'pending') ...[
+                if (complaint['status'] == 'open') ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () => _resolveComplaint(complaint['id']),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF629FAD),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.lightBlue,
+                        foregroundColor: AppColors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),

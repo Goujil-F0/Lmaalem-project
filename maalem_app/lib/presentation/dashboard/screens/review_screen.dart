@@ -1,19 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/review_service.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ReviewScreen extends StatefulWidget {
   final int bookingId;
   final int artisanId;
   final String artisanName;
-  final String token;
 
   const ReviewScreen({
     super.key,
     required this.bookingId,
     required this.artisanId,
     required this.artisanName,
-    required this.token,
   });
 
   @override
@@ -36,19 +37,24 @@ class _ReviewScreenState extends State<ReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final service = ReviewService(token: widget.token);
+      final token = context.read<AuthProvider>().token;
+      if (token == null || token.isEmpty) {
+        throw Exception('Utilisateur non connecté');
+      }
+
+      final service = ReviewService(token: token);
       await service.addReview(
         bookingId: widget.bookingId,
         artisanId: widget.artisanId,
         rating: _rating.toInt(),
-        comment: _commentController.text,
+        comment: _commentController.text.trim(),
       );
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Avis envoyé avec succès !'),
-            backgroundColor: Color(0xFF296374),
+            backgroundColor: AppColors.teal,
           ),
         );
         Navigator.pop(context);
@@ -65,13 +71,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   @override
+  void dispose() {
+    _commentController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFEDEDCE),
+      backgroundColor: AppColors.beige,
       appBar: AppBar(
         title: Text('Avis sur ${widget.artisanName}'),
-        backgroundColor: const Color(0xFF0C2C55),
-        foregroundColor: Colors.white,
+        backgroundColor: AppColors.navy,
+        foregroundColor: AppColors.white,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -81,8 +93,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
             const SizedBox(height: 20),
             CircleAvatar(
               radius: 40,
-              backgroundColor: const Color(0xFF629FAD).withOpacity(0.2),
-              child: const Icon(Icons.person, size: 50, color: Color(0xFF296374)),
+              backgroundColor: AppColors.lightBlue.withValues(alpha: 0.2),
+              child: const Icon(Icons.person, size: 50, color: AppColors.teal),
             ),
             const SizedBox(height: 16),
             Text(
@@ -90,7 +102,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Color(0xFF0C2C55),
+                color: AppColors.navy,
               ),
               textAlign: TextAlign.center,
             ),
@@ -108,13 +120,13 @@ class _ReviewScreenState extends State<ReviewScreen> {
               decoration: InputDecoration(
                 hintText: 'Écrivez votre commentaire...',
                 filled: true,
-                fillColor: Colors.white,
+                fillColor: AppColors.white,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Color(0xFF296374)),
+                  borderSide: const BorderSide(color: AppColors.teal),
                 ),
               ),
             ),
@@ -124,15 +136,15 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: ElevatedButton(
                 onPressed: _isLoading ? null : _submitReview,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF296374),
-                  foregroundColor: Colors.white,
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: AppColors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
+                    ? const CircularProgressIndicator(color: AppColors.white)
                     : const Text('Envoyer l\'avis',
                         style: TextStyle(fontSize: 16)),
               ),

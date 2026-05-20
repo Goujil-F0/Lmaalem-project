@@ -4,13 +4,20 @@ import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:provider/provider.dart';
+import 'providers/search_provider.dart';
+import 'providers/auth_provider.dart';
+import 'presentation/search/screens/map_screen.dart';
+import 'presentation/auth/screens/upload_cin_screen.dart';
+import 'presentation/auth/screens/splash_screen.dart';
+import 'presentation/auth/screens/register_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkAuthStatus(),
         ),

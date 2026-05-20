@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/core/constants/app_colors.dart';
 
 class StatsCard extends StatelessWidget {
   final IconData icon;
@@ -19,11 +20,11 @@ class StatsCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -32,14 +33,14 @@ class StatsCard extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: color ?? const Color(0xFF296374), size: 32),
+          Icon(icon, color: color ?? AppColors.teal, size: 32),
           const SizedBox(height: 8),
           Text(
             value,
             style: const TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.bold,
-              color: Color(0xFF0C2C55),
+              color: AppColors.navy,
             ),
           ),
           const SizedBox(height: 4),

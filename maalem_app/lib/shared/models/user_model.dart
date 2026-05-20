@@ -1,5 +1,4 @@
-import 'package:maalem_app/shared/models/artisan_model.dart';
-
+import 'package:maalem_app/data/models/artisan_model.dart';
 
 class User {
   final int id;
@@ -10,7 +9,7 @@ class User {
   final String? city;
   final String? neighborhood;
   final String? photoUrl;
-  final ArtisanProfile? profile; // Lien vers le profil artisan
+  final ArtisanModel? profile; // Lien vers le profil artisan
 
   User({
     required this.id,
@@ -34,8 +33,8 @@ class User {
       city: json['city'],
       neighborhood: json['neighborhood'],
       photoUrl: json['photo_url'],
-      profile: json['profile'] != null 
-          ? ArtisanProfile.fromJson(json['profile']) 
+      profile: json['profile'] != null
+          ? ArtisanModel.fromJson(json['profile'])
           : null,
     );
   }

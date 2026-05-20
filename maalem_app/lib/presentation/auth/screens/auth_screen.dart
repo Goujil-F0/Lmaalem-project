@@ -288,7 +288,6 @@ class _AppEntryScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final token = Provider.of<AuthProvider>(context, listen: false).token ?? '';
     // Données temporaires en attendant l'intégration avec la recherche et les réservations.
     const int demoArtisanId = 1;
     const int demoBookingId = 1;
@@ -327,7 +326,6 @@ class _AppEntryScreen extends StatelessWidget {
                       bookingId: demoBookingId,
                       artisanId: demoArtisanId,
                       artisanName: demoArtisanName,
-                      token: token,
                     ),
                   ),
                 ),
@@ -342,7 +340,6 @@ class _AppEntryScreen extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => DashboardScreen(
                       artisanId: demoArtisanId,
-                      token: token,
                     ),
                   ),
                 ),
@@ -358,7 +355,6 @@ class _AppEntryScreen extends StatelessWidget {
                     builder: (context) => ComplaintScreen(
                       bookingId: demoBookingId,
                       artisanId: demoArtisanId,
-                      token: token,
                     ),
                   ),
                 ),

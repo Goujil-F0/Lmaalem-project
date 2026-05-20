@@ -2,19 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/review_service.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class ReviewScreen extends StatefulWidget {
   final int bookingId;
   final int artisanId;
   final String artisanName;
-  final String token;
 
   const ReviewScreen({
     super.key,
     required this.bookingId,
     required this.artisanId,
     required this.artisanName,
-    required this.token,
   });
 
   @override
@@ -37,7 +37,12 @@ class _ReviewScreenState extends State<ReviewScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final service = ReviewService(token: widget.token);
+      final token = context.read<AuthProvider>().token;
+      if (token == null || token.isEmpty) {
+        throw Exception('Utilisateur non connecté');
+      }
+
+      final service = ReviewService(token: token);
       await service.addReview(
         bookingId: widget.bookingId,
         artisanId: widget.artisanId,

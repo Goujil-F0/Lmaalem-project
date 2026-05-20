@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/search_provider.dart';
 import '../../../data/models/artisan_model.dart';
+import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
 
 // Palette centralisée — importe depuis un fichier theme si tu veux
 class _Colors {
@@ -295,6 +296,14 @@ class _MapScreenState extends State<MapScreen> {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                  MaterialPageRoute(
+                    builder: (_) => DashboardScreen(
+                                  artisanId: artisan.id,
+      ),
+    ),
+  );
                   // TODO : Navigator.push vers ArtisanProfileScreen
                 },
                 child: const Text(

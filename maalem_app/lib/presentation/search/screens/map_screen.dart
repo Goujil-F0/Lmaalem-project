@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/search_provider.dart';
 import '../../../data/models/artisan_model.dart';
@@ -99,7 +101,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   MarkerLayer(
                     markers: provider.artisans
-                        .where((a) => a.longitude != null)
                         .map(
                           (artisan) => Marker(
                             point: LatLng(
@@ -227,7 +228,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '📍 ${artisan.city ?? 'Casablanca'}',
+                        '📍 ${artisan.city}',
                         style: TextStyle(
                           color: _Colors.textDark.withOpacity(0.55),
                           fontSize: 13,

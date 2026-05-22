@@ -4,6 +4,7 @@ import 'package:maalem_app/presentation/auth/screens/profile_artisan_screen.dart
 import 'package:maalem_app/presentation/auth/screens/profile_client_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -27,14 +28,28 @@ class _MainShellState extends State<MainShell> {
         index: _currentIndex,
         children: pages,
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.teal,
-        unselectedItemColor: AppColors.textGrey,
-        backgroundColor: AppColors.white,
-        items: items,
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.navy.withValues(alpha: 0.06),
+              blurRadius: 20,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+          child: SalomonBottomBar(
+            currentIndex: _currentIndex,
+            onTap: (index) => setState(() => _currentIndex = index),
+            selectedItemColor: AppColors.teal,
+            unselectedItemColor: AppColors.navy.withValues(alpha: 0.4),
+            items: items,
+          ),
+        ),
       ),
     );
   }
@@ -55,20 +70,20 @@ class _MainShellState extends State<MainShell> {
         ProfileArtisanScreen(),
       ];
 
-  List<BottomNavigationBarItem> get _clientItems => const [
-        BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Accueil'),
-        BottomNavigationBarItem(icon: Icon(Icons.timeline_outlined), label: 'Suivi'),
-        BottomNavigationBarItem(icon: Icon(Icons.report_outlined), label: 'Declarer'),
-        BottomNavigationBarItem(icon: Icon(Icons.house_outlined), label: 'Maison'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Compte'),
+  List<SalomonBottomBarItem> get _clientItems => [
+        SalomonBottomBarItem(icon: const Icon(Icons.home_outlined), title: const Text('Accueil')),
+        SalomonBottomBarItem(icon: const Icon(Icons.timeline_outlined), title: const Text('Suivi')),
+        SalomonBottomBarItem(icon: const Icon(Icons.report_outlined), title: const Text('Declarer')),
+        SalomonBottomBarItem(icon: const Icon(Icons.house_outlined), title: const Text('Maison')),
+        SalomonBottomBarItem(icon: const Icon(Icons.person_outline), title: const Text('Compte')),
       ];
 
-  List<BottomNavigationBarItem> get _artisanItems => const [
-        BottomNavigationBarItem(icon: Icon(Icons.dashboard_outlined), label: 'Dashboard'),
-        BottomNavigationBarItem(icon: Icon(Icons.work_outline), label: 'Missions'),
-        BottomNavigationBarItem(icon: Icon(Icons.report_outlined), label: 'Declarer'),
-        BottomNavigationBarItem(icon: Icon(Icons.house_outlined), label: 'Maison'),
-        BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Compte'),
+  List<SalomonBottomBarItem> get _artisanItems => [
+        SalomonBottomBarItem(icon: const Icon(Icons.dashboard_outlined), title: const Text('Dashboard')),
+        SalomonBottomBarItem(icon: const Icon(Icons.work_outline), title: const Text('Missions')),
+        SalomonBottomBarItem(icon: const Icon(Icons.report_outlined), title: const Text('Declarer')),
+        SalomonBottomBarItem(icon: const Icon(Icons.house_outlined), title: const Text('Maison')),
+        SalomonBottomBarItem(icon: const Icon(Icons.person_outline), title: const Text('Compte')),
       ];
 }
 

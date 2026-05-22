@@ -57,9 +57,9 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          profile?.specialty ?? 'Specialite non renseignee',
-                          style: TextStyle(
-                            color: AppColors.navy.withValues(alpha: 0.62),
+                          profile?.speciality ?? 'Specialite non renseignee',
+                          style: const TextStyle(
+                            color: AppColors.navy,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
@@ -76,6 +76,7 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   borderRadius: BorderRadius.circular(24),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
                       child: Text(
@@ -88,13 +89,14 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                     ),
                     Switch(
                       value: available,
-                      activeColor: AppColors.teal,
+                      activeThumbColor: AppColors.teal,
                       onChanged: (value) async {
+                        if (!context.mounted) return;
                         setState(() => _isAvailable = value);
                         final result = await context
                             .read<AuthProvider>()
                             .updateAvailability(value);
-                        if (!mounted) return;
+                        if (!context.mounted) return;
                         if (result['success'] != true) {
                           setState(() => _isAvailable = !value);
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -136,7 +138,7 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   onPressed: () => context.read<AuthProvider>().logout(),
                   icon: const Icon(Icons.logout, color: Colors.white),
                   label: const Text(
-                    'Deconnexion',
+                    'Déconnexion',
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
                   ),
                   style: ElevatedButton.styleFrom(
@@ -198,8 +200,8 @@ class _StatCard extends StatelessWidget {
           Text(
             label,
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.62),
+            style: const TextStyle(
+              color: AppColors.navy,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -236,7 +238,7 @@ class _SectionCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Text(
+          const Text(
             'En construction',
             style: TextStyle(
               color: AppColors.navy,

@@ -1,4 +1,4 @@
-import 'package:maalem_app/data/models/artisan_model.dart';
+import 'package:maalem_app/shared/models/artisan_model.dart';
 
 class User {
   final int id;
@@ -9,7 +9,7 @@ class User {
   final String? city;
   final String? neighborhood;
   final String? photoUrl;
-  final ArtisanModel? profile; // Lien vers le profil artisan
+  final ArtisanProfile? profile;
 
   User({
     required this.id,
@@ -26,16 +26,40 @@ class User {
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
       id: json['id'],
-      fullName: json['full_name'],
-      email: json['email'],
-      role: json['role'],
+      fullName: json['full_name'] ?? json['fullName'] ?? '',
+      email: json['email'] ?? '',
+      role: json['role'] ?? 'client',
       phone: json['phone'],
       city: json['city'],
       neighborhood: json['neighborhood'],
-      photoUrl: json['photo_url'],
+      photoUrl: json['photo_url'] ?? json['photoUrl'],
       profile: json['profile'] != null
-          ? ArtisanModel.fromJson(json['profile'])
+          ? ArtisanProfile.fromJson(json['profile'])
           : null,
+    );
+  }
+
+  User copyWith({
+    int? id,
+    String? fullName,
+    String? email,
+    String? role,
+    String? phone,
+    String? city,
+    String? neighborhood,
+    String? photoUrl,
+    ArtisanProfile? profile,
+  }) {
+    return User(
+      id: id ?? this.id,
+      fullName: fullName ?? this.fullName,
+      email: email ?? this.email,
+      role: role ?? this.role,
+      phone: phone ?? this.phone,
+      city: city ?? this.city,
+      neighborhood: neighborhood ?? this.neighborhood,
+      photoUrl: photoUrl ?? this.photoUrl,
+      profile: profile ?? this.profile,
     );
   }
 

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:provider/provider.dart';
-import '../../../providers/search_provider.dart';
-import '../../../data/models/artisan_model.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
+import 'package:provider/provider.dart';
 
-// Palette centralisée — importe depuis un fichier theme si tu veux
+import '../../../data/models/artisan_model.dart';
+import '../../../providers/search_provider.dart';
+
 class _Colors {
   static const blue = Color(0xFF2C5F8A);
   static const beige = Color(0xFFF5ECD7);
@@ -46,122 +46,71 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          // COUCHE 1 : Carte
-          Consumer<SearchProvider>(
-            builder: (context, provider, _) {
-              if (provider.hasError) {
-                return Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.wifi_off,
-                          size: 48,
-                          color: _Colors.blue.withOpacity(0.4),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          provider.errorMessage,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: _Colors.textDark.withOpacity(0.6),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        ElevatedButton.icon(
-                          onPressed: () => provider.loadArtisans(),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Réessayer'),
-                        ),
-                      ],
+          Positioned.fill(
+            child: Consumer<SearchProvider>(
+              builder: (context, provider, _) {
+                if (provider.isLoading && provider.artisans.isEmpty) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: _Colors.blue),
+                  );
+                }
+
+                return FlutterMap(
+                  options: const MapOptions(
+                    initialCenter: LatLng(33.5731, -7.5898),
+                    initialZoom: 13,
+                    minZoom: 4,
+                    maxZoom: 18,
+                  ),
+                  children: [
+                    TileLayer(
+                      urlTemplate:
+                          'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                      subdomains: const ['a', 'b', 'c'],
+                      userAgentPackageName: 'com.maalem.app',
+                      tileProvider: NetworkTileProvider(),
                     ),
-                  ),
+                    MarkerLayer(markers: _buildMarkers(context, provider)),
+                    if (provider.hasError)
+                      Align(
+                        alignment: Alignment.bottomCenter,
+                        child: _MapNotice(message: provider.errorMessage),
+                      ),
+                  ],
                 );
-              }
-
-              if (provider.isLoading) {
-                return const Center(
-                  child: CircularProgressIndicator(color: _Colors.blue),
-                );
-              }
-
-              return FlutterMap(
-                options: const MapOptions(
-                  initialCenter: LatLng(33.5731, -7.5898),
-                  initialZoom: 13.0,
-                ),
-                children: [
-                  TileLayer(
-                    urlTemplate:
-                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.maalem.app',
-                    tileProvider: NetworkTileProvider(),
-                  ),
-                  MarkerLayer(
-                    markers: provider.artisans
-                        .map(
-                          (artisan) => Marker(
-                            point: LatLng(
-                              artisan.latitude,
-                              artisan.longitude,
-                            ),
-                            width: 50,
-                            height: 50,
-                            child: GestureDetector(
-                              onTap: () =>
-                                  _showArtisanDetails(context, artisan),
-                              child: const Icon(
-                                Icons.location_on,
-                                color: _Colors.blue,
-                                size: 40,
-                              ),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                  ),
-                ],
-              );
-            },
+              },
+            ),
           ),
-
-          // COUCHE 2 : Barre de recherche
           Positioned(
             top: 16,
             left: 16,
             right: 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _Colors.beigeDark, width: 1.5),
-                boxShadow: [
-                  BoxShadow(
-                    color: _Colors.blue.withOpacity(0.10),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: TextField(
-                onChanged: (value) =>
-                    context.read<SearchProvider>().filterArtisans(value),
-                style: const TextStyle(color: _Colors.textDark),
-                decoration: const InputDecoration(
-                  hintText: 'Rechercher un artisan...',
-                  hintStyle: TextStyle(color: Color(0xFFAAAFBC)),
-                  prefixIcon: Icon(Icons.search, color: _Colors.blue),
-                  border: InputBorder.none,
-                  contentPadding: EdgeInsets.symmetric(vertical: 14),
-                ),
-              ),
-            ),
+            child: _SearchBox(),
           ),
         ],
       ),
     );
+  }
+
+  List<Marker> _buildMarkers(BuildContext context, SearchProvider provider) {
+    return provider.artisans
+        .where((artisan) => artisan.latitude != 0 && artisan.longitude != 0)
+        .map(
+          (artisan) => Marker(
+            point: LatLng(artisan.latitude, artisan.longitude),
+            width: 50,
+            height: 50,
+            child: GestureDetector(
+              onTap: () => _showArtisanDetails(context, artisan),
+              child: const Icon(
+                Icons.location_on,
+                color: _Colors.blue,
+                size: 42,
+              ),
+            ),
+          ),
+        )
+        .toList();
   }
 
   void _showArtisanDetails(BuildContext context, ArtisanModel artisan) {
@@ -178,7 +127,6 @@ class _MapScreenState extends State<MapScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Handle bar
             Container(
               width: 40,
               height: 4,
@@ -188,10 +136,8 @@ class _MapScreenState extends State<MapScreen> {
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
-
             Row(
               children: [
-                // Avatar initiales
                 Container(
                   width: 52,
                   height: 52,
@@ -228,9 +174,9 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '📍 ${artisan.city}',
+                        '${artisan.speciality} - ${artisan.city}',
                         style: TextStyle(
-                          color: _Colors.textDark.withOpacity(0.55),
+                          color: _Colors.textDark.withValues(alpha: 0.55),
                           fontSize: 13,
                         ),
                       ),
@@ -244,7 +190,7 @@ class _MapScreenState extends State<MapScreen> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF2C5F8A).withOpacity(0.1),
+                      color: _Colors.blue.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
@@ -258,14 +204,11 @@ class _MapScreenState extends State<MapScreen> {
                   ),
               ],
             ),
-
             const SizedBox(height: 20),
-
-            // Infos secondaires
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: _Colors.beigeDark.withOpacity(0.5),
+                color: _Colors.beigeDark.withValues(alpha: 0.5),
                 borderRadius: BorderRadius.circular(14),
               ),
               child: Row(
@@ -273,22 +216,21 @@ class _MapScreenState extends State<MapScreen> {
                 children: [
                   _InfoChip(
                     icon: Icons.star_rounded,
-                    label: (artisan.averageRating ?? 0.0).toStringAsFixed(1),
+                    label: (artisan.averageRating ?? artisan.rating ?? 0)
+                        .toStringAsFixed(1),
                     iconColor: const Color(0xFFD4A017),
                   ),
                   Container(width: 1, height: 28, color: _Colors.beigeDark),
                   _InfoChip(
                     icon: Icons.access_time_rounded,
                     label:
-                        '${(artisan.hourlyRate ?? 0.0).toStringAsFixed(0)} MAD/h',
+                        '${(artisan.hourlyRate ?? 0).toStringAsFixed(0)} MAD/h',
                     iconColor: _Colors.blue,
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 20),
-
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -297,13 +239,10 @@ class _MapScreenState extends State<MapScreen> {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                  MaterialPageRoute(
-                    builder: (_) => DashboardScreen(
-                                  artisanId: artisan.id,
-      ),
-    ),
-  );
-                  // TODO : Navigator.push vers ArtisanProfileScreen
+                    MaterialPageRoute(
+                      builder: (_) => DashboardScreen(artisanId: artisan.id),
+                    ),
+                  );
                 },
                 child: const Text(
                   'Voir le profil',
@@ -318,7 +257,70 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-// Widget réutilisable pour les chips d'info
+class _SearchBox extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _Colors.beigeDark, width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: _Colors.blue.withValues(alpha: 0.10),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: TextField(
+        onChanged: (value) =>
+            context.read<SearchProvider>().filterArtisans(value),
+        style: const TextStyle(color: _Colors.textDark),
+        decoration: const InputDecoration(
+          hintText: 'Rechercher un artisan...',
+          hintStyle: TextStyle(color: Color(0xFFAAAFBC)),
+          prefixIcon: Icon(Icons.search, color: _Colors.blue),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
+}
+
+class _MapNotice extends StatelessWidget {
+  final String message;
+
+  const _MapNotice({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _Colors.beigeDark),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.info_outline, color: _Colors.blue, size: 18),
+          const SizedBox(width: 8),
+          Flexible(
+            child: Text(
+              message,
+              style: const TextStyle(color: _Colors.textDark, fontSize: 12),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _InfoChip extends StatelessWidget {
   final IconData icon;
   final String label;

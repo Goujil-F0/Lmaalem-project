@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -23,7 +24,8 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
     final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
     final bytes = await image.readAsBytes();
-    if (mounted) setState(() => _localPhotoBytes = bytes);
+    if (!mounted) return;
+    setState(() => _localPhotoBytes = bytes);
 
     final result = await context.read<AuthProvider>().updateProfilePhoto(image);
     if (!mounted) return;
@@ -62,7 +64,10 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
   }
 
   Future<void> _updateLocation() async {
-    _showSuccess('Ouverture de la carte bientot disponible');
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const MapScreen()),
+    );
   }
 
   Future<void> _openSupport() async {
@@ -160,8 +165,10 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                     'phone': phoneController.text.trim(),
                   });
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
-                child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
+                child: const Text('Enregistrer',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -241,7 +248,9 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                 ),
                 const SizedBox(height: 16),
                 _LocationCard(
-                  location: location.isEmpty ? 'Casablanca, Quartier Habous' : location,
+                  location: location.isEmpty
+                      ? 'Casablanca, Quartier Habous'
+                      : location,
                   details: user?.neighborhood ?? 'Residence Al-Amal, N 45',
                   isUpdating: auth.isUpdatingProfile,
                   onUpdate: _updateLocation,
@@ -302,7 +311,8 @@ class _TopBar extends StatelessWidget {
           child: IconButton(
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Notifications - en construction')),
+                const SnackBar(
+                    content: Text('Notifications - en construction')),
               );
             },
             icon: const Icon(Icons.notifications_none, color: AppColors.navy),
@@ -340,7 +350,8 @@ class _ProfileHeader extends StatelessWidget {
       final commaIndex = photoUrl!.indexOf(',');
       if (commaIndex != -1) {
         try {
-          providerImage = MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
+          providerImage =
+              MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
         } catch (_) {
           providerImage = null;
         }
@@ -485,11 +496,15 @@ class _PersonalInfoCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 6),
-          _InfoRow(icon: Icons.person_outline, label: 'Nom complet', value: fullName),
+          _InfoRow(
+              icon: Icons.person_outline,
+              label: 'Nom complet',
+              value: fullName),
           const _DividerLine(),
           _InfoRow(icon: Icons.email_outlined, label: 'Email', value: email),
           const _DividerLine(),
-          _InfoRow(icon: Icons.phone_outlined, label: 'Telephone', value: phone),
+          _InfoRow(
+              icon: Icons.phone_outlined, label: 'Telephone', value: phone),
         ],
       ),
     );
@@ -605,9 +620,12 @@ class _QuickActionsGrid extends StatelessWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.14,
       children: [
-        const _ActionTile(icon: Icons.calendar_today_outlined, label: 'Mes reservations'),
-        const _ActionTile(icon: Icons.favorite_border, label: 'Artisans favoris'),
-        const _ActionTile(icon: Icons.settings_outlined, label: 'Parametres du compte'),
+        const _ActionTile(
+            icon: Icons.calendar_today_outlined, label: 'Mes reservations'),
+        const _ActionTile(
+            icon: Icons.favorite_border, label: 'Artisans favoris'),
+        const _ActionTile(
+            icon: Icons.settings_outlined, label: 'Parametres du compte'),
         _ActionTile(
           icon: Icons.help_center_outlined,
           label: "Centre d'aide",
@@ -632,11 +650,12 @@ class _ActionTile extends StatelessWidget {
       borderRadius: BorderRadius.circular(24),
       elevation: 0,
       child: InkWell(
-        onTap: onTap ?? () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('$label - en construction')),
-          );
-        },
+        onTap: onTap ??
+            () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('$label - en construction')),
+              );
+            },
         borderRadius: BorderRadius.circular(24),
         child: Container(
           padding: const EdgeInsets.all(16),

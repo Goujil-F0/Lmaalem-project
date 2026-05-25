@@ -55,56 +55,36 @@ class _MainShellState extends State<MainShell> {
     );
   }
 
-  List<Widget> get _clientPages => [
-        const ClientHomeScreen(),
-        const _ConstructionScreen(title: 'Suivi'),
-        const _ConstructionScreen(title: 'Declarer'),
-        const _ConstructionScreen(title: 'Maison'),
-        const ProfileClientScreen(),
+  List<Widget> get _clientPages => const [
+        _ConstructionScreen(title: 'Accueil'),
+        _ConstructionScreen(title: 'Suivi'),
+        _ConstructionScreen(title: 'Map'),
+        _ConstructionScreen(title: 'Maison'),
+        ProfileClientScreen(),
       ];
 
   List<Widget> get _artisanPages => const [
         _ConstructionScreen(title: 'Dashboard'),
         _ConstructionScreen(title: 'Missions'),
-        _ConstructionScreen(title: 'Declarer'),
+        _ConstructionScreen(title: 'Map'),
         _ConstructionScreen(title: 'Maison'),
         ProfileArtisanScreen(),
       ];
 
   List<SalomonBottomBarItem> get _clientItems => [
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.home_outlined),
-            title: const Text('Accueil')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.timeline_outlined),
-            title: const Text('Suivi')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.report_outlined),
-            title: const Text('Declarer')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.house_outlined),
-            title: const Text('Maison')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.person_outline),
-            title: const Text('Compte')),
+        SalomonBottomBarItem(icon: const Icon(Icons.home_outlined), title: const Text('Accueil')),
+        SalomonBottomBarItem(icon: const Icon(Icons.timeline_outlined), title: const Text('Suivi')),
+        SalomonBottomBarItem(icon: const Icon(Icons.map_outlined), title: const Text('Map')),
+        SalomonBottomBarItem(icon: const Icon(Icons.house_outlined), title: const Text('Maison')),
+        SalomonBottomBarItem(icon: const Icon(Icons.person_outline), title: const Text('Compte')),
       ];
 
   List<SalomonBottomBarItem> get _artisanItems => [
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.dashboard_outlined),
-            title: const Text('Dashboard')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.work_outline),
-            title: const Text('Missions')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.report_outlined),
-            title: const Text('Declarer')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.house_outlined),
-            title: const Text('Maison')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.person_outline),
-            title: const Text('Compte')),
+        SalomonBottomBarItem(icon: const Icon(Icons.dashboard_outlined), title: const Text('Dashboard')),
+        SalomonBottomBarItem(icon: const Icon(Icons.work_outline), title: const Text('Missions')),
+        SalomonBottomBarItem(icon: const Icon(Icons.map_outlined), title: const Text('Map')),
+        SalomonBottomBarItem(icon: const Icon(Icons.house_outlined), title: const Text('Maison')),
+        SalomonBottomBarItem(icon: const Icon(Icons.person_outline), title: const Text('Compte')),
       ];
 }
 

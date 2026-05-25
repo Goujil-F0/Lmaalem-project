@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -16,8 +17,23 @@ class ProfileClientScreen extends StatefulWidget {
   State<ProfileClientScreen> createState() => _ProfileClientScreenState();
 }
 
+class _LocationUpdate {
+  final String? city;
+  final String? neighborhood;
+  final double? latitude;
+  final double? longitude;
+
+  const _LocationUpdate({
+    required this.city,
+    required this.neighborhood,
+    required this.latitude,
+    required this.longitude,
+  });
+}
+
 class _ProfileClientScreenState extends State<ProfileClientScreen> {
   final ImagePicker _picker = ImagePicker();
+  final LocationService _locationService = LocationService();
   Uint8List? _localPhotoBytes;
 
   Future<void> _pickProfilePhoto() async {
@@ -64,10 +80,33 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
   }
 
   Future<void> _updateLocation() async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const MapScreen()),
+    final user = context.read<AuthProvider>().user;
+    final updated = await _showLocationDialog(
+      city: user?.city ?? '',
+      neighborhood: user?.neighborhood ?? '',
+      latitude: user?.latitude,
+      longitude: user?.longitude,
     );
+    if (updated == null) return;
+    if (!mounted) return;
+
+    final response = await context.read<AuthProvider>().updateClientProfile(
+          city: updated.city,
+          neighborhood: updated.neighborhood,
+          latitude: updated.latitude,
+          longitude: updated.longitude,
+        );
+    if (!mounted) return;
+
+    if (response['success'] == true) {
+      _showSuccess(_successMessage('Localisation mise a jour', response));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MapScreen()),
+      );
+    } else {
+      _showError(response['error'] ?? 'Erreur lors de la mise a jour');
+    }
   }
 
   Future<void> _openSupport() async {
@@ -77,6 +116,176 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
     if (!launched) {
       _showError("Impossible d'ouvrir WhatsApp");
     }
+  }
+
+  Future<_LocationUpdate?> _showLocationDialog({
+    required String city,
+    required String neighborhood,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final cityController = TextEditingController(text: city);
+    final neighborhoodController = TextEditingController(text: neighborhood);
+    UserLocation? selectedLocation = latitude != null && longitude != null
+        ? UserLocation(latitude: latitude, longitude: longitude)
+        : null;
+    var isLocating = false;
+
+    Future<void> useCurrentLocation(StateSetter setSheetState) async {
+      setSheetState(() => isLocating = true);
+      try {
+        final location = await _locationService.getCurrentLocation();
+        if (!mounted) return;
+        setSheetState(() => selectedLocation = location);
+      } catch (e) {
+        if (!mounted) return;
+        _showError(e.toString().replaceFirst('Exception: ', ''));
+      } finally {
+        if (mounted) setSheetState(() => isLocating = false);
+      }
+    }
+
+    final result = await showModalBottomSheet<_LocationUpdate>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(sheetContext).viewInsets.bottom + 22,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mettre a jour ma localisation',
+                    style: TextStyle(
+                      color: AppColors.navy,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: cityController,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Ville',
+                      prefixIcon: Icon(Icons.location_city),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: neighborhoodController,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Quartier ou adresse',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.teal.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Text(
+                      selectedLocation == null
+                          ? 'Aucune position GPS enregistree'
+                          : 'GPS: ${selectedLocation!.coordinatesLabel}',
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: isLocating
+                        ? null
+                        : () => useCurrentLocation(setSheetState),
+                    icon: isLocating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: AppColors.teal,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.gps_fixed),
+                    label: Text(
+                      isLocating
+                          ? 'Recherche de position...'
+                          : 'Utiliser ma position actuelle',
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          child: const Text('Annuler'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(
+                              sheetContext,
+                              _LocationUpdate(
+                                city: cityController.text.trim().isEmpty
+                                    ? null
+                                    : cityController.text.trim(),
+                                neighborhood:
+                                    neighborhoodController.text.trim().isEmpty
+                                        ? null
+                                        : neighborhoodController.text.trim(),
+                                latitude: selectedLocation?.latitude,
+                                longitude: selectedLocation?.longitude,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                          ),
+                          child: const Text(
+                            'Enregistrer',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    cityController.dispose();
+    neighborhoodController.dispose();
+    return result;
   }
 
   Future<Map<String, String>?> _showPersonalInfoDialog({
@@ -218,6 +427,9 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
       if (user?.city?.isNotEmpty == true) user!.city,
       if (user?.neighborhood?.isNotEmpty == true) user!.neighborhood,
     ].whereType<String>().join(', ');
+    final coordinates = user?.latitude != null && user?.longitude != null
+        ? 'GPS: ${user!.latitude!.toStringAsFixed(5)}, ${user.longitude!.toStringAsFixed(5)}'
+        : null;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -251,7 +463,9 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                   location: location.isEmpty
                       ? 'Casablanca, Quartier Habous'
                       : location,
-                  details: user?.neighborhood ?? 'Residence Al-Amal, N 45',
+                  details: coordinates ??
+                      user?.neighborhood ??
+                      'Residence Al-Amal, N 45',
                   isUpdating: auth.isUpdatingProfile,
                   onUpdate: _updateLocation,
                 ),

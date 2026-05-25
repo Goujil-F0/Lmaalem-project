@@ -8,6 +8,8 @@ class User {
   final String? phone;
   final String? city;
   final String? neighborhood;
+  final double? latitude;
+  final double? longitude;
   final String? photoUrl;
   final ArtisanProfile? profile;
 
@@ -19,6 +21,8 @@ class User {
     this.phone,
     this.city,
     this.neighborhood,
+    this.latitude,
+    this.longitude,
     this.photoUrl,
     this.profile,
   });
@@ -32,6 +36,8 @@ class User {
       phone: json['phone'],
       city: json['city'],
       neighborhood: json['neighborhood'],
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
       photoUrl: json['photo_url'] ?? json['photoUrl'],
       profile: json['profile'] != null
           ? ArtisanProfile.fromJson(json['profile'])
@@ -47,6 +53,8 @@ class User {
     String? phone,
     String? city,
     String? neighborhood,
+    double? latitude,
+    double? longitude,
     String? photoUrl,
     ArtisanProfile? profile,
   }) {
@@ -58,6 +66,8 @@ class User {
       phone: phone ?? this.phone,
       city: city ?? this.city,
       neighborhood: neighborhood ?? this.neighborhood,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       photoUrl: photoUrl ?? this.photoUrl,
       profile: profile ?? this.profile,
     );
@@ -72,6 +82,8 @@ class User {
       'phone': phone,
       'city': city,
       'neighborhood': neighborhood,
+      'latitude': latitude,
+      'longitude': longitude,
       'photo_url': photoUrl,
       'profile': profile?.toJson(),
     };

@@ -195,13 +195,14 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ?? _user!.copyWith(
-          profile: _updatedArtisanProfile(
-            specialty: specialty,
-            hourlyRate: hourlyRate,
-            description: description,
-          ),
-        );
+        _user = _userFromResponse(result) ??
+            _user!.copyWith(
+              profile: _updatedArtisanProfile(
+                specialty: specialty,
+                hourlyRate: hourlyRate,
+                description: description,
+              ),
+            );
         await _persistUser();
         if (result['success'] != true) await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
@@ -244,13 +245,16 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ?? _user!.copyWith(
-          fullName: fullName,
-          email: email,
-          phone: phone,
-          city: city,
-          neighborhood: neighborhood,
-        );
+        _user = _userFromResponse(result) ??
+            _user!.copyWith(
+              fullName: fullName,
+              email: email,
+              phone: phone,
+              city: city,
+              neighborhood: neighborhood,
+              latitude: latitude,
+              longitude: longitude,
+            );
         await _persistUser();
         if (result['success'] != true) await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
@@ -283,9 +287,8 @@ class AuthProvider with ChangeNotifier {
         final photoUrl = data is Map<String, dynamic>
             ? data['photo_url'] ?? data['photoUrl'] ?? data['url']
             : null;
-        final mockPhotoUrl = result['success'] == true
-            ? null
-            : await _imageToDataUrl(image);
+        final mockPhotoUrl =
+            result['success'] == true ? null : await _imageToDataUrl(image);
         _user = _userFromResponse(result) ??
             _user!.copyWith(photoUrl: photoUrl ?? mockPhotoUrl ?? image.path);
         await _persistUser();
@@ -395,6 +398,8 @@ class AuthProvider with ChangeNotifier {
         phone: mockUser.phone,
         city: mockUser.city,
         neighborhood: mockUser.neighborhood,
+        latitude: mockUser.latitude,
+        longitude: mockUser.longitude,
         photoUrl: mockUser.photoUrl,
         profile: _mergeProfiles(backendUser.profile, mockUser.profile),
       );

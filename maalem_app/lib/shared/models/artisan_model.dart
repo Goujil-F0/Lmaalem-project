@@ -2,6 +2,7 @@ class ArtisanProfile {
   final int userId;
   final int? specialtyId;
   final String? description;
+  final String? specialty;
   final double? hourlyRate;
   final bool isAvailable;
   final String? cinUrl;
@@ -12,6 +13,7 @@ class ArtisanProfile {
     required this.userId,
     this.specialtyId,
     this.description,
+    this.specialty,
     this.hourlyRate,
     required this.isAvailable,
     this.cinUrl,
@@ -24,6 +26,7 @@ class ArtisanProfile {
       userId: json['user_id'],
       specialtyId: json['specialty_id'],
       description: json['description'],
+      specialty: json['specialty'],
       hourlyRate: json['hourly_rate'] != null
           ? double.parse(json['hourly_rate'].toString())
           : null,
@@ -42,6 +45,7 @@ class ArtisanProfile {
       'user_id': userId,
       'specialty_id': specialtyId,
       'description': description,
+      'specialty': specialty,
       'hourly_rate': hourlyRate,
       'is_available': isAvailable,
       'cin_url': cinUrl,

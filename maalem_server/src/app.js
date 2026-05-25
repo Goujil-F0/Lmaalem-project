@@ -7,9 +7,9 @@ dotenv.config();
 
 const app = express(); // ← une seule fois
 
-// Middlewares globaux
-app.use(cors());
+// Middleware
 app.use(express.json());
+app.use(cors());
 
 // Rate limiting global sur /api
 const { apiLimiter } = require('./middleware/rateLimiter');

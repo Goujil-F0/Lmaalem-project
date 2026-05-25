@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'providers/search_provider.dart';
-import 'providers/auth_provider.dart';
-import 'presentation/search/screens/map_screen.dart';
-import 'presentation/auth/screens/upload_cin_screen.dart';
-import 'presentation/auth/screens/splash_screen.dart';
-import 'presentation/auth/screens/register_screen.dart';
 
-void main() async {
+// Imports des Providers
+import 'package:maalem_app/providers/search_provider.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+
+// Imports des Écrans
+import 'package:maalem_app/presentation/search/screens/map_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(
     MultiProvider(
@@ -56,27 +62,55 @@ class MaalemApp extends StatelessWidget {
             ),
           ),
         ),
+        fontFamily: 'Inter',
         useMaterial3: true,
       ),
-      home: Consumer<AuthProvider>(
-        builder: (context, auth, child) {
-          // 1. ÉCRAN DE CHARGEMENT
-          if (auth.isLoading) {
-            return const SplashScreen();
-          }
-
-          // 2. SI L'UTILISATEUR EST CONNECTÉ -> DIRECTION LA MAP
-          if (auth.token != null) {
-            if (auth.user?.isArtisan == true && auth.user?.profile == null) {
-              return const UploadCinScreen();
-            }
-            return const MapScreen();
-          }
-
-          // 3. SI PAS CONNECTÉ -> DIRECTION L'ÉCRAN AUTH
-          return const RegisterScreen();
-        },
-      ),
+      // On utilise l'AppGate pour gérer la logique de démarrage
+      home: const _AppGate(),
     );
+  }
+}
+
+class _AppGate extends StatefulWidget {
+  const _AppGate();
+
+  @override
+  State<_AppGate> createState() => _AppGateState();
+}
+
+class _AppGateState extends State<_AppGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Petit délai pour laisser le temps au Splash Screen de s'afficher
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _showSplash = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final auth = context.watch<AuthProvider>();
+
+    // 1. ÉCRAN DE CHARGEMENT (Splash)
+    if (_showSplash || auth.isLoading) {
+      return const SplashScreen();
+    }
+
+    // 2. SI L'UTILISATEUR EST CONNECTÉ
+    if (auth.token != null) {
+      // Vérification spéciale pour l'artisan : doit-il uploader sa CIN ?
+      if (auth.user?.isArtisan == true && auth.user?.profile == null) {
+        return const UploadCinScreen();
+      }
+      // Sinon, direction l'écran principal (MainShell qui contient la Map)
+      return const MainShell();
+    }
+
+    // 3. SI PAS CONNECTÉ -> Direction l'écran d'authentification
+    return const AuthScreen();
   }
 }

@@ -1,41 +1,32 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/shared/models/user_model.dart';
-import '../data/services/auth_service.dart';
 import '../core/utils/storage_helper.dart';
+import '../data/services/auth_service.dart';
 
 class AuthProvider with ChangeNotifier {
-  // État privé
   User? _user;
   String? _token;
+  String? _pendingCinToken;
   bool _isLoading = false;
 
-  // Getters pour l'UI (lecture seule)
   User? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
 
-  // Instance du service
   final AuthService _authService = AuthService();
 
-  // ---------------------------------------------------------------------------
-  // 1. INITIALISATION (Vérifier si l'utilisateur est déjà connecté au démarrage)
-  // ---------------------------------------------------------------------------
   Future<void> checkAuthStatus() async {
-    print("🔍 DEBUG: checkAuthStatus commencé..."); 
-
     _isLoading = true;
     notifyListeners();
 
     try {
-      // On récupère le token sauvegardé dans le téléphone
-      final savedToken = await StorageHelper.getToken();
-
-      if (savedToken != null) {
-        _token = savedToken;
-        // OPTIONNEL: Ici, on pourrait appeler un endpoint /auth/me
-        // pour récupérer les infos fraîches de l'utilisateur depuis le serveur.
-        // Pour l'instant, on considère que si on a un token, on est connecté.
+      _token = await StorageHelper.getToken();
+      final userJson = await StorageHelper.getUser();
+      if (userJson != null) {
+        _user = User.fromJson(jsonDecode(userJson));
       }
     } catch (e) {
       debugPrint("Erreur lors du check l'auth status: $e");
@@ -45,9 +36,6 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // 2. CONNEXION (Login)
-  // ---------------------------------------------------------------------------
   Future<bool> login(String email, String password) async {
     _isLoading = true;
     notifyListeners();
@@ -57,24 +45,20 @@ class AuthProvider with ChangeNotifier {
     if (result['success']) {
       final data = result['data'];
       _token = data['token'];
-      _user = User.fromJson(data['user']); // Transformation JSON -> Objet User
-
-      // Sauvegarde du token localement pour la prochaine fois
+      _pendingCinToken = null;
+      _user = User.fromJson(data['user']);
       await StorageHelper.saveToken(_token!);
-
+      await StorageHelper.saveUser(jsonEncode(_user!.toJson()));
       _isLoading = false;
-      notifyListeners(); // Notifie l'UI pour rediriger vers la Map
+      notifyListeners();
       return true;
     }
 
     _isLoading = false;
     notifyListeners();
-    return false; // Retourne false pour afficher l'erreur dans l'UI
+    return false;
   }
 
-  // ---------------------------------------------------------------------------
-  // 3. INSCRIPTION (Register)
-  // ---------------------------------------------------------------------------
   Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
     _isLoading = true;
     notifyListeners();
@@ -91,15 +75,15 @@ class AuthProvider with ChangeNotifier {
         latitude: userData['latitude'],
         longitude: userData['longitude'],
       );
-       if (result['success']) {
-        // ✅ AJOUT : Sauvegarder le token et l'utilisateur dès l'inscription
+
+      if (result['success']) {
         final data = result['data'];
-        if (data['token'] != null) {
-          _token = data['token'];
-          await StorageHelper.saveToken(_token!);
-        }
-        if (data['user'] != null) {
-          _user = User.fromJson(data['user']);
+        if (userData['role'] == 'artisan') {
+          _pendingCinToken = data['token'];
+          _user = data['user'] != null ? User.fromJson(data['user']) : null;
+        } else {
+          _pendingCinToken = null;
+          _user = null;
         }
       }
 
@@ -113,31 +97,46 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-    // ---------------------------------------------------------------------------
-    // 4. DÉCONNEXION (Logout)
-    // ---------------------------------------------------------------------------
-    Future<void> logout() async {
+  Future<Map<String, dynamic>> uploadCin(XFile recto, XFile verso) async {
+    final uploadToken = _pendingCinToken ?? _token;
+    if (uploadToken == null) {
+      return {'success': false, 'error': 'Session upload introuvable. Reconnectez-vous.'};
+    }
+
+    _isLoading = true;
+    notifyListeners();
+
+    final result = await _authService.uploadCin(
+      rectoFile: recto,
+      versoFile: verso,
+      token: uploadToken,
+    );
+
+    if (result['success'] && _pendingCinToken != null) {
+      _pendingCinToken = null;
       _user = null;
-      _token = null;
-      await StorageHelper.clearToken(); // Efface le token du téléphone
-      notifyListeners(); // L'UI redirige automatiquement vers l'écran Login
     }
 
-    // ---------------------------------------------------------------------------
-    // 4. UploadCIN
-    // ---------------------------------------------------------------------------
-    Future<Map<String, dynamic>> uploadCin(XFile recto, XFile verso) async {
-      _isLoading = true;
-      notifyListeners();
-
-      final result = await _authService.uploadCin(
-        rectoFile: recto,
-        versoFile: verso,
-        token: _token!,
-      );
-
-      _isLoading = false;
-      notifyListeners();
-      return result;
-    }
+    _isLoading = false;
+    notifyListeners();
+    return result;
   }
+
+  Future<Map<String, dynamic>> updateAvailability(bool isAvailable) async {
+    if (_token == null) {
+      return {'success': false, 'error': 'Token manquant'};
+    }
+    return _authService.updateAvailability(
+      isAvailable: isAvailable,
+      token: _token!,
+    );
+  }
+
+  Future<void> logout() async {
+    _user = null;
+    _token = null;
+    _pendingCinToken = null;
+    await StorageHelper.clearToken();
+    notifyListeners();
+  }
+}

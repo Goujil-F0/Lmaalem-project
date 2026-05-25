@@ -1,10 +1,12 @@
 import 'dart:typed_data';
-import 'package:image_picker/image_picker.dart';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/widgets/cin_upload_card.dart';
-import 'package:provider/provider.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class UploadCinScreen extends StatefulWidget {
   const UploadCinScreen({super.key});
@@ -18,62 +20,80 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
   XFile? _versoFile;
   Uint8List? _rectoBytes;
   Uint8List? _versoBytes;
+  String? _rectoName;
+  String? _versoName;
+  bool _rectoIsPdf = false;
+  bool _versoIsPdf = false;
   bool _isLoading = false;
 
-  Future<void> _pickImage(bool isRecto) async {
-    final picker = ImagePicker();
-    final picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 80,
-    );
+  Future<void> _pickFile(bool isRecto) async {
+    final selected = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (selected == null) return;
 
-    if (picked != null) {
-      final bytes = await picked.readAsBytes();
-      setState(() {
-        if (isRecto) {
-          _rectoFile = picked;
-          _rectoBytes = bytes;
-        } else {
-          _versoFile = picked;
-          _versoBytes = bytes;
-        }
-      });
+    final bytes = await selected.readAsBytes();
+    if (bytes.isEmpty) {
+      _showSnackBar('Fichier illisible. Reessayez.', Colors.redAccent);
+      return;
     }
+
+    final fileName = selected.name;
+
+    if (!mounted) return;
+    setState(() {
+      if (isRecto) {
+        _rectoFile = selected;
+        _rectoBytes = bytes;
+        _rectoName = fileName;
+        _rectoIsPdf = false;
+      } else {
+        _versoFile = selected;
+        _versoBytes = bytes;
+        _versoName = fileName;
+        _versoIsPdf = false;
+      }
+    });
   }
 
   Future<void> _handleUpload() async {
     if (_rectoFile == null || _versoFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Les deux côtés de la CIN sont obligatoires'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      _showSnackBar('Les deux cotes de la CIN sont obligatoires', Colors.redAccent);
       return;
     }
 
     setState(() => _isLoading = true);
-
-    final auth = Provider.of<AuthProvider>(context, listen: false);
+    final auth = context.read<AuthProvider>();
     final result = await auth.uploadCin(_rectoFile!, _versoFile!);
 
+    if (!mounted) return;
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('CIN uploadée avec succès !'),
-          backgroundColor: Colors.green,
-        ),
+      _showSnackBar('CIN uploadee avec succes. Connectez-vous maintenant.', Colors.green);
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const AuthScreen()),
       );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['error'] ?? 'Erreur'),
-          backgroundColor: Colors.redAccent,
-        ),
-      );
+      return;
     }
+
+    _showSnackBar(result['error'] ?? 'Erreur upload', Colors.redAccent);
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: color),
+    );
+  }
+
+  bool _isPdf(String name) => name.toLowerCase().endsWith('.pdf');
+
+  String _mimeTypeFor(String name) {
+    final lower = name.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.png')) return 'image/png';
+    return 'image/jpeg';
   }
 
   @override
@@ -88,8 +108,12 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Maalem",
-          style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.w900),
+          'Lmaalem',
+          style: TextStyle(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w900,
+            fontStyle: FontStyle.italic,
+          ),
         ),
         centerTitle: true,
       ),
@@ -99,7 +123,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
           child: Column(
             children: [
               const Text(
-                "Vérification d'Identité",
+                "Verification d'identite",
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w900,
@@ -109,7 +133,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                "Pour garantir la sécurité de la plateforme, veuillez uploader votre CIN",
+                'Ajoutez le recto et le verso de votre CIN pour finaliser votre demande artisan.',
                 style: TextStyle(
                   color: AppColors.navy.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -117,32 +141,34 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-
-              // Recto
               CinUploadCard(
-                label: "Côté Recto",
-                imageBytes: _rectoBytes,
-                onTap: () => _pickImage(true),
+                label: 'Cote Recto',
+                fileBytes: _rectoBytes,
+                fileName: _rectoName,
+                isPdf: _rectoIsPdf,
+                onTap: () => _pickFile(true),
               ),
               const SizedBox(height: 20),
-
-              // Verso
               CinUploadCard(
-                label: "Côté Verso",
-                imageBytes: _versoBytes,
-                onTap: () => _pickImage(false),
+                label: 'Cote Verso',
+                fileBytes: _versoBytes,
+                fileName: _versoName,
+                isPdf: _versoIsPdf,
+                onTap: () => _pickFile(false),
               ),
               const SizedBox(height: 24),
-
-              // Tips box
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.navy.withValues(alpha: 0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: AppColors.navy.withValues(alpha: 0.1),
-                  ),
+                  color: AppColors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.navy.withValues(alpha: 0.05),
+                      blurRadius: 16,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -150,19 +176,15 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: AppColors.teal.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(8),
+                        color: AppColors.teal.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(
-                        Icons.lightbulb,
-                        color: AppColors.teal,
-                        size: 20,
-                      ),
+                      child: const Icon(Icons.info_outline, color: AppColors.teal),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        "Tips: Assurez-vous que la photo est nette et que les 4 coins de la carte sont visibles.",
+                        'Formats acceptes: JPG, PNG ou PDF. Les deux cotes sont obligatoires.',
                         style: TextStyle(
                           color: AppColors.navy.withValues(alpha: 0.8),
                           fontSize: 13,
@@ -173,32 +195,39 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              _isLoading
-                  ? const CircularProgressIndicator(color: AppColors.teal)
-                  : SizedBox(
-                      width: double.infinity,
-                      height: 62,
-                      child: ElevatedButton.icon(
-                        onPressed: _handleUpload,
-                        icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                        label: const Text(
-                          "Valider mon Profil",
-                          style: TextStyle(
+              SizedBox(
+                width: double.infinity,
+                height: 62,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _handleUpload,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
                             color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
+                            strokeWidth: 2,
                           ),
-                        ),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.teal,
-                          elevation: 6,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(32),
-                          ),
-                        ),
-                      ),
+                        )
+                      : const Icon(Icons.arrow_forward, color: Colors.white),
+                  label: Text(
+                    _isLoading ? 'Upload...' : 'Valider mon profil',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
                     ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.teal,
+                    disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.6),
+                    elevation: 6,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

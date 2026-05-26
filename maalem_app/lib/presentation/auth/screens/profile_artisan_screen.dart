@@ -57,7 +57,7 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          profile?.speciality ?? 'Specialite non renseignee',
+                          profile?.specialty ?? 'Specialite non renseignee',
                           style: TextStyle(
                             color: AppColors.navy.withValues(alpha: 0.62),
                             fontWeight: FontWeight.w700,

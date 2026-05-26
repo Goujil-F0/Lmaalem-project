@@ -101,7 +101,6 @@ class _MapScreenState extends State<MapScreen> {
                   ),
                   MarkerLayer(
                     markers: provider.artisans
-                        .where((a) => a.longitude != null)
                         .map(
                           (artisan) => Marker(
                             point: LatLng(
@@ -229,7 +228,7 @@ class _MapScreenState extends State<MapScreen> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '📍 ${artisan.city ?? 'Casablanca'}',
+                        '📍 ${artisan.city}',
                         style: TextStyle(
                           color: _Colors.textDark.withOpacity(0.55),
                           fontSize: 13,

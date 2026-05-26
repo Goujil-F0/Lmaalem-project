@@ -1,130 +1,268 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
-class ProfileClientScreen extends StatelessWidget {
+class ProfileClientScreen extends StatefulWidget {
   const ProfileClientScreen({super.key});
+
+  @override
+  State<ProfileClientScreen> createState() => _ProfileClientScreenState();
+}
+
+class _ProfileClientScreenState extends State<ProfileClientScreen> {
+  final ImagePicker _picker = ImagePicker();
+  Uint8List? _localPhotoBytes;
+
+  Future<void> _pickProfilePhoto() async {
+    final image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+    final bytes = await image.readAsBytes();
+    if (mounted) setState(() => _localPhotoBytes = bytes);
+
+    final result = await context.read<AuthProvider>().updateProfilePhoto(image);
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      _showSuccess(_successMessage('Photo de profil mise a jour', result));
+    } else {
+      _showError(result['error'] ?? 'Erreur upload photo');
+    }
+  }
+
+  Future<void> _editPersonalInfo() async {
+    final user = context.read<AuthProvider>().user;
+    final result = await _showPersonalInfoDialog(
+      fullName: user?.fullName ?? '',
+      email: user?.email ?? '',
+      phone: user?.phone ?? '',
+    );
+    if (result == null) return;
+
+    await Future.delayed(Duration.zero);
+    if (!mounted) return;
+    FocusScope.of(context).unfocus();
+    final response = await context.read<AuthProvider>().updateClientProfile(
+          fullName: result['fullName'],
+          email: result['email'],
+          phone: result['phone'],
+        );
+    if (!mounted) return;
+
+    if (response['success'] == true) {
+      _showSuccess(_successMessage('Informations mises a jour', response));
+    } else {
+      _showError(response['error'] ?? 'Erreur lors de la mise a jour');
+    }
+  }
+
+  Future<void> _updateLocation() async {
+    _showSuccess('Ouverture de la carte bientot disponible');
+  }
+
+  Future<void> _openSupport() async {
+    final uri = context.read<AuthProvider>().contactSupportUri();
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!mounted) return;
+    if (!launched) {
+      _showError("Impossible d'ouvrir WhatsApp");
+    }
+  }
+
+  Future<Map<String, String>?> _showPersonalInfoDialog({
+    required String fullName,
+    required String email,
+    required String phone,
+  }) async {
+    final nameController = TextEditingController(text: fullName);
+    final emailController = TextEditingController(text: email);
+    final phoneController = TextEditingController(text: phone);
+    final nameFocus = FocusNode();
+    final emailFocus = FocusNode();
+    final phoneFocus = FocusNode();
+
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) {
+        return GestureDetector(
+          onTap: () => FocusScope.of(dialogContext).unfocus(),
+          child: AlertDialog(
+            title: const Text('Modifier mes informations'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nameController,
+                    focusNode: nameFocus,
+                    autofocus: true,
+                    textInputAction: TextInputAction.next,
+                    keyboardType: TextInputType.name,
+                    onSubmitted: (_) => emailFocus.requestFocus(),
+                    decoration: const InputDecoration(
+                      labelText: 'Nom complet',
+                      prefixIcon: Icon(Icons.person_outline),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: emailController,
+                    focusNode: emailFocus,
+                    textInputAction: TextInputAction.next,
+                    keyboardType: TextInputType.emailAddress,
+                    onSubmitted: (_) => phoneFocus.requestFocus(),
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: phoneController,
+                    focusNode: phoneFocus,
+                    textInputAction: TextInputAction.done,
+                    keyboardType: TextInputType.phone,
+                    onSubmitted: (_) {
+                      FocusScope.of(dialogContext).unfocus();
+                      Navigator.pop(dialogContext, {
+                        'fullName': nameController.text.trim(),
+                        'email': emailController.text.trim(),
+                        'phone': phoneController.text.trim(),
+                      });
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Telephone',
+                      prefixIcon: Icon(Icons.phone_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  FocusScope.of(dialogContext).unfocus();
+                  Navigator.pop(dialogContext, {
+                    'fullName': nameController.text.trim(),
+                    'email': emailController.text.trim(),
+                    'phone': phoneController.text.trim(),
+                  });
+                },
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
+                child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    nameController.dispose();
+    emailController.dispose();
+    phoneController.dispose();
+    nameFocus.dispose();
+    emailFocus.dispose();
+    phoneFocus.dispose();
+
+    if (result == null ||
+        (result['fullName'] ?? '').isEmpty ||
+        (result['email'] ?? '').isEmpty) {
+      return null;
+    }
+    return result;
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: AppColors.teal),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
+
+  String _successMessage(String message, Map<String, dynamic> result) {
+    return result['mocked'] == true ? '$message (Simulation locale)' : message;
+  }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
+    final fullName = user?.fullName ?? 'Client Lmaalem';
+    final email = user?.email ?? '-';
+    final phone = user?.phone ?? '-';
+    final location = [
+      if (user?.city?.isNotEmpty == true) user!.city,
+      if (user?.neighborhood?.isNotEmpty == true) user!.neighborhood,
+    ].whereType<String>().join(', ');
 
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            children: [
-              const SizedBox(height: 12),
-              Stack(
-                alignment: Alignment.bottomRight,
-                children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: AppColors.navy,
-                    child: Text(
-                      _initials(user?.fullName),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    width: 38,
-                    height: 38,
-                    decoration: const BoxDecoration(
-                      color: AppColors.teal,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.edit, color: Colors.white, size: 18),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 14),
-              Text(
-                user?.fullName ?? 'Client Lmaalem',
-                style: const TextStyle(
-                  color: AppColors.navy,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w900,
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: AppColors.beige,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            child: Column(
+              children: [
+                const _TopBar(),
+                const SizedBox(height: 8),
+                _ProfileHeader(
+                  fullName: fullName,
+                  initials: _initials(fullName),
+                  photoUrl: user?.photoUrl,
+                  localPhotoBytes: _localPhotoBytes,
+                  isUploading: auth.isUploadingPhoto,
+                  onEditPhoto: _pickProfilePhoto,
                 ),
-              ),
-              const SizedBox(height: 8),
-              const _Badge(label: 'Client'),
-              const SizedBox(height: 24),
-              _InfoCard(
-                title: 'Infos personnelles',
-                children: [
-                  _InfoRow(icon: Icons.person, label: 'Nom', value: user?.fullName ?? '-'),
-                  _InfoRow(icon: Icons.mail, label: 'Email', value: user?.email ?? '-'),
-                  _InfoRow(icon: Icons.phone, label: 'Telephone', value: user?.phone ?? '-'),
-                ],
-              ),
-              const SizedBox(height: 16),
-              _InfoCard(
-                title: 'Localisation',
-                children: [
-                  _InfoRow(icon: Icons.location_city, label: 'Ville', value: user?.city ?? '-'),
-                  _InfoRow(icon: Icons.map, label: 'Quartier', value: user?.neighborhood ?? '-'),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      onPressed: () {},
-                      icon: const Icon(Icons.place_outlined),
-                      label: const Text('Mettre a jour sur la carte'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.teal,
-                        side: const BorderSide(color: AppColors.teal),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.28,
-                children: const [
-                  _ActionTile(icon: Icons.event_note, label: 'Mes reservations'),
-                  _ActionTile(icon: Icons.favorite_border, label: 'Artisans favoris'),
-                  _ActionTile(icon: Icons.settings_outlined, label: 'Parametres'),
-                  _ActionTile(icon: Icons.help_outline, label: "Centre d'aide"),
-                ],
-              ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton.icon(
-                  onPressed: () => context.read<AuthProvider>().logout(),
-                  icon: const Icon(Icons.logout, color: Colors.white),
-                  label: const Text(
-                    'Deconnexion',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                    ),
+                const SizedBox(height: 24),
+                _PersonalInfoCard(
+                  fullName: fullName,
+                  email: email,
+                  phone: phone,
+                  isUpdating: auth.isUpdatingProfile,
+                  onEdit: _editPersonalInfo,
+                ),
+                const SizedBox(height: 16),
+                _LocationCard(
+                  location: location.isEmpty ? 'Casablanca, Quartier Habous' : location,
+                  details: user?.neighborhood ?? 'Residence Al-Amal, N 45',
+                  isUpdating: auth.isUpdatingProfile,
+                  onUpdate: _updateLocation,
+                ),
+                const SizedBox(height: 16),
+                _QuickActionsGrid(onHelp: _openSupport),
+                const SizedBox(height: 22),
+                _LogoutButton(
+                  onLogout: () => context.read<AuthProvider>().logout(),
+                ),
+                const SizedBox(height: 18),
+                Text(
+                  'Version 2.4.1 - Lmaalem Client',
+                  style: TextStyle(
+                    color: AppColors.textGrey.withValues(alpha: 0.5),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -138,64 +276,447 @@ class ProfileClientScreen extends StatelessWidget {
   }
 }
 
-class _Badge extends StatelessWidget {
-  final String label;
-
-  const _Badge({required this.label});
+class _TopBar extends StatelessWidget {
+  const _TopBar();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
-      decoration: BoxDecoration(
-        color: AppColors.teal.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        label,
-        style: const TextStyle(color: AppColors.teal, fontWeight: FontWeight.w800),
+    return Row(
+      children: [
+        const SizedBox(width: 40, height: 40),
+        const Expanded(
+          child: Text(
+            'Lmaalem',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w900,
+              fontSize: 18,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+        Material(
+          color: Colors.white.withValues(alpha: 0.5),
+          shape: const CircleBorder(),
+          child: IconButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Notifications - en construction')),
+              );
+            },
+            icon: const Icon(Icons.notifications_none, color: AppColors.navy),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  final String fullName;
+  final String initials;
+  final String? photoUrl;
+  final Uint8List? localPhotoBytes;
+  final bool isUploading;
+  final VoidCallback onEditPhoto;
+
+  const _ProfileHeader({
+    required this.fullName,
+    required this.initials,
+    required this.photoUrl,
+    required this.localPhotoBytes,
+    required this.isUploading,
+    required this.onEditPhoto,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
+    ImageProvider? providerImage;
+    if (localPhotoBytes != null) {
+      providerImage = MemoryImage(localPhotoBytes!);
+    } else if (hasPhoto && photoUrl!.startsWith('data:image')) {
+      final commaIndex = photoUrl!.indexOf(',');
+      if (commaIndex != -1) {
+        try {
+          providerImage = MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
+        } catch (_) {
+          providerImage = null;
+        }
+      }
+    } else if (hasPhoto) {
+      providerImage = NetworkImage(photoUrl!);
+    }
+
+    return Column(
+      children: [
+        Stack(
+          alignment: Alignment.bottomRight,
+          children: [
+            Container(
+              width: 128,
+              height: 128,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.white, width: 4),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.navy.withValues(alpha: 0.12),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                backgroundColor: AppColors.navy,
+                backgroundImage: providerImage,
+                child: providerImage != null
+                    ? null
+                    : Text(
+                        initials,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+              ),
+            ),
+            Material(
+              color: AppColors.teal,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: isUploading ? null : onEditPhoto,
+                customBorder: const CircleBorder(),
+                child: SizedBox(
+                  width: 42,
+                  height: 42,
+                  child: isUploading
+                      ? const Padding(
+                          padding: EdgeInsets.all(11),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.edit, color: Colors.white, size: 20),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        Text(
+          fullName,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: AppColors.navy,
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.teal,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const Text(
+            'Client',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _PersonalInfoCard extends StatelessWidget {
+  final String fullName;
+  final String email;
+  final String phone;
+  final bool isUpdating;
+  final VoidCallback onEdit;
+
+  const _PersonalInfoCard({
+    required this.fullName,
+    required this.email,
+    required this.phone,
+    required this.isUpdating,
+    required this.onEdit,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SoftCard(
+      child: Column(
+        children: [
+          Row(
+            children: [
+              const Expanded(
+                child: Text(
+                  'Informations personnelles',
+                  style: TextStyle(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              IconButton(
+                onPressed: isUpdating ? null : onEdit,
+                icon: isUpdating
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          color: AppColors.teal,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.edit, color: AppColors.teal),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          _InfoRow(icon: Icons.person_outline, label: 'Nom complet', value: fullName),
+          const _DividerLine(),
+          _InfoRow(icon: Icons.email_outlined, label: 'Email', value: email),
+          const _DividerLine(),
+          _InfoRow(icon: Icons.phone_outlined, label: 'Telephone', value: phone),
+        ],
       ),
     );
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  final String title;
-  final List<Widget> children;
+class _LocationCard extends StatelessWidget {
+  final String location;
+  final String details;
+  final bool isUpdating;
+  final VoidCallback onUpdate;
 
-  const _InfoCard({required this.title, required this.children});
+  const _LocationCard({
+    required this.location,
+    required this.details,
+    required this.isUpdating,
+    required this.onUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _SoftCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ma localisation',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _IconBox(icon: Icons.location_on_outlined),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      location,
+                      style: const TextStyle(
+                        color: Color(0xFF1D1B20),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      details,
+                      style: const TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: isUpdating ? null : onUpdate,
+              icon: isUpdating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: AppColors.teal,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.map_outlined),
+              label: const Text('Mettre a jour sur la carte'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.teal,
+                backgroundColor: AppColors.teal.withValues(alpha: 0.05),
+                side: BorderSide(
+                  color: AppColors.teal.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuickActionsGrid extends StatelessWidget {
+  final VoidCallback onHelp;
+
+  const _QuickActionsGrid({required this.onHelp});
+
+  @override
+  Widget build(BuildContext context) {
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      childAspectRatio: 1.14,
+      children: [
+        const _ActionTile(icon: Icons.calendar_today_outlined, label: 'Mes reservations'),
+        const _ActionTile(icon: Icons.favorite_border, label: 'Artisans favoris'),
+        const _ActionTile(icon: Icons.settings_outlined, label: 'Parametres du compte'),
+        _ActionTile(
+          icon: Icons.help_center_outlined,
+          label: "Centre d'aide",
+          onTap: onHelp,
+        ),
+      ],
+    );
+  }
+}
+
+class _ActionTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+
+  const _ActionTile({required this.icon, required this.label, this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(24),
+      elevation: 0,
+      child: InkWell(
+        onTap: onTap ?? () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('$label - en construction')),
+          );
+        },
+        borderRadius: BorderRadius.circular(24),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: _softDecoration(),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withValues(alpha: 0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.teal, size: 25),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onLogout;
+
+  const _LogoutButton({required this.onLogout});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: ElevatedButton.icon(
+        onPressed: onLogout,
+        icon: const Icon(Icons.logout, color: Color(0xFFBA1A1A)),
+        label: const Text(
+          'Deconnexion',
+          style: TextStyle(
+            color: Color(0xFFBA1A1A),
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.white,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SoftCard extends StatelessWidget {
+  final Widget child;
+
+  const _SoftCard({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.navy,
-              fontSize: 17,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          const SizedBox(height: 12),
-          ...children,
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      decoration: _softDecoration(),
+      child: child,
     );
   }
 }
@@ -205,31 +726,43 @@ class _InfoRow extends StatelessWidget {
   final String label;
   final String value;
 
-  const _InfoRow({required this.icon, required this.label, required this.value});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 11),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.teal),
-          const SizedBox(width: 12),
+          _IconBox(icon: icon),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(
-                color: AppColors.navy.withValues(alpha: 0.58),
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          Flexible(
-            child: Text(
-              value,
-              textAlign: TextAlign.right,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    color: AppColors.textGrey,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -238,39 +771,48 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-class _ActionTile extends StatelessWidget {
+class _IconBox extends StatelessWidget {
   final IconData icon;
-  final String label;
 
-  const _ActionTile({required this.icon, required this.label});
+  const _IconBox({required this.icon});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        color: AppColors.teal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, color: AppColors.teal, size: 30),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.navy, fontWeight: FontWeight.w800),
-          ),
-        ],
-      ),
+      child: Icon(icon, color: AppColors.teal, size: 22),
     );
   }
+}
+
+class _DividerLine extends StatelessWidget {
+  const _DividerLine();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      width: double.infinity,
+      color: AppColors.textGrey.withValues(alpha: 0.05),
+    );
+  }
+}
+
+BoxDecoration _softDecoration() {
+  return BoxDecoration(
+    color: AppColors.white,
+    borderRadius: BorderRadius.circular(24),
+    boxShadow: [
+      BoxShadow(
+        color: AppColors.navy.withValues(alpha: 0.05),
+        blurRadius: 12,
+        offset: const Offset(0, 4),
+      ),
+    ],
+  );
 }

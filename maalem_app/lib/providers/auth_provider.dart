@@ -18,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   String? _pendingCinToken;
 
   bool _isLoading = false;
+  bool _isCheckingAuth = false;
   bool _isUpdatingProfile = false;
   bool _isUploadingPhoto = false;
   bool _isUploadingPortfolio = false;
@@ -26,13 +27,14 @@ class AuthProvider with ChangeNotifier {
   User? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
+  bool get isCheckingAuth => _isCheckingAuth;
   bool get isUpdatingProfile => _isUpdatingProfile;
   bool get isUploadingPhoto => _isUploadingPhoto;
   bool get isUploadingPortfolio => _isUploadingPortfolio;
   bool get isUpdatingAvailability => _isUpdatingAvailability;
 
   Future<void> checkAuthStatus() async {
-    _isLoading = true;
+    _isCheckingAuth = true;
     notifyListeners();
 
     try {
@@ -44,7 +46,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Erreur lors du check l'auth status: $e");
     } finally {
-      _isLoading = false;
+      _isCheckingAuth = false;
       notifyListeners();
     }
   }
@@ -55,15 +57,25 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final result = await _authService.login(email, password);
+      debugPrint('🔐 Login response: $result');
       if (result['success'] == true) {
         final data = result['data'];
+        debugPrint('🔐 Token received: ${data['token']?.substring(0, 20)}...');
+        debugPrint('🔐 User data: ${data['user']}');
         _token = data['token'];
         _pendingCinToken = null;
         _user = await _mergeWithMockUser(User.fromJson(data['user']));
+        debugPrint('🔐 User parsed: ${_user?.email}');
         await StorageHelper.saveToken(_token!);
         await _persistUser();
+        debugPrint('🔐 Login successful!');
         return true;
       }
+      debugPrint('❌ Login failed: ${result['error']}');
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Login error: $e');
+      debugPrint('❌ Stacktrace: $stackTrace');
       return false;
     } finally {
       _isLoading = false;

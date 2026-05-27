@@ -50,7 +50,8 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
 
-    final result = await context.read<AuthProvider>().uploadPortfolioImage(image);
+    final result =
+        await context.read<AuthProvider>().uploadPortfolioImage(image);
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -200,8 +201,10 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   FocusScope.of(dialogContext).unfocus();
                   Navigator.pop(dialogContext, controller.text);
                 },
-                style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
-                child: const Text('Enregistrer', style: TextStyle(color: Colors.white)),
+                style:
+                    ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
+                child: const Text('Enregistrer',
+                    style: TextStyle(color: Colors.white)),
               ),
             ],
           ),
@@ -278,10 +281,12 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   available: available,
                   isUpdatingProfile: auth.isUpdatingProfile,
                   isUpdatingAvailability: auth.isUpdatingAvailability,
-                  onEditSpecialty: () => _editSpecialty(profile?.specialty ?? ''),
+                  onEditSpecialty: () =>
+                      _editSpecialty(profile?.specialty ?? ''),
                   onEditHourlyRate: () => _editHourlyRate(profile?.hourlyRate),
-                  onAvailabilityChanged:
-                      auth.isUpdatingAvailability ? null : _handleAvailabilityChange,
+                  onAvailabilityChanged: auth.isUpdatingAvailability
+                      ? null
+                      : _handleAvailabilityChange,
                 ),
                 const SizedBox(height: 26),
                 _PortfolioSection(
@@ -345,7 +350,8 @@ class _ProfileHeader extends StatelessWidget {
       final commaIndex = photoUrl!.indexOf(',');
       if (commaIndex != -1) {
         try {
-          providerImage = MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
+          providerImage =
+              MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
         } catch (_) {
           providerImage = null;
         }
@@ -567,7 +573,7 @@ class _ManagementCard extends StatelessWidget {
                     )
                   : Switch(
                       value: available,
-                      activeColor: AppColors.teal,
+                      activeThumbColor: AppColors.teal,
                       onChanged: onAvailabilityChanged,
                     ),
             ],
@@ -676,7 +682,8 @@ class _PortfolioSection extends StatelessWidget {
                         strokeWidth: 2,
                       ),
                     )
-                  : const Icon(Icons.add_circle, color: AppColors.teal, size: 20),
+                  : const Icon(Icons.add_circle,
+                      color: AppColors.teal, size: 20),
               label: const Text(
                 'Ajouter',
                 style: TextStyle(
@@ -696,7 +703,9 @@ class _PortfolioSection extends StatelessWidget {
           mainAxisSpacing: 12,
           children: images.isEmpty
               ? List.generate(4, (_) => const _PortfolioPlaceholder())
-              : images.map((image) => _PortfolioImageTile(image: image)).toList(),
+              : images
+                  .map((image) => _PortfolioImageTile(image: image))
+                  .toList(),
         ),
       ],
     );

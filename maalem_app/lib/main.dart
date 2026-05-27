@@ -3,6 +3,7 @@ import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/location_provider.dart';
 import 'package:provider/provider.dart';
 import 'providers/search_provider.dart';
 
@@ -12,6 +13,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkAuthStatus(),
         ),
@@ -61,22 +63,26 @@ class _AppGateState extends State<_AppGate> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // 1. Display splash during initialization or manual check
+        if (_showSplash || auth.isCheckingAuth) {
+          return const SplashScreen();
+        }
 
-    if (_showSplash || auth.isLoading) {
-      return const SplashScreen();
-    }
+        // 2. Si un token est présent, l'utilisateur est connecté
+        if (auth.token != null) {
+          // On attend que les données utilisateur (profil) soient prêtes
+          if (auth.user != null) {
+            return const MainShell();
+          }
+          // Si on a le token mais pas encore le profil, on affiche le SplashScreen
+          return const SplashScreen();
+        }
 
-    // Token présent ET user chargé → MainShell
-    if (auth.token != null && auth.user != null) {
-      return const MainShell();
-    }
-
-    // Token présent mais user null → encore en chargement
-    if (auth.token != null && auth.user == null) {
-      return const SplashScreen();
-    }
-
-    return const AuthScreen();
+        // 3. Sinon, on demande la connexion
+        return const AuthScreen();
+      },
+    );
   }
 }

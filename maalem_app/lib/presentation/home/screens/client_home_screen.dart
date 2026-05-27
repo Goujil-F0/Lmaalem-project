@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/search_provider.dart';
 import 'package:provider/provider.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -12,6 +13,15 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Load artisans when home screen is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SearchProvider>().loadArtisans();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
@@ -112,6 +122,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
             // Barre de recherche
             TextField(
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              ),
+              readOnly: true,
               decoration: InputDecoration(
                 hintText: 'Rechercher un artisan...',
                 hintStyle:
@@ -139,20 +154,44 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Grille de services
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              mainAxisSpacing: 14,
-              crossAxisSpacing: 14,
-              childAspectRatio: 1.1,
-              children: const [
-                _ServiceCard(icon: Icons.water, label: 'Plomberie'),
-                _ServiceCard(icon: Icons.electric_bolt, label: 'Électricité'),
-                _ServiceCard(icon: Icons.palette, label: 'Peinture'),
-                _ServiceCard(icon: Icons.construction, label: 'Maçonnerie'),
-              ],
+            // Grille de services - Dynamic based on categories
+            Consumer<SearchProvider>(
+              builder: (context, provider, _) {
+                final categories = provider.categories;
+
+                // Si les catégories ne sont pas chargées, afficher 4 par défaut
+                final displayCategories = categories.isEmpty
+                    ? [
+                        'Plomberie',
+                        'Électricité',
+                        'Peinture',
+                        'Carrelage',
+                      ]
+                    : categories.take(4).toList();
+
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 14,
+                  crossAxisSpacing: 14,
+                  childAspectRatio: 1.1,
+                  children: displayCategories
+                      .map((category) => _ServiceCard(
+                            label: category,
+                            onTap: () {
+                              // Filtrer par catégorie et aller à la carte
+                              provider.filterByCategory(category);
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (_) => const MapScreen()),
+                              );
+                            },
+                          ))
+                      .toList(),
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -248,21 +287,52 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 }
 
 class _ServiceCard extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String label;
+  final VoidCallback? onTap;
 
   const _ServiceCard({
-    required this.icon,
+    this.icon,
     required this.label,
+    this.onTap,
   });
+
+  /// Génère une icône basée sur le nom du service
+  IconData _getIconForCategory(String category) {
+    final cat = category.toLowerCase();
+    if (cat.contains('plomb')) return Icons.water;
+    if (cat.contains('électr')) return Icons.electric_bolt;
+    if (cat.contains('peint')) return Icons.palette;
+    if (cat.contains('maçon')) return Icons.construction;
+    if (cat.contains('carrel')) return Icons.layers;
+    if (cat.contains('menuiser')) return Icons.carpenter;
+    if (cat.contains('climat')) return Icons.ac_unit;
+    if (cat.contains('serr')) return Icons.vpn_key;
+    if (cat.contains('garden') || cat.contains('jardin')) return Icons.grass;
+    if (cat.contains('nettoy')) return Icons.cleaning_services;
+    if (cat.contains('plátr')) return Icons.brush;
+    if (cat.contains('isolation')) return Icons.layers;
+    if (cat.contains('domotique')) return Icons.smart_button;
+    if (cat.contains('solaire')) return Icons.solar_power;
+    if (cat.contains('tv') || cat.contains('satellite')) return Icons.tv;
+    if (cat.contains('rénovation') || cat.contains('renovati'))
+      return Icons.build;
+    if (cat.contains('étanch')) return Icons.water_damage;
+    if (cat.contains('démolit') || cat.contains('demolit'))
+      return Icons.delete_sweep;
+    return Icons.handyman; // Default icon
+  }
 
   @override
   Widget build(BuildContext context) {
+    final displayIcon = icon ?? _getIconForCategory(label);
+
     return GestureDetector(
-      onTap: () => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const MapScreen()),
-      ),
+      onTap: onTap ??
+          () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -278,7 +348,7 @@ class _ServiceCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 40, color: AppColors.teal),
+            Icon(displayIcon, size: 40, color: AppColors.teal),
             const SizedBox(height: 12),
             Text(
               label,

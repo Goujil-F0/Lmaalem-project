@@ -29,15 +29,15 @@ class User {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
+      id: _toInt(json['id'] ?? json['user_id'] ?? json['userId']) ?? 0,
       fullName: json['full_name'] ?? json['fullName'] ?? '',
       email: json['email'] ?? '',
-      role: json['role'] ?? 'client',
+      role: json['role'] ?? json['userRole'] ?? 'client',
       phone: json['phone'],
       city: json['city'],
       neighborhood: json['neighborhood'],
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: _toDouble(json['latitude']),
+      longitude: _toDouble(json['longitude']),
       photoUrl: json['photo_url'] ?? json['photoUrl'],
       profile: json['profile'] != null
           ? ArtisanProfile.fromJson(json['profile'])
@@ -91,4 +91,20 @@ class User {
 
   bool get isArtisan => role == 'artisan';
   bool get isClient => role == 'client';
+}
+
+int? _toInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

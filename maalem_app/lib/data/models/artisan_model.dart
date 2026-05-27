@@ -40,21 +40,26 @@ class ArtisanModel {
   /// Factory constructor pour créer depuis JSON (API)
   factory ArtisanModel.fromJson(Map<String, dynamic> json) {
     return ArtisanModel(
-      id: json['id'] ?? 0,
+      id: _toInt(json['id']) ?? _toInt(json['user_id']) ?? 0,
       fullName: json['fullName'] ?? json['full_name'] ?? '',
       email: json['email'] ?? '',
       phone: json['phone'] ?? '',
-      speciality: json['speciality'] ?? json['specialty'] ?? '',
+      speciality: json['speciality'] ??
+          json['specialty'] ??
+          json['specialite'] ??
+          json['speciality_name'] ??
+          '',
       city: json['city'] ?? '',
       bio: json['bio'],
-      latitude: (json['latitude'] as num?)?.toDouble() ?? 0.0,
-      longitude: (json['longitude'] as num?)?.toDouble() ?? 0.0,
+      latitude: _toDouble(json['latitude']) ?? 0.0,
+      longitude: _toDouble(json['longitude']) ?? 0.0,
       isAvailable: json['isAvailable'] ?? json['is_available'] ?? true,
       profileImage: json['profileImage'] ?? json['profile_image'],
-      rating: (json['rating'] as num?)?.toDouble(),
-      reviewCount: json['reviewCount'] ?? json['review_count'],
-      averageRating: (json['averageRating'] as num?)?.toDouble(),
-      hourlyRate: (json['hourlyRate'] as num?)?.toDouble(),
+      rating: _toDouble(json['rating']) ?? _toDouble(json['average_rating']),
+      reviewCount: _toInt(json['reviewCount']) ?? _toInt(json['review_count']),
+      averageRating:
+          _toDouble(json['averageRating']) ?? _toDouble(json['average_rating']),
+      hourlyRate: _toDouble(json['hourlyRate']) ?? _toDouble(json['hourly_rate']),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -141,4 +146,20 @@ class ArtisanModel {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+int? _toInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

@@ -64,6 +64,21 @@ CREATE TABLE IF NOT EXISTS users (
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Test Users (password: Test1234!)
+-- Hash: $2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm (bcrypt)
+INSERT INTO users (full_name, email, password_hash, role, phone, city, neighborhood)
+VALUES
+    ('Ahmed Test Client', 'ahmed@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'client', '0612345678', 'Casablanca', 'Centre'),
+    ('Fatima Test Artisan', 'fatima@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'artisan', '0698765432', 'Rabat', 'Agdal')
+ON CONFLICT (email) DO NOTHING;
+
+-- Link artisan to Plumbing specialty
+INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
+SELECT u.id, s.id, 150.00, true, 'Plombier expérimenté avec 10 ans d''expérience', 4.5
+FROM users u, specialties s
+WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
+ON CONFLICT (user_id) DO NOTHING;
+
 -- 4. PROFILS ARTISANS
 CREATE TABLE IF NOT EXISTS artisan_profiles (
     user_id        INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,

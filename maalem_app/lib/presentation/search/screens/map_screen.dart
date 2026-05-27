@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../../data/models/artisan_model.dart';
 import '../../../providers/search_provider.dart';
+import '../../../providers/location_provider.dart';
 
 class _Colors {
   static const blue = Color(0xFF2C5F8A);
@@ -27,7 +28,16 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SearchProvider>().loadArtisans();
+      // Démarrer le suivi de la localisation du client
+      context.read<LocationProvider>().startLocationUpdates();
     });
+  }
+
+  @override
+  void dispose() {
+    // Arrêter le suivi de la localisation quand on quitte l'écran
+    context.read<LocationProvider>().stopLocationUpdates();
+    super.dispose();
   }
 
   @override
@@ -47,9 +57,10 @@ class _MapScreenState extends State<MapScreen> {
       body: Stack(
         children: [
           Positioned.fill(
-            child: Consumer<SearchProvider>(
-              builder: (context, provider, _) {
-                if (provider.isLoading && provider.artisans.isEmpty) {
+            child: Consumer2<SearchProvider, LocationProvider>(
+              builder: (context, searchProvider, locationProvider, _) {
+                if (searchProvider.isLoading &&
+                    searchProvider.artisans.isEmpty) {
                   return const Center(
                     child: CircularProgressIndicator(color: _Colors.blue),
                   );
@@ -70,11 +81,14 @@ class _MapScreenState extends State<MapScreen> {
                       userAgentPackageName: 'com.maalem.app',
                       tileProvider: NetworkTileProvider(),
                     ),
-                    MarkerLayer(markers: _buildMarkers(context, provider)),
-                    if (provider.hasError)
+                    MarkerLayer(
+                      markers: _buildMarkers(
+                          context, searchProvider, locationProvider),
+                    ),
+                    if (searchProvider.hasError)
                       Align(
                         alignment: Alignment.bottomCenter,
-                        child: _MapNotice(message: provider.errorMessage),
+                        child: _MapNotice(message: searchProvider.errorMessage),
                       ),
                   ],
                 );
@@ -92,25 +106,72 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  List<Marker> _buildMarkers(BuildContext context, SearchProvider provider) {
-    return provider.artisans
-        .where((artisan) => artisan.latitude != 0 && artisan.longitude != 0)
-        .map(
-          (artisan) => Marker(
-            point: LatLng(artisan.latitude, artisan.longitude),
-            width: 50,
-            height: 50,
-            child: GestureDetector(
-              onTap: () => _showArtisanDetails(context, artisan),
-              child: const Icon(
-                Icons.location_on,
-                color: _Colors.blue,
-                size: 42,
+  List<Marker> _buildMarkers(BuildContext context,
+      SearchProvider searchProvider, LocationProvider locationProvider) {
+    List<Marker> markers = [];
+
+    // Ajouter le marqueur de localisation du client
+    if (locationProvider.userLocation != null) {
+      markers.add(
+        Marker(
+          point: LatLng(
+            locationProvider.userLocation!.latitude,
+            locationProvider.userLocation!.longitude,
+          ),
+          width: 50,
+          height: 50,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Colors.blue.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.blue,
+                    width: 2,
+                  ),
+                ),
+              ),
+              Container(
+                width: 16,
+                height: 16,
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Ajouter les marqueurs des artisans
+    markers.addAll(
+      searchProvider.artisans
+          .where((artisan) => artisan.latitude != 0 && artisan.longitude != 0)
+          .map(
+            (artisan) => Marker(
+              point: LatLng(artisan.latitude, artisan.longitude),
+              width: 50,
+              height: 50,
+              child: GestureDetector(
+                onTap: () => _showArtisanDetails(context, artisan),
+                child: const Icon(
+                  Icons.location_on,
+                  color: _Colors.blue,
+                  size: 42,
+                ),
               ),
             ),
-          ),
-        )
-        .toList();
+          )
+          .toList(),
+    );
+
+    return markers;
   }
 
   void _showArtisanDetails(BuildContext context, ArtisanModel artisan) {
@@ -257,34 +318,155 @@ class _MapScreenState extends State<MapScreen> {
   }
 }
 
-class _SearchBox extends StatelessWidget {
+class _SearchBox extends StatefulWidget {
+  @override
+  State<_SearchBox> createState() => _SearchBoxState();
+}
+
+class _SearchBoxState extends State<_SearchBox> {
+  bool _showCategories = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    // On web, `onTap` can be flaky depending on how the user clicks.
+    // Focusing the field should always reveal category chips when available.
+    _searchFocusNode.addListener(() {
+      if (_searchFocusNode.hasFocus && !_showCategories) {
+        setState(() => _showCategories = true);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocusNode.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _Colors.beigeDark, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: _Colors.blue.withValues(alpha: 0.10),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: TextField(
-        onChanged: (value) =>
-            context.read<SearchProvider>().filterArtisans(value),
-        style: const TextStyle(color: _Colors.textDark),
-        decoration: const InputDecoration(
-          hintText: 'Rechercher un artisan...',
-          hintStyle: TextStyle(color: Color(0xFFAAAFBC)),
-          prefixIcon: Icon(Icons.search, color: _Colors.blue),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 14),
-        ),
-      ),
+    return Consumer<SearchProvider>(
+      builder: (context, provider, _) {
+        return Column(
+          children: [
+            Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _Colors.beigeDark, width: 1.5),
+                boxShadow: [
+                  BoxShadow(
+                    color: _Colors.blue.withValues(alpha: 0.10),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _searchController,
+                    onChanged: (value) => provider.filterArtisans(value),
+                    focusNode: _searchFocusNode,
+                    style: const TextStyle(color: _Colors.textDark),
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher un artisan ou spécialité...',
+                      hintStyle: const TextStyle(color: Color(0xFFAAAFBC)),
+                      prefixIcon: const Icon(Icons.search, color: _Colors.blue),
+                      suffixIcon: _showCategories
+                          ? IconButton(
+                              icon: const Icon(Icons.expand_less,
+                                  color: _Colors.blue),
+                              onPressed: () =>
+                                  setState(() => _showCategories = false),
+                            )
+                          : IconButton(
+                              icon: const Icon(Icons.expand_more,
+                                  color: _Colors.blue),
+                              onPressed: () =>
+                                  setState(() => _showCategories = true),
+                            ),
+                      border: InputBorder.none,
+                      contentPadding: const EdgeInsets.symmetric(
+                          vertical: 14, horizontal: 8),
+                    ),
+                  ),
+                  if (_showCategories && provider.categories.isNotEmpty)
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: _Colors.beige.withValues(alpha: 0.5),
+                        border: Border(
+                          top: BorderSide(
+                            color: _Colors.beigeDark.withValues(alpha: 0.3),
+                          ),
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            // Bouton "Tous"
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: FilterChip(
+                                label: const Text('Tous'),
+                                selected: provider.selectedCategory.isEmpty,
+                                onSelected: (_) {
+                                  provider.resetFilters();
+                                  _searchController.clear();
+                                },
+                                backgroundColor: Colors.white,
+                                selectedColor: _Colors.blue,
+                                labelStyle: TextStyle(
+                                  color: provider.selectedCategory.isEmpty
+                                      ? Colors.white
+                                      : _Colors.textDark,
+                                ),
+                              ),
+                            ),
+                            // Catégories
+                            ...provider.categories.map((category) {
+                              final isSelected =
+                                  provider.selectedCategory.toLowerCase() ==
+                                      category.toLowerCase();
+                              return Padding(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 4),
+                                child: FilterChip(
+                                  label: Text(category),
+                                  selected: isSelected,
+                                  onSelected: (_) {
+                                    provider.filterByCategory(category);
+                                    _searchController.clear();
+                                    setState(() => _showCategories = false);
+                                  },
+                                  backgroundColor: Colors.white,
+                                  selectedColor: _Colors.blue,
+                                  labelStyle: TextStyle(
+                                    color: isSelected
+                                        ? Colors.white
+                                        : _Colors.textDark,
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

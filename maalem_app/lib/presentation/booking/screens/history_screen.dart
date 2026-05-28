@@ -27,7 +27,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     });
   }
 
-  // Fonction pour filtrer les réservations selon l'onglet
+  // Fonction mise à jour avec les statuts exacts de Wissal
   List<Booking> _getFilteredBookings(List<Booking> allBookings) {
     if (_selectedTab == 'En cours') {
       return allBookings
@@ -36,7 +36,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
     } else if (_selectedTab == 'Terminé') {
       return allBookings.where((b) => b.status == 'completed').toList();
     } else if (_selectedTab == 'Annulé') {
-      return allBookings.where((b) => b.status == 'canceled').toList();
+      // On inclut rejected (refusé par l'artisan) et cancelled (annulé par le client)
+      return allBookings
+          .where((b) => b.status == 'cancelled' || b.status == 'rejected')
+          .toList();
     }
     return allBookings;
   }

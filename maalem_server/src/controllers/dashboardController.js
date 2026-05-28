@@ -13,6 +13,15 @@ const getArtisanDashboard = async (req, res) => {
     const averageRating = Math.round(parseFloat(statsQuery.rows[0].avg_rating || 0) * 10) / 10;
     const totalReviews = parseInt(statsQuery.rows[0].total_reviews);
 
+    const bookingStatsQuery = await pool.query(
+      `SELECT
+        COUNT(*) FILTER (WHERE status = 'pending') as pending_bookings,
+        COUNT(*) FILTER (WHERE status = 'accepted') as confirmed_bookings
+       FROM bookings
+       WHERE artisan_id = $1`,
+      [artisanId]
+    );
+
     const recentReviewsQuery = await pool.query(
       `SELECT r.*, u.full_name as client_name 
        FROM reviews r 
@@ -22,10 +31,24 @@ const getArtisanDashboard = async (req, res) => {
       [artisanId]
     );
 
+    const recentBookingsQuery = await pool.query(
+      `SELECT b.id, b.booking_date, b.status, b.description, b.agreed_price,
+        b.created_at, u.full_name as client_name, u.phone as client_phone
+       FROM bookings b
+       JOIN users u ON b.client_id = u.id
+       WHERE b.artisan_id = $1
+       ORDER BY b.created_at DESC
+       LIMIT 5`,
+      [artisanId]
+    );
+
     res.status(200).json({
       averageRating,
       totalReviews,
       recentReviews: recentReviewsQuery.rows,
+      pendingBookings: parseInt(bookingStatsQuery.rows[0].pending_bookings || 0),
+      confirmedBookings: parseInt(bookingStatsQuery.rows[0].confirmed_bookings || 0),
+      recentBookings: recentBookingsQuery.rows,
     });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });
@@ -38,7 +61,7 @@ const getAdminDashboard = async (req, res) => {
       SELECT 
         (SELECT COUNT(*) FROM reviews) as total_reviews,
         (SELECT COUNT(*) FROM complaints) as total_complaints,
-        (SELECT COUNT(*) FROM complaints WHERE status = 'open') as open_complaints
+        (SELECT COUNT(*) FROM complaints WHERE status IN ('open', 'in_progress')) as open_complaints
     `);
 
     const topArtisans = await pool.query(`

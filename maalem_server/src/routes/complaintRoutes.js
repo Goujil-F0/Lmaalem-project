@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { createComplaint, getComplaints, resolveComplaint } = require('../controllers/complaintController');
-const { verifyToken } = require('../middleware/authMiddleware');
+const { verifyToken, verifyClient } = require('../middleware/authMiddleware');
 const adminMiddleware = require('../middleware/adminMiddleware');
 const { body } = require('express-validator');
 
@@ -9,9 +9,10 @@ const { body } = require('express-validator');
 router.post(
   '/',
   verifyToken,
+  verifyClient,
   [
-    body('booking_id').notEmpty().withMessage('booking_id requis'),
-    body('artisan_id').notEmpty().withMessage('artisan_id requis'),
+    body('booking_id').isInt({ min: 1 }).withMessage('booking_id invalide'),
+    body('artisan_id').isInt({ min: 1 }).withMessage('artisan_id invalide'),
     body('description').notEmpty().withMessage('description requise').isLength({ max: 1000 }),
   ],
   createComplaint

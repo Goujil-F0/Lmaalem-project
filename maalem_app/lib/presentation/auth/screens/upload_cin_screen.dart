@@ -1,6 +1,5 @@
 import 'dart:typed_data';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
@@ -28,39 +27,29 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
   bool _isLoading = false;
 
   Future<void> _pickFile(bool isRecto) async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['jpg', 'jpeg', 'png', 'pdf'],
-      withData: true,
-    );
+    final selected = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (selected == null) return;
 
-    final file = result?.files.single;
-    if (file == null) return;
-
-    final bytes = file.bytes;
-    if (bytes == null) {
+    final bytes = await selected.readAsBytes();
+    if (bytes.isEmpty) {
       _showSnackBar('Fichier illisible. Reessayez.', Colors.redAccent);
       return;
     }
 
-    final selected = XFile.fromData(
-      bytes,
-      name: file.name,
-      mimeType: _mimeTypeFor(file.name),
-    );
+    final fileName = selected.name;
 
     if (!mounted) return;
     setState(() {
       if (isRecto) {
         _rectoFile = selected;
         _rectoBytes = bytes;
-        _rectoName = file.name;
-        _rectoIsPdf = _isPdf(file.name);
+        _rectoName = fileName;
+        _rectoIsPdf = false;
       } else {
         _versoFile = selected;
         _versoBytes = bytes;
-        _versoName = file.name;
-        _versoIsPdf = _isPdf(file.name);
+        _versoName = fileName;
+        _versoIsPdf = false;
       }
     });
   }

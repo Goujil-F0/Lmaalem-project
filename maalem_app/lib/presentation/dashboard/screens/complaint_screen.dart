@@ -98,6 +98,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   }
 
   Future<void> _resolveComplaint(int complaintId) async {
+    setState(() => _isLoading = true);
     try {
       await _service().resolveComplaint(complaintId);
       await _loadComplaints();
@@ -107,6 +108,8 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
           SnackBar(content: Text('Erreur : $e')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -200,6 +203,7 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
       itemCount: _complaints.length,
       itemBuilder: (context, index) {
         final complaint = _complaints[index];
+        final isOpen = _isOpenStatus(complaint['status']);
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
           shape: RoundedRectangleBorder(
@@ -224,28 +228,34 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: complaint['status'] == 'open'
+                        color: isOpen
                             ? AppColors.lightBlue.withValues(alpha: 0.2)
                             : Colors.green.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        complaint['status'] == 'open'
-                            ? 'En attente'
-                            : 'Résolu',
+                        isOpen ? 'En attente' : 'Résolu',
                         style: TextStyle(
-                          color: complaint['status'] == 'open'
-                              ? AppColors.teal
-                              : Colors.green,
+                          color: isOpen ? AppColors.teal : Colors.green,
                           fontSize: 12,
                         ),
                       ),
                     ),
                   ],
                 ),
+                if (complaint['artisan_name'] != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    'Artisan: ${complaint['artisan_name']}',
+                    style: const TextStyle(
+                      color: AppColors.textGrey,
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 8),
                 Text(complaint['description'] ?? ''),
-                if (complaint['status'] == 'open') ...[
+                if (isOpen) ...[
                   const SizedBox(height: 12),
                   SizedBox(
                     width: double.infinity,
@@ -268,5 +278,9 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
         );
       },
     );
+  }
+
+  bool _isOpenStatus(dynamic status) {
+    return status == 'open' || status == 'in_progress';
   }
 }

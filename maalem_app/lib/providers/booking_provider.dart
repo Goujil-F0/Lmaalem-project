@@ -62,4 +62,29 @@ class BookingProvider with ChangeNotifier {
       notifyListeners();
     }
   }
+
+  // Fonction pour créer une réservation
+  Future<bool> addBooking(int clientId, int artisanId, String description,
+      double price, DateTime date) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final success = await _bookingService.createBooking(
+          clientId, artisanId, description, price, date);
+
+      if (success) {
+        // Si ça a marché, on recharge l'historique pour que la nouvelle réservation apparaisse !
+        await fetchBookingHistory(clientId, 'client');
+        return true;
+      }
+      return false;
+    } catch (e) {
+      _errorMessage = "Erreur lors de la création de la réservation";
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 }

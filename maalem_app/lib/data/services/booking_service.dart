@@ -49,4 +49,29 @@ class BookingService {
           'Erreur de connexion lors de la mise à jour du statut: $e');
     }
   }
+
+  // 3. Créer une nouvelle réservation (POST)
+  Future<bool> createBooking(int clientId, int artisanId, String description,
+      double agreedPrice, DateTime bookingDate) async {
+    final url = Uri.parse(ApiEndpoints.bookings);
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'client_id': clientId,
+          'artisan_id': artisanId,
+          'description': description,
+          'agreed_price': agreedPrice,
+          'booking_date': bookingDate.toIso8601String(),
+        }),
+      );
+
+      return response.statusCode == 201; // 201 = Created
+    } catch (e) {
+      throw Exception(
+          'Erreur de connexion lors de la création de la réservation: $e');
+    }
+  }
 }

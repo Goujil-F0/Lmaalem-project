@@ -14,6 +14,7 @@ class ArtisanModel {
   final int? reviewCount;
   final double? averageRating;
   final double? hourlyRate;
+  final List<String> portfolioImages;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -33,6 +34,7 @@ class ArtisanModel {
     this.reviewCount,
     this.averageRating,
     this.hourlyRate,
+    this.portfolioImages = const [],
     this.createdAt,
     this.updatedAt,
   });
@@ -50,16 +52,22 @@ class ArtisanModel {
           json['speciality_name'] ??
           '',
       city: json['city'] ?? '',
-      bio: json['bio'],
+      bio: json['bio'] ?? json['description'],
       latitude: _toDouble(json['latitude']) ?? 0.0,
       longitude: _toDouble(json['longitude']) ?? 0.0,
       isAvailable: json['isAvailable'] ?? json['is_available'] ?? true,
-      profileImage: json['profileImage'] ?? json['profile_image'],
+      profileImage: json['profileImage'] ??
+          json['profile_image'] ??
+          json['profile_photo_url'] ??
+          json['profilePhotoUrl'],
       rating: _toDouble(json['rating']) ?? _toDouble(json['average_rating']),
       reviewCount: _toInt(json['reviewCount']) ?? _toInt(json['review_count']),
       averageRating:
           _toDouble(json['averageRating']) ?? _toDouble(json['average_rating']),
       hourlyRate: _toDouble(json['hourlyRate']) ?? _toDouble(json['hourly_rate']),
+      portfolioImages: _toStringList(
+        json['portfolioImages'] ?? json['portfolio_images'],
+      ),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -87,6 +95,7 @@ class ArtisanModel {
       'reviewCount': reviewCount,
       'averageRating': averageRating,
       'hourlyRate': hourlyRate,
+      'portfolioImages': portfolioImages,
       'createdAt': createdAt?.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -109,6 +118,7 @@ class ArtisanModel {
     int? reviewCount,
     double? averageRating,
     double? hourlyRate,
+    List<String>? portfolioImages,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -128,6 +138,7 @@ class ArtisanModel {
       reviewCount: reviewCount ?? this.reviewCount,
       averageRating: averageRating ?? this.averageRating,
       hourlyRate: hourlyRate ?? this.hourlyRate,
+      portfolioImages: portfolioImages ?? this.portfolioImages,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -162,4 +173,11 @@ double? _toDouble(dynamic value) {
   if (value is num) return value.toDouble();
   if (value is String) return double.tryParse(value);
   return null;
+}
+
+List<String> _toStringList(dynamic value) {
+  if (value is List) {
+    return value.whereType<String>().toList();
+  }
+  return const [];
 }

@@ -91,6 +91,7 @@ class User {
 
   bool get isArtisan => role == 'artisan';
   bool get isClient => role == 'client';
+  bool get isAdmin => role == 'admin';
 }
 
 int? _toInt(dynamic value) {

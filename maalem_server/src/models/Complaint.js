@@ -1,10 +1,10 @@
 const pool = require('./db');
 
-// Créer une réclamation (Note l'ajout de booking_id qui est obligatoire chez toi)
+// Créer une réclamation
 const createComplaint = async (booking_id, client_id, artisan_id, description) => {
   const result = await pool.query(
     `INSERT INTO complaints (booking_id, client_id, artisan_id, description, status)
-     VALUES ($1, $2, $3, $4, 'pending')
+     VALUES ($1, $2, $3, $4, 'open')
      RETURNING *`,
     [booking_id, client_id, artisan_id, description]
   );

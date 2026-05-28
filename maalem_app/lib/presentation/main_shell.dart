@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/screens/profile_artisan_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/profile_client_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/admin_dashboard_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/complaint_screen.dart';
+import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
 import 'package:maalem_app/presentation/home/screens/client_home_screen.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
@@ -22,8 +25,17 @@ class _MainShellState extends State<MainShell> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     final isArtisan = user?.isArtisan ?? false;
-    final pages = isArtisan ? _artisanPages : _clientPages;
-    final items = isArtisan ? _artisanItems : _clientItems;
+    final isAdmin = user?.isAdmin ?? false;
+    final pages = isAdmin
+        ? _adminPages
+        : isArtisan
+            ? _artisanPages(user?.id ?? 0)
+            : _clientPages;
+    final items = isAdmin
+        ? _adminItems
+        : isArtisan
+            ? _artisanItems
+            : _clientItems;
 
     return Scaffold(
       body: IndexedStack(
@@ -64,12 +76,22 @@ class _MainShellState extends State<MainShell> {
         ProfileClientScreen(),
       ];
 
-  List<Widget> get _artisanPages => const [
-        _ConstructionScreen(title: 'Dashboard'),
-        _ConstructionScreen(title: 'Missions'),
-        MapScreen(),
-        _ConstructionScreen(title: 'Maison'),
-        ProfileArtisanScreen(),
+  List<Widget> _artisanPages(int artisanId) => [
+        DashboardScreen(artisanId: artisanId),
+        const _ConstructionScreen(title: 'Missions'),
+        const MapScreen(),
+        const _ConstructionScreen(title: 'Maison'),
+        const ProfileArtisanScreen(),
+      ];
+
+  List<Widget> get _adminPages => const [
+        AdminDashboardScreen(),
+        ComplaintScreen(
+          bookingId: 0,
+          artisanId: 0,
+          isAdmin: true,
+        ),
+        _ConstructionScreen(title: 'Compte'),
       ];
 
   List<SalomonBottomBarItem> get _clientItems => [
@@ -101,6 +123,18 @@ class _MainShellState extends State<MainShell> {
         SalomonBottomBarItem(
             icon: const Icon(Icons.house_outlined),
             title: const Text('Maison')),
+        SalomonBottomBarItem(
+            icon: const Icon(Icons.person_outline),
+            title: const Text('Compte')),
+      ];
+
+  List<SalomonBottomBarItem> get _adminItems => [
+        SalomonBottomBarItem(
+            icon: const Icon(Icons.dashboard_outlined),
+            title: const Text('Dashboard')),
+        SalomonBottomBarItem(
+            icon: const Icon(Icons.report_problem_outlined),
+            title: const Text('Réclamations')),
         SalomonBottomBarItem(
             icon: const Icon(Icons.person_outline),
             title: const Text('Compte')),

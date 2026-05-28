@@ -3,17 +3,45 @@ const pool = require('../models/db'); // ta connexion PostgreSQL
 
 const getAllArtisans = async (req, res) => {
   try {
-    // En prod : remplace les mockData par une vraie requête SQL
-    // const result = await pool.query(`
-    //   SELECT u.id, u.full_name, u.phone, u.city, u.latitude, u.longitude,
-    //          s.name as speciality, ap.description, ap.hourly_rate,
-    //          ap.is_available, ap.average_rating
-    //   FROM users u
-    //   JOIN artisan_profiles ap ON ap.user_id = u.id
-    //   JOIN specialties s ON ap.specialty_id = s.id
-    //   WHERE u.role = 'artisan'
-    // `);
-    // return res.json(result.rows);
+    let result;
+
+    try {
+      result = await pool.query(`
+        SELECT u.id, u.full_name, u.email, u.phone, u.city, u.latitude, u.longitude,
+          s.name as speciality, ap.description, ap.hourly_rate,
+          ap.is_available, ap.profile_photo_url, ap.portfolio_images,
+          COALESCE(ROUND(AVG(r.rating)::NUMERIC, 1), ap.average_rating, 0) as average_rating,
+          COUNT(r.id) as review_count
+        FROM users u
+        JOIN artisan_profiles ap ON ap.user_id = u.id
+        LEFT JOIN specialties s ON ap.specialty_id = s.id
+        LEFT JOIN reviews r ON r.artisan_id = u.id
+        WHERE u.role = 'artisan'
+        GROUP BY u.id, s.name, ap.user_id
+        ORDER BY u.full_name
+      `);
+    } catch (error) {
+      if (error.code !== '42703') throw error;
+
+      result = await pool.query(`
+        SELECT u.id, u.full_name, u.email, u.phone, u.city, u.latitude, u.longitude,
+          s.name as speciality, ap.description, ap.hourly_rate,
+          ap.is_available, ap.profile_photo_url, ARRAY[]::TEXT[] as portfolio_images,
+          COALESCE(ROUND(AVG(r.rating)::NUMERIC, 1), ap.average_rating, 0) as average_rating,
+          COUNT(r.id) as review_count
+        FROM users u
+        JOIN artisan_profiles ap ON ap.user_id = u.id
+        LEFT JOIN specialties s ON ap.specialty_id = s.id
+        LEFT JOIN reviews r ON r.artisan_id = u.id
+        WHERE u.role = 'artisan'
+        GROUP BY u.id, s.name, ap.user_id
+        ORDER BY u.full_name
+      `);
+    }
+
+    if (result.rows.length > 0) {
+      return res.status(200).json(result.rows);
+    }
 
     const mockArtisans = [
       // Plomberie
@@ -29,6 +57,8 @@ const getAllArtisans = async (req, res) => {
         hourly_rate: 150.00,
         is_available: true,
         average_rating: 4.8,
+        review_count: 0,
+        portfolio_images: [],
       },
       // Électricité
       {
@@ -43,6 +73,8 @@ const getAllArtisans = async (req, res) => {
         hourly_rate: 120.00,
         is_available: true,
         average_rating: 4.5,
+        review_count: 0,
+        portfolio_images: [],
       },
       // Maçonnerie
       {
@@ -57,6 +89,8 @@ const getAllArtisans = async (req, res) => {
         hourly_rate: 130.00,
         is_available: true,
         average_rating: 4.7,
+        review_count: 0,
+        portfolio_images: [],
       },
       // Peinture
       {

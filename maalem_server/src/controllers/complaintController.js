@@ -11,6 +11,17 @@ const createComplaint = async (req, res) => {
     const { booking_id, artisan_id, description } = req.body;
     const client_id = req.user.id;
 
+    const booking = await pool.query(
+      `SELECT id
+       FROM bookings
+       WHERE id = $1 AND client_id = $2 AND artisan_id = $3`,
+      [booking_id, client_id, artisan_id]
+    );
+
+    if (booking.rows.length === 0) {
+      return res.status(404).json({ message: 'Réservation introuvable pour ce client et cet artisan.' });
+    }
+
     const result = await pool.query(
       `INSERT INTO complaints (booking_id, client_id, artisan_id, description)
        VALUES ($1, $2, $3, $4) RETURNING *`,

@@ -5,6 +5,44 @@ const path = require('path');
 const db = require('../models/db');
 const { createUser, findUserByEmail } = require('../models/userModel');
 
+const getUserWithProfile = async (userId) => {
+  const result = await db.query(
+    `SELECT u.id,
+            u.full_name,
+            u.email,
+            u.role,
+            u.phone,
+            u.city,
+            u.neighborhood,
+            u.latitude,
+            u.longitude,
+            json_build_object(
+              'user_id', ap.user_id,
+              'specialty_id', ap.specialty_id,
+              'specialty', s.name,
+              'description', ap.description,
+              'hourly_rate', ap.hourly_rate,
+              'is_available', COALESCE(ap.is_available, true),
+              'cin_url', ap.cin_url,
+              'cin_verified', COALESCE(ap.cin_verified, false),
+              'average_rating', COALESCE(ap.average_rating, 0),
+              'portfolio_images', ARRAY[]::TEXT[]
+            ) AS profile
+     FROM users u
+     LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
+     LEFT JOIN specialties s ON s.id = ap.specialty_id
+     WHERE u.id = $1`,
+    [userId]
+  );
+
+  const user = result.rows[0];
+  if (!user) return null;
+  if (user.role !== 'artisan' || user.profile?.user_id === null) {
+    user.profile = null;
+  }
+  return user;
+};
+
 const register = async (req, res) => {
   try {
     const {
@@ -144,9 +182,78 @@ const updateAvailability = async (req, res) => {
   }
 };
 
+const updateClientProfile = async (req, res) => {
+  try {
+    const {
+      full_name,
+      email,
+      phone,
+      city,
+      neighborhood,
+      latitude,
+      longitude,
+    } = req.body;
+
+    const result = await db.query(
+      `UPDATE users
+       SET full_name = COALESCE($1, full_name),
+           email = COALESCE($2, email),
+           phone = COALESCE($3, phone),
+           city = COALESCE($4, city),
+           neighborhood = COALESCE($5, neighborhood),
+           latitude = COALESCE($6, latitude),
+           longitude = COALESCE($7, longitude)
+       WHERE id = $8
+       RETURNING id, full_name, email, role, phone, city, neighborhood, latitude, longitude`,
+      [full_name, email, phone, city, neighborhood, latitude, longitude, req.user.id]
+    );
+
+    res.json({ message: 'Profil mis a jour', user: result.rows[0] });
+  } catch (error) {
+    console.error('Update profile error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+const updateArtisanProfile = async (req, res) => {
+  try {
+    const { specialty, hourly_rate, description } = req.body;
+    let specialtyId = null;
+
+    if (specialty && specialty.trim()) {
+      const specialtyResult = await db.query(
+        `INSERT INTO specialties (group_id, name)
+         VALUES ((SELECT id FROM category_groups ORDER BY id LIMIT 1), $1)
+         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id`,
+        [specialty.trim()]
+      );
+      specialtyId = specialtyResult.rows[0].id;
+    }
+
+    await db.query(
+      `INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, description, is_available)
+       VALUES ($1, $2, $3, $4, true)
+       ON CONFLICT (user_id) DO UPDATE
+       SET specialty_id = COALESCE(EXCLUDED.specialty_id, artisan_profiles.specialty_id),
+           hourly_rate = COALESCE(EXCLUDED.hourly_rate, artisan_profiles.hourly_rate),
+           description = COALESCE(EXCLUDED.description, artisan_profiles.description)`,
+      [req.user.id, specialtyId, hourly_rate, description]
+    );
+
+    const user = await getUserWithProfile(req.user.id);
+    res.json({ message: 'Profil artisan mis a jour', user });
+  } catch (error) {
+    console.error('Update artisan profile error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 module.exports = {
   register,
   login,
   uploadCinHandler,
   updateAvailability,
+  updateClientProfile,
+  updateArtisanProfile,
 };

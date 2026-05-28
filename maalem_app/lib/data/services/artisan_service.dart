@@ -4,10 +4,13 @@ import '../models/artisan_model.dart';
 import 'api_client.dart';
 
 class ArtisanService {
-  Future<List<ArtisanModel>> fetchAllArtisans() async {
+  Future<List<ArtisanModel>> fetchAllArtisans({String query = ''}) async {
     try {
+      final uri = Uri.parse('${ApiClient.baseUrl}/api/artisans').replace(
+        queryParameters: query.trim().isEmpty ? null : {'q': query.trim()},
+      );
       final response = await http.get(
-        Uri.parse('${ApiClient.baseUrl}/api/artisans'),
+        uri,
         headers: ApiClient.getHeaders(null),
       );
 

@@ -16,7 +16,9 @@ class _Colors {
 }
 
 class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+  final String initialQuery;
+
+  const MapScreen({super.key, this.initialQuery = ''});
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -27,7 +29,11 @@ class _MapScreenState extends State<MapScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<SearchProvider>().loadArtisans();
+      final searchProvider = context.read<SearchProvider>();
+      if (widget.initialQuery.trim().isNotEmpty) {
+        searchProvider.filterArtisans(widget.initialQuery);
+      }
+      searchProvider.loadArtisans();
       // Démarrer le suivi de la localisation du client
       context.read<LocationProvider>().startLocationUpdates();
     });
@@ -160,9 +166,9 @@ class _MapScreenState extends State<MapScreen> {
               height: 50,
               child: GestureDetector(
                 onTap: () => _showArtisanDetails(context, artisan),
-                child: const Icon(
+                child: Icon(
                   Icons.location_on,
-                  color: _Colors.blue,
+                  color: artisan.isAvailable ? _Colors.blue : Colors.grey,
                   size: 42,
                 ),
               ),
@@ -244,25 +250,7 @@ class _MapScreenState extends State<MapScreen> {
                     ],
                   ),
                 ),
-                if (artisan.isAvailable)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: _Colors.blue.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      'Disponible',
-                      style: TextStyle(
-                        color: _Colors.blue,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
+                _AvailabilityBadge(isAvailable: artisan.isAvailable),
               ],
             ),
             const SizedBox(height: 20),
@@ -331,6 +319,10 @@ class _SearchBoxState extends State<_SearchBox> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final query = context.read<SearchProvider>().searchQuery;
+      if (query.isNotEmpty) _searchController.text = query;
+    });
     // On web, `onTap` can be flaky depending on how the user clicks.
     // Focusing the field should always reveal category chips when available.
     _searchFocusNode.addListener(() {
@@ -374,7 +366,7 @@ class _SearchBoxState extends State<_SearchBox> {
                     focusNode: _searchFocusNode,
                     style: const TextStyle(color: _Colors.textDark),
                     decoration: InputDecoration(
-                      hintText: 'Rechercher un artisan ou spécialité...',
+                      hintText: 'Decrivez votre probleme ou cherchez un artisan...',
                       hintStyle: const TextStyle(color: Color(0xFFAAAFBC)),
                       prefixIcon: const Icon(Icons.search, color: _Colors.blue),
                       suffixIcon: _showCategories
@@ -443,9 +435,9 @@ class _SearchBoxState extends State<_SearchBox> {
                                   label: Text(category),
                                   selected: isSelected,
                                   onSelected: (_) {
-                                    provider.filterByCategory(category);
-                                    _searchController.clear();
-                                    setState(() => _showCategories = false);
+                                  provider.filterArtisans('', category: category);
+                                  _searchController.clear();
+                                  setState(() => _showCategories = false);
                                   },
                                   backgroundColor: Colors.white,
                                   selectedColor: _Colors.blue,
@@ -461,12 +453,98 @@ class _SearchBoxState extends State<_SearchBox> {
                         ),
                       ),
                     ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _StatusChip(
+                            label: 'Tous',
+                            selected: provider.availabilityFilter == null,
+                            onSelected: () =>
+                                provider.filterByAvailability(null),
+                          ),
+                          _StatusChip(
+                            label: 'Disponibles (${provider.availableCount})',
+                            selected: provider.availabilityFilter == true,
+                            onSelected: () =>
+                                provider.filterByAvailability(true),
+                          ),
+                          _StatusChip(
+                            label:
+                                'Indisponibles (${provider.unavailableCount})',
+                            selected: provider.availabilityFilter == false,
+                            onSelected: () =>
+                                provider.filterByAvailability(false),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
           ],
         );
       },
+    );
+  }
+}
+
+class _AvailabilityBadge extends StatelessWidget {
+  final bool isAvailable;
+
+  const _AvailabilityBadge({required this.isAvailable});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isAvailable ? _Colors.blue : Colors.grey.shade700;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        isAvailable ? 'Disponible' : 'Indisponible',
+        style: TextStyle(
+          color: color,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onSelected;
+
+  const _StatusChip({
+    required this.label,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: selected,
+        onSelected: (_) => onSelected(),
+        backgroundColor: Colors.white,
+        selectedColor: _Colors.blue,
+        labelStyle: TextStyle(
+          color: selected ? Colors.white : _Colors.textDark,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

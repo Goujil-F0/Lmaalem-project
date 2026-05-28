@@ -10,7 +10,7 @@ const createUser = async (full_name, email, password_hash, role, phone, city, ne
       `INSERT INTO users 
         (full_name, email, password_hash, role, phone, city, neighborhood, latitude, longitude)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, full_name, email, role, city, neighborhood`,
+       RETURNING id, full_name, email, role, phone, city, neighborhood, latitude, longitude`,
       [full_name, email, password_hash, role, phone, city, neighborhood, latitude, longitude]
     );
 
@@ -20,8 +20,8 @@ const createUser = async (full_name, email, password_hash, role, phone, city, ne
     let resultData = user;
     if (role === 'artisan') {
       await client.query(
-        `INSERT INTO artisan_profiles (user_id) VALUES ($1)`,
-        [user.id]
+        `INSERT INTO artisan_profiles (user_id, is_available) VALUES ($1, $2)`,
+        [user.id, true]
       );
       const profileResult = await client.query(
         'SELECT * FROM artisan_profiles WHERE user_id = $1',

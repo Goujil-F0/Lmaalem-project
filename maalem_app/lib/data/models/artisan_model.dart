@@ -50,7 +50,7 @@ class ArtisanModel {
           json['speciality_name'] ??
           '',
       city: json['city'] ?? '',
-      bio: json['bio'],
+      bio: json['bio'] ?? json['description'],
       latitude: _toDouble(json['latitude']) ?? 0.0,
       longitude: _toDouble(json['longitude']) ?? 0.0,
       isAvailable: json['isAvailable'] ?? json['is_available'] ?? true,

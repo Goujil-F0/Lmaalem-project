@@ -1,290 +1,203 @@
 // controllers/artisanController.js
-const pool = require('../models/db'); // ta connexion PostgreSQL
+const pool = require('../models/db');
+
+const intentRules = [
+  {
+    category: 'plomberie',
+    jobNames: ['plombier', 'plomberie', 'sanitaire'],
+    phrases: [
+      'pas d eau',
+      'plus d eau',
+      'fuite d eau',
+      'eau qui coule',
+      'robinet fuit',
+      'wc bouche',
+      'evier bouche',
+      'lavabo bouche',
+      'chauffe eau',
+      'canalisation bouchee',
+      'tuyau casse',
+      'lma kayn mochkil',
+    ],
+    symptoms: ['fuite', 'coule', 'bouche', 'deborde', 'goutte', 'inondation', 'pression', 'humide', 'odeur'],
+    objects: ['eau', 'lma', 'robinet', 'evier', 'lavabo', 'wc', 'toilette', 'douche', 'baignoire', 'tuyau', 'canalisation', 'siphon', 'chauffe eau'],
+  },
+  {
+    category: 'electricite',
+    jobNames: ['electricien', 'electricite'],
+    phrases: ['pas de courant', 'plus de courant', 'prise brule', 'prise ne marche pas', 'disjoncteur saute', 'compteur saute', 'court circuit', 'lumiere clignote', 'ma kaynch do', 'ma kaynch daw'],
+    symptoms: ['courant', 'saute', 'brule', 'etincelle', 'clignote', 'panne', 'eteint', 'allume', 'daw', 'do'],
+    objects: ['prise', 'interrupteur', 'lampe', 'lumiere', 'cable', 'fil', 'tableau', 'disjoncteur', 'compteur'],
+  },
+  {
+    category: 'serrurerie',
+    jobNames: ['serrurier', 'serrurerie'],
+    phrases: ['porte bloquee', 'cle cassee', 'cle perdue', 'porte ne ferme pas', 'porte ne s ouvre pas', 'changer serrure'],
+    symptoms: ['bloque', 'casse', 'perdu', 'coince', 'ferme pas', 'ouvre pas'],
+    objects: ['serrure', 'cle', 'porte', 'verrou', 'cylindre'],
+  },
+  {
+    category: 'climatisation',
+    jobNames: ['climatisation', 'climatiseur', 'technicien clim'],
+    phrases: ['clim ne refroidit pas', 'clim coule', 'clim fait du bruit', 'installer clim', 'entretien clim'],
+    symptoms: ['froid', 'chaud', 'bruit', 'coule', 'refroidit', 'chauffe'],
+    objects: ['clim', 'climatiseur', 'air conditionne', 'split', 'ventilation'],
+  },
+  {
+    category: 'menuiserie',
+    jobNames: ['menuisier', 'menuiserie', 'bois'],
+    phrases: ['porte cassee', 'fenetre cassee', 'placard casse', 'meuble casse', 'installer cuisine'],
+    symptoms: ['casse', 'coince', 'grince', 'reparer', 'monter', 'installer'],
+    objects: ['bois', 'porte', 'fenetre', 'placard', 'meuble', 'cuisine'],
+  },
+  {
+    category: 'peinture',
+    jobNames: ['peintre', 'peinture'],
+    phrases: ['repeindre mur', 'peinture mur', 'peinture plafond'],
+    symptoms: ['repeindre', 'tache', 'ecaille', 'couleur', 'peindre'],
+    objects: ['mur', 'plafond', 'facade', 'chambre', 'salon'],
+  },
+  {
+    category: 'carrelage',
+    jobNames: ['carreleur', 'carrelage'],
+    phrases: ['carrelage casse', 'poser carrelage', 'joint carrelage'],
+    symptoms: ['casse', 'fissure', 'poser', 'joint', 'remplacer'],
+    objects: ['carrelage', 'carreau', 'sol', 'faience'],
+  },
+  {
+    category: 'maconnerie',
+    jobNames: ['macon', 'maconnerie'],
+    phrases: ['mur fissure', 'construire mur', 'casser mur'],
+    symptoms: ['fissure', 'construire', 'casser', 'beton', 'ciment'],
+    objects: ['mur', 'brique', 'beton', 'ciment', 'dalle'],
+  },
+  {
+    category: 'nettoyage',
+    jobNames: ['nettoyage', 'menage'],
+    phrases: ['nettoyage maison', 'menage complet', 'apres travaux'],
+    symptoms: ['sale', 'nettoyer', 'laver', 'poussiere', 'tache'],
+    objects: ['maison', 'appartement', 'bureau', 'vitre', 'sol'],
+  },
+  {
+    category: 'jardinage',
+    jobNames: ['jardinier', 'jardinage'],
+    phrases: ['couper herbe', 'tailler arbre', 'arroser jardin'],
+    symptoms: ['couper', 'tailler', 'planter', 'arroser', 'entretenir'],
+    objects: ['jardin', 'herbe', 'arbre', 'plante', 'gazon'],
+  },
+];
+
+const normalize = (value = '') =>
+  value
+    .toString()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const detectProblemIntent = (query) => {
+  const normalizedQuery = normalize(query);
+  if (normalizedQuery.length < 3) return { category: '', score: 0 };
+
+  const scores = {};
+  for (const rule of intentRules) {
+    let score = 0;
+
+    for (const jobName of rule.jobNames) {
+      if (normalizedQuery.includes(jobName)) score += 7;
+    }
+    for (const phrase of rule.phrases) {
+      if (normalizedQuery.includes(phrase)) score += 6;
+    }
+    for (const symptom of rule.symptoms) {
+      if (normalizedQuery.includes(symptom)) score += 3;
+    }
+    for (const object of rule.objects) {
+      if (normalizedQuery.includes(object)) score += 2;
+    }
+
+    if (score > 0) scores[rule.category] = score;
+  }
+
+  const best = Object.entries(scores).sort((a, b) => b[1] - a[1])[0];
+  if (!best || best[1] < 4) return { category: '', score: 0 };
+  return { category: best[0], score: best[1] };
+};
 
 const getAllArtisans = async (req, res) => {
   try {
-    // En prod : remplace les mockData par une vraie requête SQL
-    // const result = await pool.query(`
-    //   SELECT u.id, u.full_name, u.phone, u.city, u.latitude, u.longitude,
-    //          s.name as speciality, ap.description, ap.hourly_rate,
-    //          ap.is_available, ap.average_rating
-    //   FROM users u
-    //   JOIN artisan_profiles ap ON ap.user_id = u.id
-    //   JOIN specialties s ON ap.specialty_id = s.id
-    //   WHERE u.role = 'artisan'
-    // `);
-    // return res.json(result.rows);
+    const query = req.query.q || '';
+    const normalizedQuery = normalize(query);
+    const intent = detectProblemIntent(query);
 
-    const mockArtisans = [
-      // Plomberie
-      {
-        id: 1,
-        full_name: "Hassan Benali",
-        phone: "0661234567",
-        city: "Casablanca",
-        latitude: 33.5731,
-        longitude: -7.5898,
-        speciality: "Plomberie",
-        description: "Expert en plomberie, 10 ans d'expérience",
-        hourly_rate: 150.00,
-        is_available: true,
-        average_rating: 4.8,
-      },
-      // Électricité
-      {
-        id: 2,
-        full_name: "Fatima Zahra",
-        phone: "0662345678",
-        city: "Casablanca",
-        latitude: 33.5800,
-        longitude: -7.6200,
-        speciality: "Électricité",
-        description: "Électricienne certifiée, 8 ans d'expérience",
-        hourly_rate: 120.00,
-        is_available: true,
-        average_rating: 4.5,
-      },
-      // Maçonnerie
-      {
-        id: 3,
-        full_name: "Ahmed Makni",
-        phone: "0663456789",
-        city: "Marrakech",
-        latitude: 31.6295,
-        longitude: -8.0089,
-        speciality: "Maçonnerie",
-        description: "Maçon expert, travaux de qualité supérieure",
-        hourly_rate: 130.00,
-        is_available: true,
-        average_rating: 4.7,
-      },
-      // Peinture
-      {
-        id: 4,
-        full_name: "Karim Bouhassoun",
-        phone: "0664567891",
-        city: "Rabat",
-        latitude: 34.0209,
-        longitude: -6.8416,
-        speciality: "Peinture",
-        description: "Peintre professionnel - finitions impeccables",
-        hourly_rate: 100.00,
-        is_available: true,
-        average_rating: 4.6,
-      },
-      // Carrelage
-      {
-        id: 5,
-        full_name: "Mohammed El Kadi",
-        phone: "0665678912",
-        city: "Fez",
-        latitude: 34.0333,
-        longitude: -5.0033,
-        speciality: "Carrelage",
-        description: "Carreleur avec 15 ans d'expérience",
-        hourly_rate: 140.00,
-        is_available: true,
-        average_rating: 4.9,
-      },
-      // Menuiserie
-      {
-        id: 6,
-        full_name: "Sofia Bennani",
-        phone: "0666789123",
-        city: "Tangier",
-        latitude: 35.7667,
-        longitude: -5.8167,
-        speciality: "Menuiserie",
-        description: "Menuisier expert en bois massif",
-        hourly_rate: 135.00,
-        is_available: true,
-        average_rating: 4.8,
-      },
-      // Climatisation
-      {
-        id: 7,
-        full_name: "Rachid Amezian",
-        phone: "0667891234",
-        city: "Agadir",
-        latitude: 30.4278,
-        longitude: -9.5981,
-        speciality: "Climatisation",
-        description: "Installation et maintenance climatisation",
-        hourly_rate: 125.00,
-        is_available: true,
-        average_rating: 4.4,
-      },
-      // Serrurerie
-      {
-        id: 8,
-        full_name: "Noureddine Alaoui",
-        phone: "0668901245",
-        city: "Casablanca",
-        latitude: 33.5900,
-        longitude: -7.6100,
-        speciality: "Serrurerie",
-        description: "Serrurier spécialisé en sécurité",
-        hourly_rate: 110.00,
-        is_available: true,
-        average_rating: 4.5,
-      },
-      // Réparation électroménager
-      {
-        id: 9,
-        full_name: "Youssef Bennani",
-        phone: "0669012356",
-        city: "Marrakech",
-        latitude: 31.6300,
-        longitude: -8.0100,
-        speciality: "Réparation électroménager",
-        description: "Réparation tous types d'électroménager",
-        hourly_rate: 115.00,
-        is_available: true,
-        average_rating: 4.3,
-      },
-      // Plâtrerie / Staff
-      {
-        id: 10,
-        full_name: "Omar Fassi",
-        phone: "0670123467",
-        city: "Casablanca",
-        latitude: 33.5750,
-        longitude: -7.5850,
-        speciality: "Plâtrerie / Staff",
-        description: "Plâtrier expérimenté en décoration",
-        hourly_rate: 105.00,
-        is_available: true,
-        average_rating: 4.6,
-      },
-      // Jardinage
-      {
-        id: 11,
-        full_name: "Laila Moussaoui",
-        phone: "0671234578",
-        city: "Fez",
-        latitude: 34.0400,
-        longitude: -5.0050,
-        speciality: "Jardinage",
-        description: "Paysagiste et jardinière experte",
-        hourly_rate: 90.00,
-        is_available: true,
-        average_rating: 4.7,
-      },
-      // Domotique
-      {
-        id: 12,
-        full_name: "Technician Smart",
-        phone: "0672345689",
-        city: "Rabat",
-        latitude: 34.0250,
-        longitude: -6.8350,
-        speciality: "Domotique",
-        description: "Spécialiste en systèmes domotiques modernes",
-        hourly_rate: 160.00,
-        is_available: true,
-        average_rating: 4.9,
-      },
-      // Étanchéité
-      {
-        id: 13,
-        full_name: "Ibrahim Khaled",
-        phone: "0673456790",
-        city: "Casablanca",
-        latitude: 33.5800,
-        longitude: -7.5950,
-        speciality: "Étanchéité",
-        description: "Expert en étanchéité toiture et terrasse",
-        hourly_rate: 145.00,
-        is_available: true,
-        average_rating: 4.8,
-      },
-      // Isolation thermique & phonique
-      {
-        id: 14,
-        full_name: "Taha Bennani",
-        phone: "0674567801",
-        city: "Marrakech",
-        latitude: 31.6250,
-        longitude: -8.0150,
-        speciality: "Isolation thermique & phonique",
-        description: "Spécialiste en isolation écologique",
-        hourly_rate: 140.00,
-        is_available: true,
-        average_rating: 4.7,
-      },
-      // Nettoyage
-      {
-        id: 15,
-        full_name: "Zainab Idrissi",
-        phone: "0675678912",
-        city: "Tangier",
-        latitude: 35.7700,
-        longitude: -5.8200,
-        speciality: "Nettoyage",
-        description: "Service de nettoyage professionnel",
-        hourly_rate: 80.00,
-        is_available: true,
-        average_rating: 4.4,
-      },
-      // Panneaux solaires
-      {
-        id: 16,
-        full_name: "Majid Tahri",
-        phone: "0676789023",
-        city: "Agadir",
-        latitude: 30.4300,
-        longitude: -9.6000,
-        speciality: "Panneaux solaires",
-        description: "Installation et maintenance énergie solaire",
-        hourly_rate: 155.00,
-        is_available: true,
-        average_rating: 4.9,
-      },
-      // Installation TV / Satellite
-      {
-        id: 17,
-        full_name: "Hassan Taouil",
-        phone: "0677890134",
-        city: "Fez",
-        latitude: 34.0350,
-        longitude: -5.0100,
-        speciality: "Installation TV / Satellite",
-        description: "Installateur TV et systèmes satellite certifié",
-        hourly_rate: 95.00,
-        is_available: true,
-        average_rating: 4.5,
-      },
-      // Rénovation générale
-      {
-        id: 18,
-        full_name: "Construction Pro",
-        phone: "0678901245",
-        city: "Casablanca",
-        latitude: 33.5700,
-        longitude: -7.6000,
-        speciality: "Rénovation générale",
-        description: "Entreprise spécialisée en rénovation complète",
-        hourly_rate: 170.00,
-        is_available: true,
-        average_rating: 4.8,
-      },
-      // Démolition
-      {
-        id: 19,
-        full_name: "Mourad Kharchi",
-        phone: "0679012356",
-        city: "Marrakech",
-        latitude: 31.6350,
-        longitude: -8.0050,
-        speciality: "Démolition",
-        description: "Service de démolition sécurisée et professionnelle",
-        hourly_rate: 200.00,
-        is_available: true,
-        average_rating: 4.6,
-      },
-    ];
+    const result = await pool.query(`
+      SELECT u.id,
+             u.full_name,
+             u.email,
+             u.phone,
+             u.city,
+             u.neighborhood,
+             COALESCE(
+               u.latitude,
+               CASE
+                 WHEN LOWER(u.city) IN ('rabat') THEN 34.0209
+                 WHEN LOWER(u.city) IN ('casablanca', 'casa') THEN 33.5731
+                 WHEN LOWER(u.city) IN ('marrakech') THEN 31.6295
+                 WHEN LOWER(u.city) IN ('fes', 'fez') THEN 34.0331
+                 WHEN LOWER(u.city) IN ('tanger', 'tangier') THEN 35.7595
+                 WHEN LOWER(u.city) IN ('agadir') THEN 30.4278
+                 ELSE NULL
+               END
+             ) AS latitude,
+             COALESCE(
+               u.longitude,
+               CASE
+                 WHEN LOWER(u.city) IN ('rabat') THEN -6.8416
+                 WHEN LOWER(u.city) IN ('casablanca', 'casa') THEN -7.5898
+                 WHEN LOWER(u.city) IN ('marrakech') THEN -7.9811
+                 WHEN LOWER(u.city) IN ('fes', 'fez') THEN -5.0003
+                 WHEN LOWER(u.city) IN ('tanger', 'tangier') THEN -5.8340
+                 WHEN LOWER(u.city) IN ('agadir') THEN -9.5981
+                 ELSE NULL
+               END
+             ) AS longitude,
+             COALESCE(s.name, 'Artisan general') AS speciality,
+             ap.description AS bio,
+             ap.description,
+             ap.hourly_rate,
+             COALESCE(ap.is_available, true) AS is_available,
+             COALESCE(ap.average_rating, 0) AS average_rating,
+             ap.profile_photo_url AS profile_image
+      FROM users u
+      LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
+      LEFT JOIN specialties s ON ap.specialty_id = s.id
+      WHERE u.role = 'artisan'
+      ORDER BY COALESCE(ap.is_available, true) DESC,
+               COALESCE(ap.average_rating, 0) DESC,
+               u.full_name ASC
+    `);
 
-    return res.status(200).json(mockArtisans);
+    const artisans = result.rows.filter((artisan) => {
+      if (!normalizedQuery) return true;
+
+      const speciality = normalize(artisan.speciality);
+      const searchable = normalize([
+        artisan.full_name,
+        artisan.email,
+        artisan.phone,
+        artisan.city,
+        artisan.neighborhood,
+        artisan.speciality,
+        artisan.description,
+      ].filter(Boolean).join(' '));
+
+      return searchable.includes(normalizedQuery) ||
+        (intent.category && speciality.includes(intent.category));
+    });
+
+    return res.json(artisans);
   } catch (err) {
     console.error('[ArtisanController] Erreur getAllArtisans:', err);
     return res.status(500).json({ error: 'Erreur serveur interne.' });

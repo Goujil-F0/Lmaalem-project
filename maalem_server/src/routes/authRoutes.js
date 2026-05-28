@@ -9,6 +9,8 @@ router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/upload-cin', verifyToken, verifyArtisan, uploadCin, authController.uploadCinHandler);
 router.patch('/availability', verifyToken, verifyArtisan, authController.updateAvailability);
+router.patch('/profile', verifyToken, authController.updateClientProfile);
+router.patch('/artisan/profile', verifyToken, verifyArtisan, authController.updateArtisanProfile);
 
 router.get('/test-protected', verifyToken, (req, res) => {
   res.json({

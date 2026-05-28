@@ -72,12 +72,6 @@ VALUES
     ('Fatima Test Artisan', 'fatima@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'artisan', '0698765432', 'Rabat', 'Agdal')
 ON CONFLICT (email) DO NOTHING;
 
--- Link artisan to Plumbing specialty
-INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
-SELECT u.id, s.id, 150.00, true, 'Plombier expérimenté avec 10 ans d''expérience', 4.5
-FROM users u, specialties s
-WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
-ON CONFLICT (user_id) DO NOTHING;
 
 -- 4. PROFILS ARTISANS
 CREATE TABLE IF NOT EXISTS artisan_profiles (
@@ -91,6 +85,13 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
     cin_verified   BOOLEAN DEFAULT FALSE,
     average_rating DECIMAL(3,2) DEFAULT 0.00
 );
+-- Link artisan to Plumbing specialty
+INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
+SELECT u.id, s.id, 150.00, true, 'Plombier experimente avec 10 ans d''experience', 4.5
+FROM users u, specialties s
+WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
+ON CONFLICT (user_id) DO NOTHING;
+
 
 -- 5. WALLETS (un par artisan)
 CREATE TABLE IF NOT EXISTS wallets (

@@ -7,13 +7,19 @@ class SearchProvider with ChangeNotifier {
 
   List<ArtisanModel> _allArtisans = [];
   List<ArtisanModel> _filteredArtisans = [];
+  List<String> _categories = [];
   bool _isLoading = false;
   String _errorMessage = '';
+  String _selectedCategory = '';
+  String _searchQuery = '';
 
   List<ArtisanModel> get artisans => _filteredArtisans;
+  List<String> get categories => _categories;
   bool get isLoading => _isLoading;
   String get errorMessage => _errorMessage;
   bool get hasError => _errorMessage.isNotEmpty;
+  String get selectedCategory => _selectedCategory;
+  String get searchQuery => _searchQuery;
 
   Future<void> loadArtisans() async {
     // Guard : évite un double-appel pendant le chargement
@@ -27,6 +33,7 @@ class SearchProvider with ChangeNotifier {
       final results = await _artisanService.fetchAllArtisans();
       _allArtisans = results;
       _filteredArtisans = results;
+      _extractCategories();
     } catch (e) {
       _errorMessage =
           'Impossible de récupérer les artisans. Vérifiez votre connexion.';
@@ -37,24 +44,53 @@ class SearchProvider with ChangeNotifier {
     }
   }
 
-  /// Filtre par nom ET par disponibilité (extensible : spécialité, ville…)
-  void filterArtisans(String query, {bool? availableOnly}) {
-    _filteredArtisans = _allArtisans.where((artisan) {
-      final matchesName =
-          query.isEmpty ||
-          artisan.fullName.toLowerCase().contains(query.toLowerCase());
+  /// Extrait toutes les catégories uniques
+  void _extractCategories() {
+    final categoriesSet = <String>{};
+    for (var artisan in _allArtisans) {
+      if (artisan.speciality.isNotEmpty) {
+        categoriesSet.add(artisan.speciality);
+      }
+    }
+    _categories = categoriesSet.toList()..sort();
+  }
 
+  /// Filtre par nom, spécialité ET disponibilité
+  void filterArtisans(String query, {String? category, bool? availableOnly}) {
+    _searchQuery = query;
+    _selectedCategory = category ?? _selectedCategory;
+
+    _filteredArtisans = _allArtisans.where((artisan) {
+      // Filtre par nom
+      final matchesName = query.isEmpty ||
+          artisan.fullName.toLowerCase().contains(query.toLowerCase()) ||
+          artisan.speciality.toLowerCase().contains(query.toLowerCase());
+
+      // Filtre par catégorie
+      final matchesCategory = _selectedCategory.isEmpty ||
+          artisan.speciality.toLowerCase() == _selectedCategory.toLowerCase();
+
+      // Filtre par disponibilité
       final matchesAvailability =
           availableOnly == null || artisan.isAvailable == availableOnly;
 
-      return matchesName && matchesAvailability;
+      return matchesName && matchesCategory && matchesAvailability;
     }).toList();
 
     notifyListeners();
   }
 
+  /// Filtre uniquement par catégorie
+  void filterByCategory(String category) {
+    _selectedCategory = category;
+    filterArtisans(_searchQuery, category: category);
+  }
+
+  /// Réinitialise les filtres
   void resetFilters() {
     _filteredArtisans = _allArtisans;
+    _selectedCategory = '';
+    _searchQuery = '';
     notifyListeners();
   }
 }

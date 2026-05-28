@@ -18,6 +18,7 @@ class AuthProvider with ChangeNotifier {
   String? _pendingCinToken;
 
   bool _isLoading = false;
+  bool _isCheckingAuth = false;
   bool _isUpdatingProfile = false;
   bool _isUploadingPhoto = false;
   bool _isUploadingPortfolio = false;
@@ -26,13 +27,14 @@ class AuthProvider with ChangeNotifier {
   User? get user => _user;
   String? get token => _token;
   bool get isLoading => _isLoading;
+  bool get isCheckingAuth => _isCheckingAuth;
   bool get isUpdatingProfile => _isUpdatingProfile;
   bool get isUploadingPhoto => _isUploadingPhoto;
   bool get isUploadingPortfolio => _isUploadingPortfolio;
   bool get isUpdatingAvailability => _isUpdatingAvailability;
 
   Future<void> checkAuthStatus() async {
-    _isLoading = true;
+    _isCheckingAuth = true;
     notifyListeners();
 
     try {
@@ -44,7 +46,7 @@ class AuthProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Erreur lors du check l'auth status: $e");
     } finally {
-      _isLoading = false;
+      _isCheckingAuth = false;
       notifyListeners();
     }
   }
@@ -55,15 +57,25 @@ class AuthProvider with ChangeNotifier {
 
     try {
       final result = await _authService.login(email, password);
+      debugPrint('🔐 Login response: $result');
       if (result['success'] == true) {
         final data = result['data'];
+        debugPrint('🔐 Token received: ${data['token']?.substring(0, 20)}...');
+        debugPrint('🔐 User data: ${data['user']}');
         _token = data['token'];
         _pendingCinToken = null;
         _user = await _mergeWithMockUser(User.fromJson(data['user']));
+        debugPrint('🔐 User parsed: ${_user?.email}');
         await StorageHelper.saveToken(_token!);
         await _persistUser();
+        debugPrint('🔐 Login successful!');
         return true;
       }
+      debugPrint('❌ Login failed: ${result['error']}');
+      return false;
+    } catch (e, stackTrace) {
+      debugPrint('❌ Login error: $e');
+      debugPrint('❌ Stacktrace: $stackTrace');
       return false;
     } finally {
       _isLoading = false;
@@ -195,13 +207,14 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ?? _user!.copyWith(
-          profile: _updatedArtisanProfile(
-            specialty: specialty,
-            hourlyRate: hourlyRate,
-            description: description,
-          ),
-        );
+        _user = _userFromResponse(result) ??
+            _user!.copyWith(
+              profile: _updatedArtisanProfile(
+                specialty: specialty,
+                hourlyRate: hourlyRate,
+                description: description,
+              ),
+            );
         await _persistUser();
         if (result['success'] != true) await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
@@ -244,13 +257,16 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ?? _user!.copyWith(
-          fullName: fullName,
-          email: email,
-          phone: phone,
-          city: city,
-          neighborhood: neighborhood,
-        );
+        _user = _userFromResponse(result) ??
+            _user!.copyWith(
+              fullName: fullName,
+              email: email,
+              phone: phone,
+              city: city,
+              neighborhood: neighborhood,
+              latitude: latitude,
+              longitude: longitude,
+            );
         await _persistUser();
         if (result['success'] != true) await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
@@ -283,9 +299,8 @@ class AuthProvider with ChangeNotifier {
         final photoUrl = data is Map<String, dynamic>
             ? data['photo_url'] ?? data['photoUrl'] ?? data['url']
             : null;
-        final mockPhotoUrl = result['success'] == true
-            ? null
-            : await _imageToDataUrl(image);
+        final mockPhotoUrl =
+            result['success'] == true ? null : await _imageToDataUrl(image);
         _user = _userFromResponse(result) ??
             _user!.copyWith(photoUrl: photoUrl ?? mockPhotoUrl ?? image.path);
         await _persistUser();
@@ -395,6 +410,8 @@ class AuthProvider with ChangeNotifier {
         phone: mockUser.phone,
         city: mockUser.city,
         neighborhood: mockUser.neighborhood,
+        latitude: mockUser.latitude,
+        longitude: mockUser.longitude,
         photoUrl: mockUser.photoUrl,
         profile: _mergeProfiles(backendUser.profile, mockUser.profile),
       );

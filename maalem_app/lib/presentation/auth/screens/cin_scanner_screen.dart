@@ -60,9 +60,7 @@ class _CinScannerScreenState extends State<CinScannerScreen> {
           // 2. L'OVERLAY (Le cadre de scan)
           ColorFiltered(
             colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.7), 
-              BlendMode.srcOut
-            ),
+                Colors.black.withOpacity(0.7), BlendMode.srcOut),
             child: Stack(
               children: [
                 Container(
@@ -91,9 +89,12 @@ class _CinScannerScreenState extends State<CinScannerScreen> {
             right: 0,
             child: Column(
               children: [
-                Text(
+                const Text(
                   "Alignez la CIN dans le cadre",
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 20),
                 GestureDetector(
@@ -104,7 +105,8 @@ class _CinScannerScreenState extends State<CinScannerScreen> {
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.camera_alt, size: 40, color: Colors.black),
+                    child: const Icon(Icons.camera_alt,
+                        size: 40, color: Colors.black),
                   ),
                 ),
               ],

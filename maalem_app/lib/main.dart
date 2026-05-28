@@ -1,17 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-
-// Imports des Providers
-import 'package:maalem_app/providers/search_provider.dart';
-import 'package:maalem_app/providers/auth_provider.dart';
-
-// Imports des Écrans
-import 'package:maalem_app/presentation/search/screens/map_screen.dart';
-import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
-import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
-import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/location_provider.dart';
+import 'package:provider/provider.dart';
+import 'providers/search_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +13,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkAuthStatus(),
         ),
@@ -38,34 +33,10 @@ class MaalemApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       themeMode: ThemeMode.light,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2C5F8A),
-          primary: const Color(0xFF2C5F8A),
-          secondary: const Color(0xFFF5ECD7),
-          surface: const Color(0xFFF5ECD7),
-          onPrimary: Colors.white,
-          onSecondary: const Color(0xFF1A2D42),
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF5ECD7),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2C5F8A),
-          foregroundColor: Colors.white,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2C5F8A),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
         fontFamily: 'Inter',
-        useMaterial3: true,
+        primarySwatch: Colors.blue,
+        scaffoldBackgroundColor: Colors.white,
       ),
-      // On utilise l'AppGate pour gérer la logique de démarrage
       home: const _AppGate(),
     );
   }
@@ -84,7 +55,6 @@ class _AppGateState extends State<_AppGate> {
   @override
   void initState() {
     super.initState();
-    // Petit délai pour laisser le temps au Splash Screen de s'afficher
     Future.delayed(const Duration(seconds: 2), () {
       if (!mounted) return;
       setState(() => _showSplash = false);
@@ -93,24 +63,26 @@ class _AppGateState extends State<_AppGate> {
 
   @override
   Widget build(BuildContext context) {
-    final auth = context.watch<AuthProvider>();
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // 1. Display splash during initialization or manual check
+        if (_showSplash || auth.isCheckingAuth) {
+          return const SplashScreen();
+        }
 
-    // 1. ÉCRAN DE CHARGEMENT (Splash)
-    if (_showSplash || auth.isLoading) {
-      return const SplashScreen();
-    }
+        // 2. Si un token est présent, l'utilisateur est connecté
+        if (auth.token != null) {
+          // On attend que les données utilisateur (profil) soient prêtes
+          if (auth.user != null) {
+            return const MainShell();
+          }
+          // Si on a le token mais pas encore le profil, on affiche le SplashScreen
+          return const SplashScreen();
+        }
 
-    // 2. SI L'UTILISATEUR EST CONNECTÉ
-    if (auth.token != null) {
-      // Vérification spéciale pour l'artisan : doit-il uploader sa CIN ?
-      if (auth.user?.isArtisan == true && auth.user?.profile == null) {
-        return const UploadCinScreen();
-      }
-      // Sinon, direction l'écran principal (MainShell qui contient la Map)
-      return const MainShell();
-    }
-
-    // 3. SI PAS CONNECTÉ -> Direction l'écran d'authentification
-    return const AuthScreen();
+        // 3. Sinon, on demande la connexion
+        return const AuthScreen();
+      },
+    );
   }
 }

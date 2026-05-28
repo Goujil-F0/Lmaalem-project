@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/artisan_model.dart';
+import 'api_client.dart';
 
 class ArtisanService {
-  final String _baseUrl = "http://localhost:8081/api";
-
   Future<List<ArtisanModel>> fetchAllArtisans() async {
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/artisans'));
+      final response = await http.get(
+        Uri.parse('${ApiClient.baseUrl}/api/artisans'),
+        headers: ApiClient.getHeaders(null),
+      );
 
       if (response.statusCode == 200) {
         // json.decode transforme le texte brut en liste d'objets

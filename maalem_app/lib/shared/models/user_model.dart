@@ -8,6 +8,8 @@ class User {
   final String? phone;
   final String? city;
   final String? neighborhood;
+  final double? latitude;
+  final double? longitude;
   final String? photoUrl;
   final ArtisanProfile? profile;
 
@@ -19,19 +21,23 @@ class User {
     this.phone,
     this.city,
     this.neighborhood,
+    this.latitude,
+    this.longitude,
     this.photoUrl,
     this.profile,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      id: json['id'],
+      id: _toInt(json['id'] ?? json['user_id'] ?? json['userId']) ?? 0,
       fullName: json['full_name'] ?? json['fullName'] ?? '',
       email: json['email'] ?? '',
-      role: json['role'] ?? 'client',
+      role: json['role'] ?? json['userRole'] ?? 'client',
       phone: json['phone'],
       city: json['city'],
       neighborhood: json['neighborhood'],
+      latitude: _toDouble(json['latitude']),
+      longitude: _toDouble(json['longitude']),
       photoUrl: json['photo_url'] ?? json['photoUrl'],
       profile: json['profile'] != null
           ? ArtisanProfile.fromJson(json['profile'])
@@ -47,6 +53,8 @@ class User {
     String? phone,
     String? city,
     String? neighborhood,
+    double? latitude,
+    double? longitude,
     String? photoUrl,
     ArtisanProfile? profile,
   }) {
@@ -58,6 +66,8 @@ class User {
       phone: phone ?? this.phone,
       city: city ?? this.city,
       neighborhood: neighborhood ?? this.neighborhood,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
       photoUrl: photoUrl ?? this.photoUrl,
       profile: profile ?? this.profile,
     );
@@ -72,6 +82,8 @@ class User {
       'phone': phone,
       'city': city,
       'neighborhood': neighborhood,
+      'latitude': latitude,
+      'longitude': longitude,
       'photo_url': photoUrl,
       'profile': profile?.toJson(),
     };
@@ -79,4 +91,20 @@ class User {
 
   bool get isArtisan => role == 'artisan';
   bool get isClient => role == 'client';
+}
+
+int? _toInt(dynamic value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+double? _toDouble(dynamic value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

@@ -13,6 +13,8 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
+  final TextEditingController _searchController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -20,6 +22,22 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<SearchProvider>().loadArtisans();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _openMapWithSearch([String? query]) {
+    final searchProvider = context.read<SearchProvider>();
+    final searchText = (query ?? _searchController.text).trim();
+    searchProvider.filterArtisans(searchText);
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => MapScreen(initialQuery: searchText)),
+    );
   }
 
   @override
@@ -120,26 +138,146 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
             ),
             const SizedBox(height: 24),
 
-            // Barre de recherche
-            TextField(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MapScreen()),
-              ),
-              readOnly: true,
-              decoration: InputDecoration(
-                hintText: 'Rechercher un artisan...',
-                hintStyle:
-                    TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
-                prefixIcon: const Icon(Icons.search, color: AppColors.teal),
-                filled: true,
-                fillColor: AppColors.white,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
-                  borderSide: BorderSide.none,
-                ),
-              ),
+            Consumer<SearchProvider>(
+              builder: (context, provider, _) {
+                final suggestions = provider.artisans.take(3).toList();
+
+                return Column(
+                  children: [
+                    TextField(
+                      controller: _searchController,
+                      onChanged: provider.filterArtisans,
+                      onSubmitted: _openMapWithSearch,
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: 'Nom, categorie ou probleme: robinet fuit...',
+                        hintStyle: TextStyle(
+                            color: AppColors.navy.withValues(alpha: 0.52)),
+                        prefixIcon:
+                            const Icon(Icons.search, color: AppColors.teal),
+                        suffixIcon: IconButton(
+                          onPressed: () => _openMapWithSearch(),
+                          icon: const Icon(Icons.map, color: AppColors.teal),
+                          tooltip: 'Voir sur la carte',
+                        ),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding:
+                            const EdgeInsets.symmetric(vertical: 14),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: provider.allSpecialties
+                              .contains(provider.selectedCategory)
+                          ? provider.selectedCategory
+                          : null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        hintText: 'Choisir une specialite',
+                        prefixIcon: const Icon(
+                          Icons.work_outline,
+                          color: AppColors.teal,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: '',
+                          child: Text('Toutes les specialites'),
+                        ),
+                        ...provider.allSpecialties.map(
+                          (specialty) => DropdownMenuItem<String>(
+                            value: specialty,
+                            child: Text(specialty),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        final selected = value ?? '';
+                        _searchController.clear();
+                        if (selected.isEmpty) {
+                          provider.resetFilters();
+                        } else {
+                          provider.filterArtisans('', category: selected);
+                        }
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: provider.cities.contains(provider.selectedCity)
+                          ? provider.selectedCity
+                          : null,
+                      isExpanded: true,
+                      decoration: InputDecoration(
+                        hintText: 'Choisir une ville',
+                        prefixIcon: const Icon(
+                          Icons.location_city,
+                          color: AppColors.teal,
+                        ),
+                        filled: true,
+                        fillColor: AppColors.white,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 14,
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String>(
+                          value: '',
+                          child: Text('Toutes les villes'),
+                        ),
+                        ...provider.cities.map(
+                          (city) => DropdownMenuItem<String>(
+                            value: city,
+                            child: Text(city),
+                          ),
+                        ),
+                      ],
+                      onChanged: (value) {
+                        final selected = value ?? '';
+                        if (selected.isEmpty) {
+                          provider.filterByCity('');
+                        } else {
+                          provider.filterByCity(selected);
+                        }
+                      },
+                    ),
+                    if (_searchController.text.trim().isNotEmpty &&
+                        suggestions.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      ...suggestions.map(
+                        (artisan) => _SearchSuggestionTile(
+                          name: artisan.fullName,
+                          subtitle:
+                              '${artisan.speciality} - ${artisan.city.isEmpty ? 'Ville non renseignee' : artisan.city}',
+                          isAvailable: artisan.isAvailable,
+                          onTap: () => _openMapWithSearch(
+                            _searchController.text,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 24),
 
@@ -181,7 +319,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                             label: category,
                             onTap: () {
                               // Filtrer par catégorie et aller à la carte
-                              provider.filterByCategory(category);
+                              _searchController.clear();
+                              provider.filterArtisans('', category: category);
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -287,12 +426,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 }
 
 class _ServiceCard extends StatelessWidget {
-  final IconData? icon;
   final String label;
   final VoidCallback? onTap;
 
   const _ServiceCard({
-    this.icon,
     required this.label,
     this.onTap,
   });
@@ -325,7 +462,7 @@ class _ServiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final displayIcon = icon ?? _getIconForCategory(label);
+    final displayIcon = _getIconForCategory(label);
 
     return GestureDetector(
       onTap: onTap ??
@@ -360,6 +497,69 @@ class _ServiceCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SearchSuggestionTile extends StatelessWidget {
+  final String name;
+  final String subtitle;
+  final bool isAvailable;
+  final VoidCallback onTap;
+
+  const _SearchSuggestionTile({
+    required this.name,
+    required this.subtitle,
+    required this.isAvailable,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.06)),
+      ),
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: AppColors.teal.withValues(alpha: 0.12),
+          child: const Icon(Icons.handyman, color: AppColors.teal),
+        ),
+        title: Text(
+          name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        subtitle: Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: (isAvailable ? AppColors.teal : Colors.grey)
+                .withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            isAvailable ? 'Dispo' : 'Indispo',
+            style: TextStyle(
+              color: isAvailable ? AppColors.teal : Colors.grey.shade700,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+            ),
+          ),
         ),
       ),
     );

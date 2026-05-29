@@ -3,12 +3,15 @@ import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/booking_provider.dart';
+import 'package:maalem_app/providers/chat_provider.dart';
 import 'package:maalem_app/providers/location_provider.dart';
+import 'package:maalem_app/providers/search_provider.dart';
 import 'package:provider/provider.dart';
-import 'providers/search_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+
   runApp(
     MultiProvider(
       providers: [
@@ -17,6 +20,8 @@ void main() {
         ChangeNotifierProvider(
           create: (_) => AuthProvider()..checkAuthStatus(),
         ),
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
       child: const MaalemApp(),
     ),

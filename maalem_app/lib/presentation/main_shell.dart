@@ -10,6 +10,7 @@ import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
+import 'package:maalem_app/presentation/booking/screens/history_screen.dart';
 
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
@@ -70,7 +71,7 @@ class _MainShellState extends State<MainShell> {
 
   List<Widget> get _clientPages => const [
         ClientHomeScreen(),
-        _ConstructionScreen(title: 'Suivi'),
+        HistoryScreen(),
         MapScreen(),
         _ConstructionScreen(title: 'Maison'),
         ProfileClientScreen(),

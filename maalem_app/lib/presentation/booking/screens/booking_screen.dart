@@ -1,8 +1,7 @@
-// lib/presentation/booking/screens/booking_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
+import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
 import 'history_screen.dart';
 
 class BookingScreen extends StatefulWidget {
@@ -53,14 +52,13 @@ class _BookingScreenState extends State<BookingScreen> {
     }
   }
 
-  void _submitBooking() async {
+  // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
+  void _submitBooking(int userId) async {
     if (_formKey.currentState!.validate() && _selectedDate != null) {
-      // 1. On affiche un chargement (facultatif si le provider est rapide)
-
-      // 2. On appelle le Provider
+      // On appelle le Provider
       final success =
           await Provider.of<BookingProvider>(context, listen: false).addBooking(
-        1, // clientId (temporaire pour le test)
+        userId, // <-- 3. UTILISATION DU VRAI USER ID DYNAMIQUE
         widget.artisanId,
         _descriptionController.text,
         widget
@@ -68,8 +66,7 @@ class _BookingScreenState extends State<BookingScreen> {
         _selectedDate!,
       );
 
-      // 3. Résultat
-      // 3. Résultat
+      // Résultat
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -77,13 +74,11 @@ class _BookingScreenState extends State<BookingScreen> {
               backgroundColor: Colors.green),
         );
 
-        // --- MODIFICATION ICI ---
         // Au lieu de "pop", on détruit cet écran et on le remplace par l'Historique
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HistoryScreen()),
         );
-        // ------------------------
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -102,6 +97,10 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final int currentUserId = authProvider.user!.id;
+
     const Color primaryDarkBlue = Color(0xFF0C2C55);
     const Color primaryTeal = Color(0xFF296374);
     const Color bgColor = Color(0xFFF1F3E1);
@@ -229,7 +228,8 @@ class _BookingScreenState extends State<BookingScreen> {
                   ),
                   onPressed: Provider.of<BookingProvider>(context).isLoading
                       ? null
-                      : _submitBooking,
+                      : () => _submitBooking(
+                          currentUserId), // <-- 5. ENVOI DU VRAI ID AU SUBMIT
                   child: Provider.of<BookingProvider>(context).isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Confirmer la réservation',

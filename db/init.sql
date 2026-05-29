@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS users (
     full_name     VARCHAR(150) NOT NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role          VARCHAR(20) NOT NULL CHECK (role IN ('client', 'artisan')),
+    role          VARCHAR(20) NOT NULL CHECK (role IN ('client', 'artisan', 'admin')),
     phone         VARCHAR(20),
     city          VARCHAR(100),
     neighborhood  VARCHAR(100),
@@ -63,6 +63,10 @@ CREATE TABLE IF NOT EXISTS users (
     longitude     DOUBLE PRECISION,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users
+    ADD CONSTRAINT users_role_check CHECK (role IN ('client', 'artisan', 'admin'));
 
 -- 4. PROFILS ARTISANS
 CREATE TABLE IF NOT EXISTS artisan_profiles (
@@ -72,10 +76,30 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
     hourly_rate    DECIMAL(10,2),
     is_available   BOOLEAN DEFAULT TRUE,
     profile_photo_url TEXT,
+    portfolio_images TEXT[] DEFAULT '{}',
     cin_url        TEXT,
     cin_verified   BOOLEAN DEFAULT FALSE,
     average_rating DECIMAL(3,2) DEFAULT 0.00
 );
+
+ALTER TABLE artisan_profiles
+    ADD COLUMN IF NOT EXISTS portfolio_images TEXT[] DEFAULT '{}';
+
+-- Test Users (password: Test1234!)
+-- Hash: $2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm (bcrypt)
+INSERT INTO users (full_name, email, password_hash, role, phone, city, neighborhood)
+VALUES
+    ('Ahmed Test Client', 'ahmed@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'client', '0612345678', 'Casablanca', 'Centre'),
+    ('Fatima Test Artisan', 'fatima@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'artisan', '0698765432', 'Rabat', 'Agdal'),
+    ('Admin Test', 'admin@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'admin', '0600000000', 'Casablanca', 'Centre')
+ON CONFLICT (email) DO NOTHING;
+
+-- Link artisan to Plumbing specialty
+INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
+SELECT u.id, s.id, 150.00, true, 'Plombier expérimenté avec 10 ans d''expérience', 4.5
+FROM users u, specialties s
+WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
+ON CONFLICT (user_id) DO NOTHING;
 
 -- 5. WALLETS (un par artisan)
 CREATE TABLE IF NOT EXISTS wallets (

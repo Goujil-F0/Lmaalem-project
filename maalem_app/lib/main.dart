@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/booking_provider.dart';
+import 'package:maalem_app/providers/chat_provider.dart';
+import 'package:maalem_app/providers/location_provider.dart';
+import 'package:maalem_app/providers/search_provider.dart';
 import 'package:provider/provider.dart';
-import 'providers/booking_provider.dart';
-// import 'presentation/booking/screens/history_screen.dart';
-import 'presentation/booking/screens/booking_screen.dart';
-// import 'presentation/booking/screens/chat_screen.dart';
-import 'providers/chat_provider.dart';
 
 void main() {
-  // On s'assure que les widgets sont initialisés
   WidgetsFlutterBinding.ensureInitialized();
 
   runApp(
-    // MultiProvider permet d'ajouter plusieurs providers facilement plus tard
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..checkAuthStatus(),
+        ),
         ChangeNotifierProvider(create: (_) => BookingProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
@@ -28,17 +34,60 @@ class MaalemApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Maalem',
-      debugShowCheckedModeBanner: false, // Enlève la bannière "Debug"
+      title: 'Lmaalem',
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
       theme: ThemeData(
+        fontFamily: 'Inter',
         primarySwatch: Colors.blue,
-        // Tu pourras ajouter ici ton AppTheme plus tard
+        scaffoldBackgroundColor: Colors.white,
       ),
-      // home: SplashScreen(), <-- commente temporairement cette ligne
-      // home: const HistoryScreen(),
-      // home: const ChatScreen(bookingId: 4, currentUserId: 1),
-      home: const BookingScreen(
-          artisanId: 2, artisanName: 'Yassine El Fassi', hourlyRate: 250.0),
+      home: const _AppGate(),
+    );
+  }
+}
+
+class _AppGate extends StatefulWidget {
+  const _AppGate();
+
+  @override
+  State<_AppGate> createState() => _AppGateState();
+}
+
+class _AppGateState extends State<_AppGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _showSplash = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // 1. Display splash during initialization or manual check
+        if (_showSplash || auth.isCheckingAuth) {
+          return const SplashScreen();
+        }
+
+        // 2. Si un token est présent, l'utilisateur est connecté
+        if (auth.token != null) {
+          // On attend que les données utilisateur (profil) soient prêtes
+          if (auth.user != null) {
+            return const MainShell();
+          }
+          // Si on a le token mais pas encore le profil, on affiche le SplashScreen
+          return const SplashScreen();
+        }
+
+        // 3. Sinon, on demande la connexion
+        return const AuthScreen();
+      },
     );
   }
 }

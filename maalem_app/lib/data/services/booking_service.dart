@@ -65,6 +65,7 @@ class BookingService {
           'description': description,
           'agreed_price': agreedPrice,
           'booking_date': bookingDate.toIso8601String(),
+          'status': 'pending', // <-- AJOUTE CETTE LIGNE par sécurité
         }),
       );
 

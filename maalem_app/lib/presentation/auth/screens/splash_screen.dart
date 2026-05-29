@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/presentation/auth/screens/register_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -35,30 +34,6 @@ class _SplashScreenState extends State<SplashScreen>
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutBack));
 
     _controller.forward();
-
-    // Naviguer vers AuthScreen après 3 secondes avec transition fluide
-    Future.delayed(const Duration(seconds: 2), () {
-      Navigator.pushReplacement(
-        context,
-        PageRouteBuilder(
-          transitionDuration: const Duration(milliseconds: 800),
-          pageBuilder: (_, __, ___) => const RegisterScreen(),
-          transitionsBuilder: (_, animation, __, child) {
-            final slideUp =
-                Tween<Offset>(
-                  begin: const Offset(0, 1), // Commence en bas
-                  end: Offset.zero, // Va vers le haut
-                ).animate(
-                  CurvedAnimation(
-                    parent: animation,
-                    curve: Curves.easeOutCubic,
-                  ),
-                );
-            return SlideTransition(position: slideUp, child: child);
-          },
-        ),
-      );
-    });
   }
 
   @override

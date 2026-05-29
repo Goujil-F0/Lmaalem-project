@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:provider/provider.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -11,6 +15,113 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool isArtisan = false;
+  bool _isLocating = false;
+  UserLocation? _selectedLocation;
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _neighborhoodController = TextEditingController();
+  final LocationService _locationService = LocationService();
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _confirmPasswordController.dispose();
+    _phoneController.dispose();
+    _cityController.dispose();
+    _neighborhoodController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() => _isLocating = true);
+
+    try {
+      final location = await _locationService.getCurrentLocation();
+      if (!mounted) return;
+      setState(() => _selectedLocation = location);
+      _showSnackBar('Position GPS ajoutee');
+    } catch (e) {
+      if (!mounted) return;
+      _showSnackBar(e.toString().replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _isLocating = false);
+    }
+  }
+
+  Future<void> _handleRegister() async {
+    if (_nameController.text.isEmpty ||
+        _emailController.text.isEmpty ||
+        _passwordController.text.isEmpty) {
+      _showSnackBar('Veuillez remplir les champs obligatoires');
+      return;
+    }
+
+    if (_passwordController.text != _confirmPasswordController.text) {
+      _showSnackBar('Les mots de passe ne correspondent pas');
+      return;
+    }
+
+    final authProvider = context.read<AuthProvider>();
+    final result = await authProvider.register({
+      'full_name': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'password': _passwordController.text,
+      'role': isArtisan ? 'artisan' : 'client',
+      'phone': isArtisan ? _phoneController.text.trim() : null,
+      'city': _cityController.text.trim().isEmpty
+          ? null
+          : _cityController.text.trim(),
+      'neighborhood': _neighborhoodController.text.trim().isEmpty
+          ? null
+          : _neighborhoodController.text.trim(),
+      'latitude': _selectedLocation?.latitude,
+      'longitude': _selectedLocation?.longitude,
+    });
+
+    if (!mounted) return;
+
+    if (result['success'] != true) {
+      _showSnackBar(result['error'] ?? 'Une erreur est survenue');
+      return;
+    }
+
+    if (isArtisan) {
+      Navigator.pushReplacement(
+        context,
+        PageRouteBuilder(
+          transitionDuration: const Duration(milliseconds: 600),
+          pageBuilder: (_, __, ___) => const UploadCinScreen(),
+          transitionsBuilder: (_, animation, __, child) {
+            final slideUp = Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
+            );
+            return SlideTransition(position: slideUp, child: child);
+          },
+        ),
+      );
+      return;
+    }
+
+    _showSnackBar('Inscription reussie. Connectez-vous maintenant.');
+    _openLogin();
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+    );
+  }
 
   void _openLogin() {
     Navigator.pushReplacement(
@@ -23,8 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             begin: const Offset(0, 1),
             end: Offset.zero,
           ).animate(
-            CurvedAnimation(parent: animation, curve: Curves.easeOutCubic),
-          );
+              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
           return SlideTransition(position: slideUp, child: child);
         },
       ),
@@ -33,6 +143,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isLoading = context.watch<AuthProvider>().isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.beige,
       body: SafeArea(
@@ -44,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               const _RegisterLogo(),
               const SizedBox(height: 18),
               Text(
-                "Rejoignez la communaute Lmaalem",
+                'Rejoignez la communaute Lmaalem',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.navy.withValues(alpha: 0.62),
@@ -57,29 +169,57 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 onChanged: (value) => setState(() => isArtisan = value),
               ),
               const SizedBox(height: 28),
-              const _RegisterInput(hintText: "Nom complet", icon: Icons.person),
+              _RegisterInput(
+                controller: _nameController,
+                hintText: 'Nom complet',
+                icon: Icons.person,
+              ),
               const SizedBox(height: 16),
-              const _RegisterInput(
-                hintText: "E-mail",
+              _RegisterInput(
+                controller: _emailController,
+                hintText: 'E-mail',
                 icon: Icons.mail,
                 keyboardType: TextInputType.emailAddress,
               ),
               const SizedBox(height: 16),
-              const _RegisterInput(
-                hintText: "Mot de passe",
+              _RegisterInput(
+                controller: _passwordController,
+                hintText: 'Mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
               const SizedBox(height: 16),
-              const _RegisterInput(
-                hintText: "Confirmer le mot de passe",
+              _RegisterInput(
+                controller: _confirmPasswordController,
+                hintText: 'Confirmer le mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
               ),
+              const SizedBox(height: 16),
+              _RegisterInput(
+                controller: _cityController,
+                hintText: 'Ville',
+                icon: Icons.location_city,
+                keyboardType: TextInputType.streetAddress,
+              ),
+              const SizedBox(height: 16),
+              _RegisterInput(
+                controller: _neighborhoodController,
+                hintText: 'Quartier ou adresse',
+                icon: Icons.location_on,
+                keyboardType: TextInputType.streetAddress,
+              ),
+              const SizedBox(height: 16),
+              _LocationPickerBox(
+                isLocating: _isLocating,
+                selectedLocation: _selectedLocation,
+                onPressed: _useCurrentLocation,
+              ),
               if (isArtisan) ...[
                 const SizedBox(height: 16),
-                const _RegisterInput(
-                  hintText: "Telephone",
+                _RegisterInput(
+                  controller: _phoneController,
+                  hintText: 'Telephone',
                   icon: Icons.call,
                   keyboardType: TextInputType.phone,
                 ),
@@ -87,12 +227,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const _UploadCinBox(),
               ],
               const SizedBox(height: 34),
-              _PrimaryRegisterButton(
-                text: isArtisan ? "Devenir Artisan Lmaalem" : "S'inscrire",
-                onPressed: () {
-                  debugPrint("Tentative d'inscription...");
-                },
-              ),
+              isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.teal))
+                  : _PrimaryRegisterButton(
+                      text:
+                          isArtisan ? 'Devenir Artisan Lmaalem' : "S'inscrire",
+                      onPressed: _handleRegister,
+                    ),
               const SizedBox(height: 44),
               TextButton(
                 onPressed: _openLogin,
@@ -103,9 +245,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       fontSize: 15,
                     ),
                     children: const [
-                      TextSpan(text: "Vous avez deja un compte ? "),
+                      TextSpan(text: 'Vous avez deja un compte ? '),
                       TextSpan(
-                        text: "Se connecter",
+                        text: 'Se connecter',
                         style: TextStyle(
                           color: AppColors.teal,
                           fontWeight: FontWeight.w800,
@@ -142,7 +284,7 @@ class _RegisterLogo extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          "Lmaalem",
+          'Lmaalem',
           style: TextStyle(
             color: AppColors.navy,
             fontSize: 34,
@@ -180,13 +322,13 @@ class _RoleSwitcher extends StatelessWidget {
       child: Row(
         children: [
           _RoleOption(
-            text: "Client",
+            text: 'Client',
             selected: !isArtisan,
             onTap: () => onChanged(false),
           ),
           const SizedBox(width: 8),
           _RoleOption(
-            text: "Artisan",
+            text: 'Artisan',
             selected: isArtisan,
             onTap: () => onChanged(true),
           ),
@@ -239,10 +381,12 @@ class _RegisterInput extends StatelessWidget {
   final IconData icon;
   final bool isPassword;
   final TextInputType? keyboardType;
+  final TextEditingController controller;
 
   const _RegisterInput({
     required this.hintText,
     required this.icon,
+    required this.controller,
     this.isPassword = false,
     this.keyboardType,
   });
@@ -250,6 +394,7 @@ class _RegisterInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return TextField(
+      controller: controller,
       obscureText: isPassword,
       keyboardType: keyboardType,
       decoration: InputDecoration(
@@ -292,13 +437,105 @@ class _UploadCinBox extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.cloud_upload, color: AppColors.navy.withValues(alpha: 0.72)),
+          Icon(Icons.cloud_upload,
+              color: AppColors.navy.withValues(alpha: 0.72)),
           const SizedBox(height: 8),
           Text(
-            "Upload CIN Recto / Verso",
+            'Upload CIN Recto / Verso apres inscription',
             style: TextStyle(
               color: AppColors.navy.withValues(alpha: 0.72),
               fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationPickerBox extends StatelessWidget {
+  final bool isLocating;
+  final UserLocation? selectedLocation;
+  final VoidCallback onPressed;
+
+  const _LocationPickerBox({
+    required this.isLocating,
+    required this.selectedLocation,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasLocation = selectedLocation != null;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.navy.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                hasLocation ? Icons.my_location : Icons.location_searching,
+                color: AppColors.teal,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  hasLocation
+                      ? 'Position GPS enregistree'
+                      : 'Ajouter ma position actuelle',
+                  style: const TextStyle(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          if (hasLocation) ...[
+            const SizedBox(height: 8),
+            Text(
+              selectedLocation!.coordinatesLabel,
+              style: TextStyle(
+                color: AppColors.navy.withValues(alpha: 0.62),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: isLocating ? null : onPressed,
+              icon: isLocating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: AppColors.teal,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.gps_fixed),
+              label: Text(
+                isLocating
+                    ? 'Recherche de position...'
+                    : 'Utiliser ma position',
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.teal,
+                side: BorderSide(color: AppColors.teal.withValues(alpha: 0.35)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
             ),
           ),
         ],

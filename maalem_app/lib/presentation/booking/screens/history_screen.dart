@@ -3,6 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
+import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
 import 'chat_screen.dart';
 
@@ -22,8 +23,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     super.initState();
     // On charge l'historique au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.user!.id; // Le vrai ID
+      final userRole = authProvider.user!.role; // 'client' ou 'artisan'
+
       Provider.of<BookingProvider>(context, listen: false)
-          .fetchBookingHistory(1, 'client');
+          .fetchBookingHistory(userId, userRole);
     });
   }
 

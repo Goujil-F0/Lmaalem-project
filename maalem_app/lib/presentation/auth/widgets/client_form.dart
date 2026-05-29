@@ -31,19 +31,19 @@ class ClientForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CustomTextField(
+        const CustomTextField(
           label: "Nom complet",
           hintText: "Ahmed Mansour",
           icon: Icons.person,
         ),
         const SizedBox(height: 16),
-        CustomTextField(
+        const CustomTextField(
           label: "Email",
           hintText: "ahmed@exemple.ma",
           icon: Icons.mail,
         ),
         const SizedBox(height: 16),
-        CustomTextField(
+        const CustomTextField(
           label: "Mot de passe",
           hintText: "••••••••",
           icon: Icons.lock,
@@ -52,7 +52,7 @@ class ClientForm extends StatelessWidget {
         const SizedBox(height: 20),
         CustomButton(
           text: "S'inscrire en tant que Client",
-          onPressed: () => _navigateTo(context,  RegisterScreen()),
+          onPressed: () => _navigateTo(context,  const RegisterScreen()),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),

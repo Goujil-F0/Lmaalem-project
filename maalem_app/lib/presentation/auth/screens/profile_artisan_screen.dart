@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:maalem_app/data/services/api_client.dart';
+import 'package:maalem_app/data/services/dashboard_service.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -18,6 +20,28 @@ class ProfileArtisanScreen extends StatefulWidget {
 class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
   final ImagePicker _picker = ImagePicker();
   Uint8List? _localPhotoBytes;
+  Map<String, dynamic>? _dashboardStats;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadDashboardStats());
+  }
+
+  Future<void> _loadDashboardStats() async {
+    final auth = context.read<AuthProvider>();
+    final token = auth.token;
+    final userId = auth.user?.id;
+    if (token == null || userId == null) return;
+
+    try {
+      final data =
+          await DashboardService(token: token).getArtisanDashboard(userId);
+      if (mounted) setState(() => _dashboardStats = data);
+    } catch (_) {
+      // Le compte reste utilisable meme si les stats dashboard ne chargent pas.
+    }
+  }
 
   Future<void> _handleAvailabilityChange(bool value) async {
     final result = await context.read<AuthProvider>().updateAvailability(value);
@@ -31,12 +55,13 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
   }
 
   Future<void> _pickProfilePhoto() async {
+    final auth = context.read<AuthProvider>();
     final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
     final bytes = await image.readAsBytes();
     if (mounted) setState(() => _localPhotoBytes = bytes);
 
-    final result = await context.read<AuthProvider>().updateProfilePhoto(image);
+    final result = await auth.updateProfilePhoto(image);
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -47,11 +72,11 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
   }
 
   Future<void> _pickPortfolioImage() async {
+    final auth = context.read<AuthProvider>();
     final image = await _picker.pickImage(source: ImageSource.gallery);
     if (image == null) return;
 
-    final result =
-        await context.read<AuthProvider>().uploadPortfolioImage(image);
+    final result = await auth.uploadPortfolioImage(image);
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -236,12 +261,34 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     return result['mocked'] == true ? '$message (Simulation locale)' : message;
   }
 
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String) return double.tryParse(value);
+    return null;
+  }
+
+  int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
     final profile = user?.profile;
     final available = profile?.isAvailable ?? true;
+    final averageRating = _toDouble(_dashboardStats?['averageRating']) ??
+        profile?.averageRating ??
+        0;
+    final totalReviews = _toInt(_dashboardStats?['totalReviews']) ?? 0;
+    final totalMissions = (_toInt(_dashboardStats?['pendingBookings']) ?? 0) +
+        (_toInt(_dashboardStats?['confirmedBookings']) ?? 0);
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -265,13 +312,13 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                 Row(
                   children: [
                     _StatCard(
-                      value: (profile?.averageRating ?? 0).toStringAsFixed(1),
+                      value: averageRating.toStringAsFixed(1),
                       label: 'Note Moyenne',
                     ),
                     const SizedBox(width: 12),
-                    const _StatCard(value: '0', label: 'Avis'),
+                    _StatCard(value: '$totalReviews', label: 'Avis'),
                     const SizedBox(width: 12),
-                    const _StatCard(value: '0', label: 'Missions'),
+                    _StatCard(value: '$totalMissions', label: 'Missions'),
                   ],
                 ),
                 const SizedBox(height: 26),
@@ -740,6 +787,7 @@ class _PortfolioImageTile extends StatelessWidget {
   }
 
   ImageProvider? _imageProvider(String value) {
+    final resolvedValue = _resolveImageUrl(value);
     if (value.startsWith('data:image')) {
       final commaIndex = value.indexOf(',');
       if (commaIndex == -1) return null;
@@ -750,11 +798,21 @@ class _PortfolioImageTile extends StatelessWidget {
       }
     }
 
-    if (value.startsWith('http://') || value.startsWith('https://')) {
-      return NetworkImage(value);
+    if (resolvedValue != null) {
+      return NetworkImage(resolvedValue);
     }
 
     return null;
+  }
+
+  String? _resolveImageUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('data:image')) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) return '${ApiClient.baseUrl}$trimmed';
+    return '${ApiClient.baseUrl}/$trimmed';
   }
 }
 

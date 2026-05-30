@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/location_service.dart';
+import 'package:maalem_app/presentation/auth/screens/favorite_artisans_screen.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -470,7 +471,17 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                   onUpdate: _updateLocation,
                 ),
                 const SizedBox(height: 16),
-                _QuickActionsGrid(onHelp: _openSupport),
+                _QuickActionsGrid(
+                  onFavorites: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const FavoriteArtisansScreen(),
+                      ),
+                    );
+                  },
+                  onHelp: _openSupport,
+                ),
                 const SizedBox(height: 22),
                 _LogoutButton(
                   onLogout: () => context.read<AuthProvider>().logout(),
@@ -820,9 +831,13 @@ class _LocationCard extends StatelessWidget {
 }
 
 class _QuickActionsGrid extends StatelessWidget {
+  final VoidCallback onFavorites;
   final VoidCallback onHelp;
 
-  const _QuickActionsGrid({required this.onHelp});
+  const _QuickActionsGrid({
+    required this.onFavorites,
+    required this.onHelp,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -836,8 +851,11 @@ class _QuickActionsGrid extends StatelessWidget {
       children: [
         const _ActionTile(
             icon: Icons.calendar_today_outlined, label: 'Mes reservations'),
-        const _ActionTile(
-            icon: Icons.favorite_border, label: 'Artisans favoris'),
+        _ActionTile(
+          icon: Icons.favorite_border,
+          label: 'Artisans favoris',
+          onTap: onFavorites,
+        ),
         const _ActionTile(
             icon: Icons.settings_outlined, label: 'Parametres du compte'),
         _ActionTile(

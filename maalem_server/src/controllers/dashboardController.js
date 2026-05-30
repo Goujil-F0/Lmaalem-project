@@ -16,7 +16,8 @@ const getArtisanDashboard = async (req, res) => {
     const bookingStatsQuery = await pool.query(
       `SELECT
         COUNT(*) FILTER (WHERE status = 'pending') as pending_bookings,
-        COUNT(*) FILTER (WHERE status = 'accepted') as confirmed_bookings
+        COUNT(*) FILTER (WHERE status = 'accepted') as confirmed_bookings,
+        COUNT(*) FILTER (WHERE status IN ('cancelled', 'rejected')) as cancelled_bookings
        FROM bookings
        WHERE artisan_id = $1`,
       [artisanId]
@@ -42,12 +43,33 @@ const getArtisanDashboard = async (req, res) => {
       [artisanId]
     );
 
+    const profileQuery = await pool.query(
+      `SELECT u.id,
+              u.full_name,
+              u.email,
+              u.phone,
+              u.city,
+              COALESCE(s.name, 'Artisan general') AS speciality,
+              ap.description AS bio,
+              ap.hourly_rate,
+              COALESCE(ap.is_available, true) AS is_available,
+              ap.profile_photo_url AS profile_image,
+              COALESCE(ap.portfolio_images, ARRAY[]::TEXT[]) AS portfolio_images
+       FROM users u
+       LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
+       LEFT JOIN specialties s ON s.id = ap.specialty_id
+       WHERE u.id = $1 AND u.role = 'artisan'`,
+      [artisanId]
+    );
+
     res.status(200).json({
       averageRating,
       totalReviews,
+      artisanProfile: profileQuery.rows[0] || null,
       recentReviews: recentReviewsQuery.rows,
       pendingBookings: parseInt(bookingStatsQuery.rows[0].pending_bookings || 0),
       confirmedBookings: parseInt(bookingStatsQuery.rows[0].confirmed_bookings || 0),
+      cancelledBookings: parseInt(bookingStatsQuery.rows[0].cancelled_bookings || 0),
       recentBookings: recentBookingsQuery.rows,
     });
   } catch (error) {
@@ -61,7 +83,9 @@ const getAdminDashboard = async (req, res) => {
       SELECT 
         (SELECT COUNT(*) FROM reviews) as total_reviews,
         (SELECT COUNT(*) FROM complaints) as total_complaints,
-        (SELECT COUNT(*) FROM complaints WHERE status IN ('open', 'in_progress')) as open_complaints
+        (SELECT COUNT(*) FROM complaints WHERE status IN ('open', 'in_progress')) as open_complaints,
+        (SELECT COUNT(*) FROM complaints WHERE status = 'resolved') as resolved_complaints,
+        (SELECT ROUND(AVG(rating)::NUMERIC, 1) FROM reviews) as platform_average_rating
     `);
 
     const topArtisans = await pool.query(`
@@ -77,6 +101,8 @@ const getAdminDashboard = async (req, res) => {
       totalReviews: parseInt(counts.rows[0].total_reviews),
       totalComplaints: parseInt(counts.rows[0].total_complaints),
       openComplaints: parseInt(counts.rows[0].open_complaints),
+      resolvedComplaints: parseInt(counts.rows[0].resolved_complaints),
+      platformAverageRating: parseFloat(counts.rows[0].platform_average_rating || 0),
       topArtisans: topArtisans.rows,
     });
   } catch (error) {

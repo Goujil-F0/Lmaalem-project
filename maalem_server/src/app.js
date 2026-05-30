@@ -9,6 +9,8 @@ const MessageModel = require('./models/messageModel'); // Pour sauvegarder les m
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express(); // ← une seule fois
+const publicUploadsPath = path.join(__dirname, '..', '..', 'uploads');
+const legacyUploadsPath = path.join(__dirname, '..', 'uploads');
 
 // On englobe l'application Express dans un serveur HTTP classique
 const server = http.createServer(app);
@@ -44,7 +46,8 @@ app.use('/api/complaints', complaintRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/messages', messageRoutes);
-app.use('/uploads', express.static(path.join(__dirname, '..', '..', 'uploads')));
+app.use('/uploads', express.static(publicUploadsPath));
+app.use('/uploads', express.static(legacyUploadsPath));
 app.use('/api', artisanRoutes);
 
 // Sanity check

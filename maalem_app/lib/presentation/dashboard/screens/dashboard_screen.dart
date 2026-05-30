@@ -3,10 +3,12 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/models/artisan_model.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/dashboard_service.dart';
+import 'package:maalem_app/presentation/booking/screens/booking_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class DashboardScreen extends StatefulWidget {
   final int artisanId;
@@ -24,6 +26,8 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
+  bool _isFavorite = false;
+  String? _error;
   Map<String, dynamic>? _dashboardData;
 
   String? _resolveImageUrl(String? source) {
@@ -38,9 +42,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     _loadDashboard();
+    _loadFavoriteStatus();
+  }
+
+  String _favoritesKey(int? clientId) =>
+      'favorite_artisans_${clientId ?? 'guest'}';
+
+  Future<void> _loadFavoriteStatus() async {
+    final clientId = context.read<AuthProvider>().user?.id;
+    final prefs = await SharedPreferences.getInstance();
+    final favorites = prefs.getStringList(_favoritesKey(clientId)) ?? const [];
+    if (mounted) {
+      setState(() => _isFavorite = favorites.contains('${widget.artisanId}'));
+    }
+  }
+
+  Future<void> _toggleFavorite() async {
+    final clientId = context.read<AuthProvider>().user?.id;
+    final prefs = await SharedPreferences.getInstance();
+    final key = _favoritesKey(clientId);
+    final favorites = prefs.getStringList(key) ?? <String>[];
+    final artisanId = '${widget.artisanId}';
+    final nextValue = !favorites.contains(artisanId);
+
+    if (nextValue) {
+      favorites.add(artisanId);
+    } else {
+      favorites.remove(artisanId);
+    }
+
+    await prefs.setStringList(key, favorites);
+    if (!mounted) return;
+
+    setState(() => _isFavorite = nextValue);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          nextValue
+              ? 'Artisan ajoute aux favoris'
+              : 'Artisan retire des favoris',
+        ),
+      ),
+    );
   }
 
   Future<void> _loadDashboard() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
     try {
       final token = context.read<AuthProvider>().token;
       if (token == null || token.isEmpty) {
@@ -52,13 +103,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) {
         setState(() {
           _dashboardData = dashboardData;
-          _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() => _error = e.toString());
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -73,79 +125,152 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text(isOwnDashboard ? 'Mon Dashboard' : 'Profil Artisan'),
         backgroundColor: AppColors.navy,
         foregroundColor: AppColors.white,
+        actions: [
+          if (!isOwnDashboard)
+            IconButton(
+              tooltip:
+                  _isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris',
+              onPressed: _toggleFavorite,
+              icon: Icon(
+                _isFavorite ? Icons.favorite : Icons.favorite_border,
+                color: _isFavorite ? Colors.redAccent : AppColors.white,
+              ),
+            ),
+          IconButton(
+            tooltip: 'Actualiser',
+            onPressed: _isLoading ? null : _loadDashboard,
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(color: AppColors.teal))
-          : _dashboardData == null
-              ? const Center(child: Text('Erreur de chargement'))
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildProfileHeader(context),
-                      const SizedBox(height: 18),
-                      _buildStats(isOwnDashboard),
-                      if (isOwnDashboard) ...[
-                        const SizedBox(height: 24),
-                        _buildRecentBookings(),
+          : _error != null || _dashboardData == null
+              ? _buildErrorState()
+              : RefreshIndicator(
+                  color: AppColors.teal,
+                  onRefresh: _loadDashboard,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (!isOwnDashboard) ...[
+                          _buildProfileHeader(context),
+                          const SizedBox(height: 18),
+                        ],
+                        _buildStats(isOwnDashboard),
+                        if (isOwnDashboard) ...[
+                          const SizedBox(height: 24),
+                          _buildRecentReviews(isOwnDashboard),
+                          const SizedBox(height: 24),
+                          _buildRecentBookings(),
+                        ] else ...[
+                          const SizedBox(height: 24),
+                          _buildRecentReviews(isOwnDashboard),
+                        ],
                       ],
-                      const SizedBox(height: 24),
-                      _buildRecentReviews(isOwnDashboard),
-                    ],
+                    ),
                   ),
                 ),
     );
   }
 
-  Widget _buildStats(bool isOwnDashboard) {
-    return Column(
-      children: [
-        Row(
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Expanded(
-              child: StatsCard(
-                icon: Icons.star,
-                title: 'Note Moyenne',
-                value: '${_dashboardData!['averageRating'] ?? 0}',
-              ),
+            const Icon(
+              Icons.signal_wifi_statusbar_connected_no_internet_4_outlined,
+              color: AppColors.teal,
+              size: 44,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: StatsCard(
-                icon: Icons.rate_review,
-                title: 'Total Avis',
-                value: '${_dashboardData!['totalReviews'] ?? 0}',
-                color: AppColors.lightBlue,
+            const SizedBox(height: 12),
+            Text(
+              _error ?? 'Erreur de chargement',
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.navy),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
+              onPressed: _loadDashboard,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Réessayer'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.teal,
+                foregroundColor: AppColors.white,
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildStats(bool isOwnDashboard) {
+    final cards = <Widget>[
+      StatsCard(
+        icon: Icons.star,
+        title: 'Note Moyenne',
+        value: '${_dashboardData!['averageRating'] ?? 0}',
+      ),
+      StatsCard(
+        icon: Icons.rate_review,
+        title: 'Total Avis',
+        value: '${_dashboardData!['totalReviews'] ?? 0}',
+        color: AppColors.lightBlue,
+      ),
+      if (isOwnDashboard)
+        StatsCard(
+          icon: Icons.pending_actions,
+          title: 'En attente',
+          value: '${_dashboardData!['pendingBookings'] ?? 0}',
+          color: Colors.orange,
+        ),
+      if (isOwnDashboard)
+        StatsCard(
+          icon: Icons.check_circle_outline,
+          title: 'Confirmées',
+          value: '${_dashboardData!['confirmedBookings'] ?? 0}',
+          color: Colors.green,
+        ),
+      if (isOwnDashboard)
+        StatsCard(
+          icon: Icons.cancel_outlined,
+          title: 'Annulées',
+          value: '${_dashboardData!['cancelledBookings'] ?? 0}',
+          color: Colors.redAccent,
+        ),
+    ];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         if (isOwnDashboard) ...[
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: StatsCard(
-                  icon: Icons.pending_actions,
-                  title: 'En attente',
-                  value: '${_dashboardData!['pendingBookings'] ?? 0}',
-                  color: Colors.orange,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: StatsCard(
-                  icon: Icons.check_circle_outline,
-                  title: 'Confirmées',
-                  value: '${_dashboardData!['confirmedBookings'] ?? 0}',
-                  color: Colors.green,
-                ),
-              ),
-            ],
+          const Text(
+            'Vue d\'ensemble',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+              color: AppColors.navy,
+            ),
           ),
+          const SizedBox(height: 12),
         ],
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: isOwnDashboard ? 1.28 : 1.55,
+          children: cards,
+        ),
       ],
     );
   }
@@ -156,13 +281,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Dernières commandes clients',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.navy,
-          ),
+        const _SectionTitle(
+          icon: Icons.handyman_outlined,
+          title: 'Travaux récents',
         ),
         const SizedBox(height: 12),
         if (bookings.isEmpty)
@@ -229,13 +350,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          isOwnDashboard ? 'Derniers avis reçus' : 'Avis clients',
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: AppColors.navy,
-          ),
+        _SectionTitle(
+          icon: Icons.rate_review_outlined,
+          title: isOwnDashboard ? 'Derniers avis reçus' : 'Avis clients',
         ),
         const SizedBox(height: 12),
         if (reviews.isEmpty)
@@ -304,35 +421,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildProfileHeader(BuildContext context) {
     final authUser = context.watch<AuthProvider>().user;
+    final isOwnDashboard = authUser?.id == widget.artisanId;
     final ownProfile =
         authUser?.id == widget.artisanId ? authUser?.profile : null;
     final artisan = widget.artisan;
+    final dashboardProfile = _dashboardData?['artisanProfile'] is Map
+        ? _dashboardData!['artisanProfile'] as Map
+        : const {};
 
-    final fullName = artisan?.fullName ?? authUser?.fullName ?? 'Artisan';
+    final fullName = artisan?.fullName ??
+        dashboardProfile['full_name'] ??
+        authUser?.fullName ??
+        'Artisan';
     final specialty = artisan?.speciality.isNotEmpty == true
         ? artisan!.speciality
-        : ownProfile?.specialty ?? 'Specialite non renseignee';
+        : dashboardProfile['speciality'] ??
+            ownProfile?.specialty ??
+            'Specialite non renseignee';
     final description = artisan?.bio?.trim().isNotEmpty == true
         ? artisan!.bio!.trim()
-        : ownProfile?.description?.trim().isNotEmpty == true
-            ? ownProfile!.description!.trim()
-            : 'Aucune description pour le moment.';
-    final hourlyRate = artisan?.hourlyRate ?? ownProfile?.hourlyRate;
-    final imageUrl = _resolveImageUrl(artisan?.profileImage ?? authUser?.photoUrl);
-    final portfolioImages =
-        (artisan?.portfolioImages.isNotEmpty == true
-                ? artisan!.portfolioImages
+        : dashboardProfile['bio']?.toString().trim().isNotEmpty == true
+            ? dashboardProfile['bio'].toString().trim()
+            : ownProfile?.description?.trim().isNotEmpty == true
+                ? ownProfile!.description!.trim()
+                : 'Aucune description pour le moment.';
+    final hourlyRate = artisan?.hourlyRate ??
+        _toDouble(dashboardProfile['hourly_rate']) ??
+        ownProfile?.hourlyRate;
+    final averageRating = _toDouble(_dashboardData?['averageRating']) ??
+        artisan?.averageRating ??
+        artisan?.rating ??
+        0;
+    final totalReviews = _dashboardData?['totalReviews'] ?? 0;
+    final isAvailable = artisan?.isAvailable ??
+        dashboardProfile['is_available'] ??
+        ownProfile?.isAvailable ??
+        true;
+    final imageUrl = _resolveImageUrl(
+      artisan?.profileImage ??
+          dashboardProfile['profile_image'] ??
+          authUser?.photoUrl,
+    );
+    final portfolioImages = (artisan?.portfolioImages.isNotEmpty == true
+            ? artisan!.portfolioImages
+            : _toStringList(dashboardProfile['portfolio_images']).isNotEmpty
+                ? _toStringList(dashboardProfile['portfolio_images'])
                 : ownProfile?.portfolioImages ?? const <String>[])
-            .map(_resolveImageUrl)
-            .whereType<String>()
-            .toList();
+        .map(_resolveImageUrl)
+        .whereType<String>()
+        .toList();
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: AppColors.navy.withValues(alpha: 0.05),
@@ -345,19 +489,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              CircleAvatar(
-                radius: 32,
-                backgroundColor: AppColors.navy,
-                backgroundImage:
-                    imageUrl != null ? NetworkImage(imageUrl) : null,
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(18),
+                  image: imageUrl == null
+                      ? null
+                      : DecorationImage(
+                          image: NetworkImage(imageUrl),
+                          fit: BoxFit.cover,
+                        ),
+                ),
                 child: imageUrl == null
-                    ? Text(
-                        _initials(fullName),
-                        style: const TextStyle(
-                          color: AppColors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
+                    ? Center(
+                        child: Text(
+                          _initials(fullName),
+                          style: const TextStyle(
+                            color: AppColors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
                       )
                     : null,
@@ -367,19 +522,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    _AvailabilityBadge(isAvailable: isAvailable),
+                    const SizedBox(height: 8),
                     Text(
                       fullName,
                       style: const TextStyle(
-                        color: AppColors.navy,
-                        fontSize: 20,
+                        color: AppColors.white,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       specialty,
-                      style: const TextStyle(
-                        color: AppColors.teal,
+                      style: TextStyle(
+                        color: AppColors.white.withValues(alpha: 0.78),
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -389,25 +548,97 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ],
           ),
           const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                StarRatingWidget(rating: averageRating, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  averageRating.toStringAsFixed(1),
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '($totalReviews avis)',
+                    style: TextStyle(
+                      color: AppColors.white.withValues(alpha: 0.72),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                if (hourlyRate != null)
+                  Text(
+                    '${hourlyRate.toStringAsFixed(0)} MAD/h',
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
           Text(
             description,
-            style: const TextStyle(
-              color: AppColors.textGrey,
+            style: TextStyle(
+              color: AppColors.white.withValues(alpha: 0.82),
               height: 1.4,
             ),
           ),
-          if (hourlyRate != null) ...[
-            const SizedBox(height: 14),
-            Text(
-              'Tarif indicatif: ${hourlyRate.toStringAsFixed(0)} MAD / h',
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w800,
+          if (!isOwnDashboard) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => BookingScreen(
+                        artisanId: widget.artisanId,
+                        artisanName: fullName,
+                        hourlyRate: hourlyRate ?? 0,
+                      ),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.calendar_month_outlined),
+                label: const Text('Réserver cet artisan'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  textStyle: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
             ),
           ],
           if (portfolioImages.isNotEmpty) ...[
             const SizedBox(height: 16),
+            const Text(
+              'Travaux réalisés',
+              style: TextStyle(
+                color: AppColors.white,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 8),
             SizedBox(
               height: 86,
               child: ListView.separated(
@@ -445,6 +676,76 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (value is num) return value.toDouble();
     if (value is String) return double.tryParse(value);
     return null;
+  }
+
+  List<String> _toStringList(dynamic value) {
+    if (value is List) return value.whereType<String>().toList();
+    return const [];
+  }
+}
+
+class _AvailabilityBadge extends StatelessWidget {
+  final bool isAvailable;
+
+  const _AvailabilityBadge({required this.isAvailable});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = isAvailable ? AppColors.lightBlue : Colors.orange;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        isAvailable ? 'Disponible' : 'Indisponible',
+        style: const TextStyle(
+          color: AppColors.white,
+          fontSize: 12,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final IconData icon;
+  final String title;
+
+  const _SectionTitle({
+    required this.icon,
+    required this.title,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: AppColors.teal.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppColors.teal, size: 19),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+              color: AppColors.navy,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 

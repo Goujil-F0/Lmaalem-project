@@ -2,14 +2,15 @@ const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 
-const uploadRoot = path.join(__dirname, '..', '..', 'uploads', 'cin');
+const uploadsRoot = path.join(__dirname, '..', '..', '..', 'uploads');
+const uploadRoot = path.join(uploadsRoot, 'cin');
 if (!fs.existsSync(uploadRoot)) {
   fs.mkdirSync(uploadRoot, { recursive: true });
 }
 
-const storage = multer.diskStorage({
+const createStorage = (folder) => multer.diskStorage({
   destination: (req, file, cb) => {
-    const userDir = path.join(uploadRoot, String(req.user.id));
+    const userDir = path.join(uploadsRoot, folder, String(req.user.id));
     fs.mkdirSync(userDir, { recursive: true });
     cb(null, userDir);
   },
@@ -29,7 +30,7 @@ const fileFilter = (req, file, cb) => {
 };
 
 const uploadCin = multer({
-  storage,
+  storage: createStorage('cin'),
   fileFilter,
   limits: { fileSize: 5 * 1024 * 1024 },
 }).fields([
@@ -37,4 +38,16 @@ const uploadCin = multer({
   { name: 'cin_verso', maxCount: 1 },
 ]);
 
-module.exports = { uploadCin };
+const uploadProfilePhoto = multer({
+  storage: createStorage('profile'),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single('profile_photo');
+
+const uploadPortfolioImage = multer({
+  storage: createStorage('portfolio'),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).single('portfolio_image');
+
+module.exports = { uploadCin, uploadProfilePhoto, uploadPortfolioImage };

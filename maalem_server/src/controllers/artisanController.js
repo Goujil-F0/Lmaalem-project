@@ -169,10 +169,17 @@ const getAllArtisans = async (req, res) => {
              ap.hourly_rate,
              COALESCE(ap.is_available, true) AS is_available,
              COALESCE(ap.average_rating, 0) AS average_rating,
+             COALESCE(review_stats.review_count, 0) AS review_count,
+             COALESCE(ap.portfolio_images, ARRAY[]::TEXT[]) AS portfolio_images,
              ap.profile_photo_url AS profile_image
       FROM users u
       LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
       LEFT JOIN specialties s ON ap.specialty_id = s.id
+      LEFT JOIN (
+        SELECT artisan_id, COUNT(*) AS review_count
+        FROM reviews
+        GROUP BY artisan_id
+      ) review_stats ON review_stats.artisan_id = u.id
       WHERE u.role = 'artisan'
       ORDER BY COALESCE(ap.is_available, true) DESC,
                COALESCE(ap.average_rating, 0) DESC,

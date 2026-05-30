@@ -16,6 +16,7 @@ const getUserWithProfile = async (userId) => {
             u.neighborhood,
             u.latitude,
             u.longitude,
+            ap.profile_photo_url AS photo_url,
             json_build_object(
               'user_id', ap.user_id,
               'specialty_id', ap.specialty_id,
@@ -26,7 +27,8 @@ const getUserWithProfile = async (userId) => {
               'cin_url', ap.cin_url,
               'cin_verified', COALESCE(ap.cin_verified, false),
               'average_rating', COALESCE(ap.average_rating, 0),
-              'portfolio_images', ARRAY[]::TEXT[]
+              'profile_photo_url', ap.profile_photo_url,
+              'portfolio_images', COALESCE(ap.portfolio_images, ARRAY[]::TEXT[])
             ) AS profile
      FROM users u
      LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
@@ -122,7 +124,7 @@ const login = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    const { password_hash, ...userSafe } = user;
+    const userSafe = await getUserWithProfile(user.id);
     res.status(200).json({ token, user: userSafe });
   } catch (error) {
     console.error('Login error:', error.message);
@@ -138,7 +140,7 @@ const uploadCinHandler = async (req, res) => {
       });
     }
 
-    const userDir = path.join(__dirname, '..', '..', 'uploads', 'cin', String(req.user.id));
+    const userDir = path.join(__dirname, '..', '..', '..', 'uploads', 'cin', String(req.user.id));
     fs.mkdirSync(userDir, { recursive: true });
 
     const rectoUrl = `/uploads/cin/${req.user.id}/${req.files.cin_recto[0].filename}`;
@@ -249,6 +251,68 @@ const updateArtisanProfile = async (req, res) => {
   }
 };
 
+const uploadProfilePhotoHandler = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Photo de profil obligatoire' });
+    }
+
+    const photoUrl = `/uploads/profile/${req.user.id}/${req.file.filename}`;
+
+    if (req.user.role === 'artisan') {
+      await db.query(
+        `INSERT INTO artisan_profiles (user_id, profile_photo_url, is_available)
+         VALUES ($1, $2, true)
+         ON CONFLICT (user_id) DO UPDATE
+         SET profile_photo_url = EXCLUDED.profile_photo_url`,
+        [req.user.id, photoUrl]
+      );
+    }
+
+    const user = await getUserWithProfile(req.user.id);
+    if (user) user.photo_url = photoUrl;
+    res.status(200).json({
+      message: 'Photo de profil mise a jour',
+      photo_url: photoUrl,
+      user,
+    });
+  } catch (error) {
+    console.error('Upload profile photo error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
+const uploadPortfolioHandler = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image portfolio obligatoire' });
+    }
+
+    const imageUrl = `/uploads/portfolio/${req.user.id}/${req.file.filename}`;
+
+    await db.query(
+      `INSERT INTO artisan_profiles (user_id, portfolio_images, is_available)
+       VALUES ($1, ARRAY[$2]::TEXT[], true)
+       ON CONFLICT (user_id) DO UPDATE
+       SET portfolio_images = array_append(
+         COALESCE(artisan_profiles.portfolio_images, ARRAY[]::TEXT[]),
+         $2
+       )`,
+      [req.user.id, imageUrl]
+    );
+
+    const user = await getUserWithProfile(req.user.id);
+    res.status(201).json({
+      message: 'Image ajoutee au portfolio',
+      image_url: imageUrl,
+      user,
+    });
+  } catch (error) {
+    console.error('Upload portfolio error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -256,4 +320,6 @@ module.exports = {
   updateAvailability,
   updateClientProfile,
   updateArtisanProfile,
+  uploadProfilePhotoHandler,
+  uploadPortfolioHandler,
 };

@@ -87,71 +87,123 @@ class _ReviewScreenState extends State<ReviewScreen> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 20),
-            CircleAvatar(
-              radius: 40,
-              backgroundColor: AppColors.lightBlue.withValues(alpha: 0.2),
-              child: const Icon(Icons.person, size: 50, color: AppColors.teal),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Comment s\'est passée votre expérience avec ${widget.artisanName} ?',
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.navy,
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            StarRatingInput(
-              initialRating: _rating,
-              onRatingChanged: (value) => setState(() => _rating = value),
-              size: 48,
-            ),
-            const SizedBox(height: 32),
-            TextField(
-              controller: _commentController,
-              maxLines: 4,
-              maxLength: 500,
-              decoration: InputDecoration(
-                hintText: 'Écrivez votre commentaire...',
-                filled: true,
-                fillColor: AppColors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.lightBlue.withValues(alpha: 0.2),
+                child:
+                    const Icon(Icons.handyman, size: 44, color: AppColors.teal),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Évaluer ${widget.artisanName}',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: AppColors.navy,
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.teal),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Votre avis aide les prochains clients à choisir le bon maalem.',
+                style: TextStyle(
+                  color: AppColors.textGrey,
+                  height: 1.4,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              StarRatingInput(
+                initialRating: _rating,
+                onRatingChanged: (value) => setState(() => _rating = value),
+                size: 48,
+              ),
+              const SizedBox(height: 10),
+              Text(
+                _rating == 0 ? 'Sélectionnez une note' : _ratingLabel(),
+                style: const TextStyle(
+                  color: AppColors.teal,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _submitReview,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.teal,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
+              const SizedBox(height: 28),
+              TextField(
+                controller: _commentController,
+                maxLines: 4,
+                maxLength: 500,
+                decoration: InputDecoration(
+                  hintText: 'Décrivez la qualité, le respect du délai...',
+                  filled: true,
+                  fillColor: AppColors.beige.withValues(alpha: 0.45),
+                  border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.teal),
                   ),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: AppColors.white)
-                    : const Text('Envoyer l\'avis',
-                        style: TextStyle(fontSize: 16)),
               ),
-            ),
-          ],
+              const SizedBox(height: 18),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _submitReview,
+                  icon: _isLoading
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            color: AppColors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Icon(Icons.send_outlined),
+                  label: const Text('Envoyer l\'avis'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.teal,
+                    foregroundColor: AppColors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    textStyle: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  String _ratingLabel() {
+    if (_rating >= 5) return 'Excellent';
+    if (_rating >= 4) return 'Très bien';
+    if (_rating >= 3) return 'Correct';
+    if (_rating >= 2) return 'À améliorer';
+    return 'Mauvaise expérience';
   }
 }

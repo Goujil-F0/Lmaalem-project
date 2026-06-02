@@ -172,7 +172,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: provider.allSpecialties
+                      initialValue: provider.allSpecialties
                               .contains(provider.selectedCategory)
                           ? provider.selectedCategory
                           : null,
@@ -218,7 +218,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
-                      value: provider.cities.contains(provider.selectedCity)
+                      initialValue: provider.cities.contains(provider.selectedCity)
                           ? provider.selectedCity
                           : null,
                       isExpanded: true,
@@ -452,11 +452,13 @@ class _ServiceCard extends StatelessWidget {
     if (cat.contains('domotique')) return Icons.smart_button;
     if (cat.contains('solaire')) return Icons.solar_power;
     if (cat.contains('tv') || cat.contains('satellite')) return Icons.tv;
-    if (cat.contains('rénovation') || cat.contains('renovati'))
+    if (cat.contains('rénovation') || cat.contains('renovati')) {
       return Icons.build;
+    }
     if (cat.contains('étanch')) return Icons.water_damage;
-    if (cat.contains('démolit') || cat.contains('demolit'))
+    if (cat.contains('démolit') || cat.contains('demolit')) {
       return Icons.delete_sweep;
+    }
     return Icons.handyman; // Default icon
   }
 

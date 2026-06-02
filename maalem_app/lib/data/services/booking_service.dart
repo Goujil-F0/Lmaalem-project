@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
 import '../../core/constants/api_endpoints.dart';
+import 'api_client.dart';
 
 class BookingService {
   // 1. Récupérer l'historique des réservations
@@ -12,7 +13,7 @@ class BookingService {
     final url = Uri.parse('${ApiEndpoints.bookings}/history/$userId/$role');
 
     try {
-      final response = await http.get(url);
+      final response = await http.get(url, headers: ApiClient.getHeaders(null));
 
       if (response.statusCode == 200) {
         // Si le backend répond OK, on décode le JSON
@@ -39,11 +40,12 @@ class BookingService {
     try {
       final response = await http.patch(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: ApiClient.getHeaders(null),
         body: json.encode({'status': newStatus}),
       );
 
-      return response.statusCode == 200; // Renvoie 'true' si c'est un succès
+      if (response.statusCode == 200) return true;
+      throw Exception(_errorMessage(response));
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la mise à jour du statut: $e');
@@ -58,7 +60,7 @@ class BookingService {
     try {
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: ApiClient.getHeaders(null),
         body: json.encode({
           'client_id': clientId,
           'artisan_id': artisanId,
@@ -69,10 +71,20 @@ class BookingService {
         }),
       );
 
-      return response.statusCode == 201; // 201 = Created
+      if (response.statusCode == 201) return true;
+      throw Exception(_errorMessage(response));
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la création de la réservation: $e');
+    }
+  }
+
+  String _errorMessage(http.Response response) {
+    try {
+      final data = json.decode(response.body);
+      return data['message'] ?? data['error'] ?? 'Erreur serveur';
+    } catch (_) {
+      return 'Erreur serveur: ${response.statusCode}';
     }
   }
 }

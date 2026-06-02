@@ -80,7 +80,7 @@ class BookingProvider with ChangeNotifier {
       }
       return false;
     } catch (e) {
-      _errorMessage = "Erreur lors de la création de la réservation";
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       return false;
     } finally {
       _isLoading = false;

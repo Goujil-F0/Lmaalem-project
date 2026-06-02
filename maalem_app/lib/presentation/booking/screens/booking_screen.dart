@@ -80,9 +80,13 @@ class _BookingScreenState extends State<BookingScreen> {
           MaterialPageRoute(builder: (context) => const HistoryScreen()),
         );
       } else {
+        final errorMessage =
+            Provider.of<BookingProvider>(context, listen: false).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Erreur lors de la réservation ❌'),
+          SnackBar(
+              content: Text(errorMessage.isEmpty
+                  ? 'Erreur lors de la réservation'
+                  : errorMessage),
               backgroundColor: Colors.red),
         );
       }

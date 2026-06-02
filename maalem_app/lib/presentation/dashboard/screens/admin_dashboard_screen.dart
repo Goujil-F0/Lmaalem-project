@@ -76,17 +76,40 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator(color: AppColors.teal));
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.teal),
+      );
     }
 
     if (_error != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            'Erreur de chargement: $_error',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.navy),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.cloud_off_outlined,
+                color: AppColors.teal,
+                size: 44,
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Erreur de chargement: $_error',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: AppColors.navy),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _loadDashboard,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Réessayer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: AppColors.white,
+                ),
+              ),
+            ],
           ),
         ),
       );
@@ -101,6 +124,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          _buildSummaryHeader(data),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
@@ -122,11 +147,26 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ],
           ),
           const SizedBox(height: 12),
-          StatsCard(
-            icon: Icons.pending_actions,
-            title: 'Réclamations ouvertes',
-            value: '${data['openComplaints'] ?? 0}',
-            color: Colors.orange,
+          Row(
+            children: [
+              Expanded(
+                child: StatsCard(
+                  icon: Icons.pending_actions,
+                  title: 'Ouvertes',
+                  value: '${data['openComplaints'] ?? 0}',
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: StatsCard(
+                  icon: Icons.verified_outlined,
+                  title: 'Résolues',
+                  value: '${data['resolvedComplaints'] ?? 0}',
+                  color: Colors.green,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 16),
           SizedBox(
@@ -157,23 +197,82 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Top artisans',
-            style: TextStyle(
-              color: AppColors.navy,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
-            ),
+          const _SectionTitle(
+            title: 'Top artisans',
+            actionLabel: 'Par note',
           ),
           const SizedBox(height: 12),
           if (topArtisans.isEmpty)
-            const Text(
-              'Aucun avis pour le moment',
-              style: TextStyle(color: AppColors.textGrey),
-            )
+            _buildEmptyBox('Aucun avis pour le moment')
           else
             ...topArtisans.map(_buildTopArtisanCard),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader(Map<String, dynamic> data) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(
+              Icons.admin_panel_settings_outlined,
+              color: AppColors.white,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Vue qualité plateforme',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Note globale ${data['platformAverageRating'] ?? 0} / 5',
+                  style: TextStyle(
+                    color: AppColors.white.withValues(alpha: 0.78),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyBox(String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        text,
+        style: const TextStyle(color: AppColors.textGrey),
       ),
     );
   }
@@ -215,6 +314,49 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final String actionLabel;
+
+  const _SectionTitle({
+    required this.title,
+    required this.actionLabel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(
+            color: AppColors.lightBlue.withValues(alpha: 0.18),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            actionLabel,
+            style: const TextStyle(
+              color: AppColors.teal,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

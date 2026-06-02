@@ -39,10 +39,14 @@ const getComplaints = async (req, res) => {
     const result = await pool.query(
       `SELECT c.*, 
         u1.full_name as client_name, 
-        u2.full_name as artisan_name
+        u2.full_name as artisan_name,
+        b.booking_date,
+        b.status as booking_status,
+        b.agreed_price
        FROM complaints c
        JOIN users u1 ON c.client_id = u1.id
        JOIN users u2 ON c.artisan_id = u2.id
+       JOIN bookings b ON c.booking_id = b.id
        ORDER BY c.created_at DESC`
     );
     res.status(200).json(result.rows);

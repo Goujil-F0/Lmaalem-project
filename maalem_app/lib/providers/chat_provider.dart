@@ -16,47 +16,67 @@ class ChatProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
 
   // 1. Démarrer le chat (Historique HTTP + Connexion Socket)
+  // 1. Démarrer le chat (Historique HTTP + Connexion Socket)
   void initChat(int bookingId) async {
     _isLoading = true;
     _messages.clear();
-    notifyListeners();
+    // On met à jour l'interface pour afficher le chargement
+    Future.microtask(() => notifyListeners());
 
-    // A. On charge l'historique de la BDD
+    // A. On charge l'historique de la BDD via HTTP
     try {
       final url = Uri.parse('${ApiEndpoints.messages}/$bookingId');
       final response = await http.get(url);
+
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<dynamic> data = decoded['data'];
         _messages = data.map((m) => Message.fromJson(m)).toList();
+      } else {
+        print("⚠️ Erreur API Messages: ${response.statusCode}");
       }
     } catch (e) {
-      print("Erreur historique chat: $e");
-    }
-
-    // B. On se connecte au Socket en temps réel
-    _socket = IO.io(
-        ApiEndpoints.socketUrl,
-        IO.OptionBuilder()
-            .setTransports(['websocket']) // Obligatoire pour Flutter
-            .enableAutoConnect()
-            .build());
-
-    _socket!.onConnect((_) {
-      print("🔌 Connecté au serveur Socket !");
-      // On rejoint la "Room" de cette réservation
-      _socket!.emit('join_chat', bookingId);
-
+      print("❌ Erreur de connexion au serveur pour l'historique: $e");
+    } finally {
+      // --- CETTE PARTIE EST CRUCIALE ---
+      // Le bloc "finally" s'exécute TOUJOURS, même si le backend a planté.
+      // Ça garantit que l'écran ne restera jamais bloqué sur un chargement infini !
       _isLoading = false;
       notifyListeners();
-    });
+    }
 
-    // C. Quand on reçoit un message en temps réel
-    _socket!.on('receive_message', (data) {
-      final newMessage = Message.fromJson(data);
-      _messages.add(newMessage);
-      notifyListeners(); // 🔄 Met à jour l'écran instantanément !
-    });
+    // B. On se connecte au Socket en temps réel (en arrière-plan)
+    // B. On se connecte au Socket en temps réel (en arrière-plan)
+    try {
+      // 1. On déconnecte l'ancien socket s'il existe
+      if (_socket != null) {
+        _socket!.disconnect();
+        _socket!
+            .clearListeners(); // 🧹 LA LIGNE MAGIQUE QUI TUE LE BUG DE L'ÉCHO !
+      }
+
+      // 2. On crée la nouvelle connexion
+      _socket = IO.io(
+          ApiEndpoints.socketUrl,
+          IO.OptionBuilder()
+              .setTransports(['websocket'])
+              .enableAutoConnect()
+              .build());
+
+      // 3. On remet NOS oreilles toutes neuves (une seule fois)
+      _socket!.onConnect((_) {
+        print("🔌 Connecté au serveur Socket !");
+        _socket!.emit('join_chat', bookingId);
+      });
+
+      _socket!.on('receive_message', (data) {
+        final newMessage = Message.fromJson(data);
+        _messages.add(newMessage);
+        notifyListeners(); // Met à jour l'écran
+      });
+    } catch (e) {
+      print("Erreur d'initialisation du Socket: $e");
+    }
   }
 
   // 2. Envoyer un message

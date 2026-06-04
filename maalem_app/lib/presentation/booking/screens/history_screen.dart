@@ -8,6 +8,7 @@ import '../../../data/models/booking_model.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
 import 'chat_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -238,7 +239,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                         onPressed: () {
-                          // Plus tard: Naviguer vers l'écran de déclaration de besoin
+                          // Retourne à la page principale (Accueil) et vide l'historique de navigation
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MainShell()),
+                            (route) => false,
+                          );
                         },
                         icon: const Icon(Icons.add_circle, color: Colors.white),
                         label: const Text(

@@ -265,27 +265,126 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }
 
   // Version finale de la carte avec Navigation ET Paiement Espèces
+  // Version Finale avec gestion des Rôles (Client / Artisan)
   Widget _buildBookingCard(
       Booking booking, Color titleColor, Color priceColor) {
-    final authUser = context.read<AuthProvider>().user;
-    final currentUserId = authUser?.id ?? booking.clientId;
-    final isClient = authUser?.role == 'client';
-    final canComplain = isClient &&
-        booking.id != null &&
-        (booking.status == 'accepted' || booking.status == 'completed');
-    final canReview =
-        isClient && booking.id != null && booking.status == 'completed';
+    // 1. On récupère le rôle de la personne connectée
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final userRole =
+        authProvider.user?.role ?? 'client'; // 'client' ou 'artisan'
+
+    // --- GESTION DU VISUEL DES STATUTS ---
+    String statusText = '';
+    Color statusColor = Colors.grey;
+    IconData statusIcon = Icons.info;
+
+    if (booking.status == 'pending') {
+      statusText = 'En attente de l\'artisan';
+      statusColor = Colors.orange;
+      statusIcon = Icons.access_time;
+    } else if (booking.status == 'accepted') {
+      statusText = 'Artisan en route / En cours';
+      statusColor = Colors.green;
+      statusIcon = Icons.check_circle;
+    } else if (booking.status == 'completed') {
+      statusText = 'Projet terminé';
+      statusColor = Colors.blue;
+      statusIcon = Icons.done_all;
+    } else {
+      statusText = 'Projet annulé/refusé';
+      statusColor = Colors.red;
+      statusIcon = Icons.cancel;
+    }
+
+    // --- CRÉATION DU MENU (Les 3 petits points) SELON LE RÔLE ---
+    List<PopupMenuEntry<String>> menuOptions = [];
+
+    // Option A : L'ARTISAN valide le paiement (seulement si le projet est en cours)
+    if (userRole == 'artisan' && booking.status == 'pending') {
+      menuOptions.add(
+        const PopupMenuItem<String>(
+          value: 'accept_booking',
+          child: Row(
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.green),
+              SizedBox(width: 8),
+              Text('Accepter la demande'),
+            ],
+          ),
+        ),
+      );
+      menuOptions.add(
+        const PopupMenuItem<String>(
+          value: 'reject_booking',
+          child: Row(
+            children: [
+              Icon(Icons.cancel_outlined, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Refuser la demande'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Option B : L'ARTISAN valide le paiement (seulement si le projet est EN COURS)
+    if (userRole == 'artisan' && booking.status == 'accepted') {
+      menuOptions.add(
+        const PopupMenuItem<String>(
+          value: 'pay_cash',
+          child: Row(
+            children: [
+              Icon(Icons.payments_outlined, color: Colors.green),
+              SizedBox(width: 8),
+              Text('Marquer comme payé'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Option B : LE CLIENT laisse un avis (seulement si le projet est terminé)
+    if (userRole == 'client' && booking.status == 'completed') {
+      menuOptions.add(
+        const PopupMenuItem<String>(
+          value: 'review',
+          child: Row(
+            children: [
+              Icon(Icons.star_border, color: Colors.orange),
+              SizedBox(width: 8),
+              Text('Évaluer l\'artisan'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Option C : LE CLIENT fait une réclamation (si le projet n'est pas annulé)
+    if (userRole == 'client' &&
+        booking.status != 'cancelled' &&
+        booking.status != 'rejected') {
+      menuOptions.add(
+        const PopupMenuItem<String>(
+          value: 'complaint',
+          child: Row(
+            children: [
+              Icon(Icons.warning_amber_rounded, color: Colors.red),
+              SizedBox(width: 8),
+              Text('Faire une réclamation'),
+            ],
+          ),
+        ),
+      );
+    }
 
     return GestureDetector(
       onTap: () {
-        if (booking.id == null) return;
-        // Navigation fluide vers le chat au clic sur la carte
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
-              currentUserId: currentUserId,
+              currentUserId: authProvider.user!.id,
             ),
           ),
         );
@@ -298,7 +397,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -318,18 +417,41 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: titleColor),
                 ),
 
-                // --- LE NOUVEAU MENU DES 3 POINTS ---
-                if (booking.status == 'pending' || booking.status == 'accepted')
+                // On affiche les 3 points UNIQUEMENT si on a des options à proposer !
+                if (menuOptions.isNotEmpty)
                   PopupMenuButton<String>(
                     icon: Icon(Icons.more_horiz, color: Colors.grey.shade400),
                     onSelected: (value) async {
+                      // --- NOUVELLES ACTIONS ARTISAN ---
+                      if (value == 'accept_booking') {
+                        await Provider.of<BookingProvider>(context,
+                                listen: false)
+                            .changeBookingStatus(booking.id!, 'accepted');
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text(
+                                  "Réservation acceptée ! L'artisan est en route ✅"),
+                              backgroundColor: Colors.green),
+                        );
+                      } else if (value == 'reject_booking') {
+                        await Provider.of<BookingProvider>(context,
+                                listen: false)
+                            .changeBookingStatus(booking.id!, 'rejected');
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text("Réservation refusée."),
+                              backgroundColor: Colors.red),
+                        );
+                      }
+                      // Action : Payer
                       if (value == 'pay_cash') {
-                        // 1. Appel du Provider pour passer au statut "completed"
                         await Provider.of<BookingProvider>(context,
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'completed');
 
-                        // 2. Affichage d'un petit message de succès en bas de l'écran
+                        if (!mounted) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content:
@@ -338,29 +460,52 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         );
                       }
+                      // Action : Évaluer
+                      else if (value == 'review') {
+                        _openReview(booking); // Appelle la fonction de Wissal !
+                      }
+                      // Action : Réclamation
+                      else if (value == 'complaint') {
+                        _openComplaint(
+                            booking); // Appelle la fonction de Wissal !
+                      }
                     },
-                    itemBuilder: (BuildContext context) =>
-                        <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'pay_cash',
-                        child: Row(
-                          children: [
-                            Icon(Icons.payments_outlined, color: Colors.green),
-                            SizedBox(width: 8),
-                            Text('Paiement en espèces'),
-                          ],
-                        ),
-                      ),
-                    ],
+                    itemBuilder: (BuildContext context) => menuOptions,
                   )
                 else
-                  // Si le projet est annulé ou terminé, on ne met rien à la place des 3 points
                   const SizedBox(width: 24, height: 24),
               ],
             ),
             const SizedBox(height: 8),
             Text(booking.description, style: const TextStyle(fontSize: 15)),
+
+            const SizedBox(height: 12),
+
+            // Le Badge
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: statusColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(statusIcon, color: statusColor, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    statusText,
+                    style: TextStyle(
+                        color: statusColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+
             const SizedBox(height: 16),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -376,41 +521,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: priceColor),
                 ),
               ],
-            ),
-            if (canComplain || canReview) ...[
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  if (canReview)
-                    OutlinedButton.icon(
-                      onPressed: () => _openReview(booking),
-                      icon: const Icon(Icons.star_outline, size: 18),
-                      label: const Text('Laisser un avis'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: priceColor,
-                        side: BorderSide(color: priceColor),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                    ),
-                  if (canComplain)
-                    TextButton.icon(
-                      onPressed: () => _openComplaint(booking),
-                      icon: const Icon(
-                        Icons.report_problem_outlined,
-                        size: 18,
-                      ),
-                      label: const Text('Réclamation'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: titleColor,
-                      ),
-                    ),
-                ],
-              ),
-            ],
+            )
           ],
         ),
       ),

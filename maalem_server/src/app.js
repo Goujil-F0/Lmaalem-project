@@ -22,6 +22,7 @@ const io = new Server(server, {
         methods: ["GET", "POST"]
     }
 });
+app.set('socketio', io);
 
 // Middleware
 app.use(express.json());

@@ -56,7 +56,10 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
 
   Future<void> _handleUpload() async {
     if (_rectoFile == null || _versoFile == null) {
-      _showSnackBar('Les deux cotes de la CIN sont obligatoires', Colors.redAccent);
+      _showSnackBar(
+        'Les deux cotes de la CIN sont obligatoires',
+        Colors.redAccent,
+      );
       return;
     }
 
@@ -68,7 +71,10 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
     setState(() => _isLoading = false);
 
     if (result['success']) {
-      _showSnackBar('CIN uploadee avec succes. Connectez-vous maintenant.', Colors.green);
+      _showSnackBar(
+        'CIN uploadee avec succes. Connectez-vous maintenant.',
+        Colors.green,
+      );
       await Future.delayed(const Duration(milliseconds: 500));
       if (!mounted) return;
       Navigator.pushReplacement(
@@ -85,15 +91,6 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: color),
     );
-  }
-
-  bool _isPdf(String name) => name.toLowerCase().endsWith('.pdf');
-
-  String _mimeTypeFor(String name) {
-    final lower = name.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'application/pdf';
-    if (lower.endsWith('.png')) return 'image/png';
-    return 'image/jpeg';
   }
 
   @override
@@ -179,7 +176,8 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                         color: AppColors.teal.withValues(alpha: 0.14),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: const Icon(Icons.info_outline, color: AppColors.teal),
+                      child:
+                          const Icon(Icons.info_outline, color: AppColors.teal),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
@@ -220,7 +218,8 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.teal,
-                    disabledBackgroundColor: AppColors.teal.withValues(alpha: 0.6),
+                    disabledBackgroundColor:
+                        AppColors.teal.withValues(alpha: 0.6),
                     elevation: 6,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),

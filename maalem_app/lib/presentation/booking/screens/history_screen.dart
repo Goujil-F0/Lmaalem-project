@@ -5,7 +5,10 @@ import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
+import '../../dashboard/screens/complaint_screen.dart';
+import '../../dashboard/screens/review_screen.dart';
 import 'chat_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -81,7 +84,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
@@ -100,7 +103,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -183,67 +186,106 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   // Création de la vue quand il n'y a pas de réservation
   Widget _buildEmptyState(Color titleColor, Color buttonColor) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        // Le carré gris (placeholder pour une image future)
-        Container(
-          width: 200,
-          height: 200,
-          color: Colors.grey.shade300,
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Aucun projet ${_selectedTab.toLowerCase()}',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: titleColor,
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          "Il semble que vous n'ayez pas de travaux de bricolage ou d'artisanat lancés pour le moment.",
-          textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey),
-        ),
-        const SizedBox(height: 32),
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: buttonColor,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 132,
+                      height: 132,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        borderRadius: BorderRadius.circular(24),
+                        border: Border.all(color: Colors.grey.shade300),
+                      ),
+                      child: Icon(
+                        Icons.assignment_outlined,
+                        color: buttonColor,
+                        size: 54,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Aucun projet ${_selectedTab.toLowerCase()}',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 23,
+                        fontWeight: FontWeight.bold,
+                        color: titleColor,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      "Vous n'avez pas encore de travaux lancés dans cette catégorie.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 15, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 24),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: buttonColor,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: () {
+                          // Retourne à la page principale (Accueil) et vide l'historique de navigation
+                          Navigator.pushAndRemoveUntil(
+                            context,
+                            MaterialPageRoute(
+                                builder: (context) => const MainShell()),
+                            (route) => false,
+                          );
+                        },
+                        icon: const Icon(Icons.add_circle, color: Colors.white),
+                        label: const Text(
+                          'Déclarer mon besoin',
+                          style: TextStyle(fontSize: 16, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            onPressed: () {
-              // Plus tard: Naviguer vers l'écran de déclaration de besoin
-            },
-            icon: const Icon(Icons.add_circle, color: Colors.white),
-            label: const Text(
-              'Déclarer mon besoin',
-              style: TextStyle(fontSize: 18, color: Colors.white),
-            ),
           ),
-        ),
-      ],
+        );
+      },
     );
   }
 
   // Version finale de la carte avec Navigation ET Paiement Espèces
   Widget _buildBookingCard(
       Booking booking, Color titleColor, Color priceColor) {
+    final authUser = context.read<AuthProvider>().user;
+    final currentUserId = authUser?.id ?? booking.clientId;
+    final isClient = authUser?.role == 'client';
+    final canComplain = isClient &&
+        booking.id != null &&
+        (booking.status == 'accepted' || booking.status == 'completed');
+    final canReview =
+        isClient && booking.id != null && booking.status == 'completed';
+
     return GestureDetector(
       onTap: () {
+        if (booking.id == null) return;
         // Navigation fluide vers le chat au clic sur la carte
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
-              currentUserId: 1, // ID temporaire pour le test
+              currentUserId: currentUserId,
             ),
           ),
         );
@@ -256,7 +298,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -334,8 +376,67 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       color: priceColor),
                 ),
               ],
-            )
+            ),
+            if (canComplain || canReview) ...[
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  if (canReview)
+                    OutlinedButton.icon(
+                      onPressed: () => _openReview(booking),
+                      icon: const Icon(Icons.star_outline, size: 18),
+                      label: const Text('Laisser un avis'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: priceColor,
+                        side: BorderSide(color: priceColor),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  if (canComplain)
+                    TextButton.icon(
+                      onPressed: () => _openComplaint(booking),
+                      icon: const Icon(
+                        Icons.report_problem_outlined,
+                        size: 18,
+                      ),
+                      label: const Text('Réclamation'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: titleColor,
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
+        ),
+      ),
+    );
+  }
+
+  void _openReview(Booking booking) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ReviewScreen(
+          bookingId: booking.id!,
+          artisanId: booking.artisanId,
+          artisanName: 'Artisan #${booking.artisanId}',
+        ),
+      ),
+    );
+  }
+
+  void _openComplaint(Booking booking) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ComplaintScreen(
+          bookingId: booking.id!,
+          artisanId: booking.artisanId,
         ),
       ),
     );

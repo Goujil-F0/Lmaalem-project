@@ -79,7 +79,7 @@ class _MainShellState extends State<MainShell> {
 
   List<Widget> _artisanPages(int artisanId) => [
         DashboardScreen(artisanId: artisanId),
-        const _ConstructionScreen(title: 'Missions'),
+        const HistoryScreen(),
         const MapScreen(),
         const _ConstructionScreen(title: 'Maison'),
         const ProfileArtisanScreen(),

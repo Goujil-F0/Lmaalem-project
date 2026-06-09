@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
-import 'history_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final int artisanId; // L'artisan qu'on veut réserver
@@ -94,13 +93,24 @@ class _BookingScreenState extends State<BookingScreen> {
     // 4. On gère le résultat
     if (success) {
       print("🎉 Réservation réussie dans la BDD !");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Réservation envoyée avec succès ! ✅'),
-            backgroundColor: Colors.green),
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Réservation enregistrée'),
+          content: const Text(
+            "Votre réservation a été envoyée. Elle reste en attente jusqu'à l'acceptation de l'artisan.",
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
       );
 
       // On retourne à la page principale pour voir le suivi
+      if (!mounted) return;
       Navigator.pop(context);
     } else {
       print("⚠️ Le backend a refusé la réservation !");
@@ -115,9 +125,6 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   Widget build(BuildContext context) {
     // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final int currentUserId = authProvider.user!.id;
-
     const Color primaryDarkBlue = Color(0xFF0C2C55);
     const Color primaryTeal = Color(0xFF296374);
     const Color bgColor = Color(0xFFF1F3E1);

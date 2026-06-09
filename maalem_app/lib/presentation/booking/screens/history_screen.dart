@@ -272,6 +272,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole =
         authProvider.user?.role ?? 'client'; // 'client' ou 'artisan'
+    final personName = userRole == 'artisan'
+        ? booking.clientName
+        : booking.artisanName;
+    final cardTitle = personName != null && personName.trim().isNotEmpty
+        ? personName.trim()
+        : 'Service #${booking.id}';
 
     // --- GESTION DU VISUEL DES STATUTS ---
     String statusText = '';
@@ -344,7 +350,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
     }
 
     // Option B : LE CLIENT laisse un avis (seulement si le projet est terminé)
-    if (userRole == 'client' && booking.status == 'completed') {
+    if (userRole == 'client' &&
+        booking.status == 'completed' &&
+        !booking.hasReview) {
       menuOptions.add(
         const PopupMenuItem<String>(
           value: 'review',
@@ -359,10 +367,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    // Option C : LE CLIENT fait une réclamation (si le projet n'est pas annulé)
+    // Option C : LE CLIENT fait une réclamation seulement après acceptation.
     if (userRole == 'client' &&
-        booking.status != 'cancelled' &&
-        booking.status != 'rejected') {
+        (booking.status == 'accepted' || booking.status == 'completed')) {
       menuOptions.add(
         const PopupMenuItem<String>(
           value: 'complaint',
@@ -410,7 +417,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Service #${booking.id}',
+                  cardTitle,
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 18,
@@ -528,17 +535,28 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  void _openReview(Booking booking) {
-    Navigator.push(
+  Future<void> _openReview(Booking booking) async {
+    final saved = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => ReviewScreen(
           bookingId: booking.id!,
           artisanId: booking.artisanId,
-          artisanName: 'Artisan #${booking.artisanId}',
+          artisanName: booking.artisanName ?? 'Artisan #${booking.artisanId}',
         ),
       ),
     );
+
+    if (saved == true && mounted) {
+      Provider.of<BookingProvider>(context, listen: false)
+          .markBookingReviewed(booking.id!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Votre avis est enregistré. Merci !'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
   }
 
   void _openComplaint(Booking booking) {

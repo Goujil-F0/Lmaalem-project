@@ -29,6 +29,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isFavorite = false;
   String? _error;
   Map<String, dynamic>? _dashboardData;
+  DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
+  DateTime? _selectedCalendarDate;
 
   String? _resolveImageUrl(String? source) {
     if (source == null || source.trim().isEmpty) return null;
@@ -161,13 +163,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           _buildProfileHeader(context),
                           const SizedBox(height: 18),
                         ],
-                        _buildStats(isOwnDashboard),
                         if (isOwnDashboard) ...[
+                          _buildWallet(),
+                          const SizedBox(height: 24),
+                          _buildStats(isOwnDashboard),
+                          const SizedBox(height: 24),
+                          _buildCalendar(),
                           const SizedBox(height: 24),
                           _buildRecentReviews(isOwnDashboard),
                           const SizedBox(height: 24),
                           _buildRecentBookings(),
                         ] else ...[
+                          _buildStats(isOwnDashboard),
                           const SizedBox(height: 24),
                           _buildRecentReviews(isOwnDashboard),
                         ],
@@ -292,6 +299,380 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ...bookings.map(_buildBookingCard),
       ],
     );
+  }
+
+  Widget _buildWallet() {
+    final wallet = _dashboardData!['wallet'] is Map
+        ? _dashboardData!['wallet'] as Map
+        : const {};
+    final received = _toDouble(wallet['received']) ?? 0;
+    final expected = _toDouble(wallet['expected']) ?? 0;
+    final balance = _toDouble(wallet['balance']) ?? received;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.18),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 46,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFD8B45D),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.credit_card,
+                  color: AppColors.navy,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Wallet',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  'MAD',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Text(
+            '${received.toStringAsFixed(0)} MAD',
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 34,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          Text(
+            'Montant reçu',
+            style: TextStyle(
+              color: AppColors.white.withValues(alpha: 0.72),
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: _WalletMetric(
+                  icon: Icons.account_balance_outlined,
+                  label: 'Solde',
+                  value: '${balance.toStringAsFixed(0)} MAD',
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: _WalletMetric(
+                  icon: Icons.trending_up,
+                  label: 'À venir',
+                  value: '${expected.toStringAsFixed(0)} MAD',
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCalendar() {
+    final bookings = (_dashboardData!['upcomingBookings'] as List?) ?? const [];
+    final markedDays = <DateTime, List<Map<dynamic, dynamic>>>{};
+
+    for (final item in bookings) {
+      if (item is! Map) continue;
+      final date = DateTime.tryParse('${item['booking_date'] ?? ''}');
+      if (date == null) continue;
+      final key = DateTime(date.year, date.month, date.day);
+      markedDays.putIfAbsent(key, () => []).add(item);
+    }
+
+    final days = _calendarDays(_calendarMonth);
+    final selectedKey = _selectedCalendarDate == null
+        ? null
+        : DateTime(
+            _selectedCalendarDate!.year,
+            _selectedCalendarDate!.month,
+            _selectedCalendarDate!.day,
+          );
+    final selectedBookings = selectedKey == null
+        ? const <Map<dynamic, dynamic>>[]
+        : markedDays[selectedKey] ?? const <Map<dynamic, dynamic>>[];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _SectionTitle(
+          icon: Icons.calendar_month_outlined,
+          title: 'Calendrier',
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  IconButton(
+                    tooltip: 'Mois précédent',
+                    onPressed: () {
+                      setState(() {
+                        _calendarMonth = DateTime(
+                          _calendarMonth.year,
+                          _calendarMonth.month - 1,
+                        );
+                        _selectedCalendarDate = null;
+                      });
+                    },
+                    icon: const Icon(Icons.chevron_left),
+                    color: AppColors.navy,
+                  ),
+                  Expanded(
+                    child: Text(
+                      _monthLabel(_calendarMonth),
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Mois suivant',
+                    onPressed: () {
+                      setState(() {
+                        _calendarMonth = DateTime(
+                          _calendarMonth.year,
+                          _calendarMonth.month + 1,
+                        );
+                        _selectedCalendarDate = null;
+                      });
+                    },
+                    icon: const Icon(Icons.chevron_right),
+                    color: AppColors.navy,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              const Row(
+                children: [
+                  _WeekdayLabel('L'),
+                  _WeekdayLabel('M'),
+                  _WeekdayLabel('M'),
+                  _WeekdayLabel('J'),
+                  _WeekdayLabel('V'),
+                  _WeekdayLabel('S'),
+                  _WeekdayLabel('D'),
+                ],
+              ),
+              const SizedBox(height: 8),
+              GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: days.length,
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 7,
+                  mainAxisSpacing: 8,
+                  crossAxisSpacing: 8,
+                ),
+                itemBuilder: (context, index) {
+                  final day = days[index];
+                  final isCurrentMonth = day.month == _calendarMonth.month;
+                  final key = DateTime(day.year, day.month, day.day);
+                  final dayBookings = markedDays[key] ?? const [];
+                  final hasBooking = dayBookings.isNotEmpty;
+                  final hasPriority =
+                      dayBookings.any((b) => b['status'] == 'accepted');
+                  final isSelected = selectedKey == key;
+
+                  return _CalendarDayCell(
+                    day: day,
+                    isCurrentMonth: isCurrentMonth,
+                    hasBooking: hasBooking,
+                    hasPriority: hasPriority,
+                    isSelected: isSelected,
+                    count: dayBookings.length,
+                    onTap: hasBooking
+                        ? () => setState(() => _selectedCalendarDate = key)
+                        : null,
+                  );
+                },
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (bookings.isEmpty)
+          _buildEmptyBox('Aucun rendez-vous à prioriser')
+        else if (selectedBookings.isEmpty)
+          _buildEmptyBox('Touchez une date marquée pour voir les rendez-vous')
+        else
+          ...selectedBookings.map(_buildCalendarAppointment),
+      ],
+    );
+  }
+
+  Widget _buildCalendarAppointment(dynamic item) {
+    final booking = item is Map ? item : const {};
+    final status = '${booking['status'] ?? 'pending'}';
+    final isPriority = status == 'accepted';
+    final date = DateTime.tryParse('${booking['booking_date'] ?? ''}');
+    final price = _toDouble(booking['agreed_price']);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: (isPriority ? Colors.green : Colors.orange)
+                    .withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                isPriority ? Icons.priority_high : Icons.schedule,
+                color: isPriority ? Colors.green : Colors.orange,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          '${booking['client_name'] ?? 'Client'}',
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      _StatusBadge(status: status),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    date == null
+                        ? 'Date non définie'
+                        : '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}',
+                    style: const TextStyle(
+                      color: AppColors.teal,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  if ((booking['description'] ?? '')
+                      .toString()
+                      .trim()
+                      .isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${booking['description']}',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: AppColors.textGrey),
+                    ),
+                  ],
+                  if (price != null) ...[
+                    const SizedBox(height: 6),
+                    Text(
+                      '${price.toStringAsFixed(0)} MAD',
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  List<DateTime> _calendarDays(DateTime month) {
+    final firstDay = DateTime(month.year, month.month);
+    final start = firstDay.subtract(Duration(days: firstDay.weekday - 1));
+
+    return List.generate(42, (index) => start.add(Duration(days: index)));
+  }
+
+  String _monthLabel(DateTime date) {
+    const months = [
+      'Janvier',
+      'Février',
+      'Mars',
+      'Avril',
+      'Mai',
+      'Juin',
+      'Juillet',
+      'Août',
+      'Septembre',
+      'Octobre',
+      'Novembre',
+      'Décembre',
+    ];
+
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   Widget _buildBookingCard(dynamic item) {
@@ -705,6 +1086,172 @@ class _AvailabilityBadge extends StatelessWidget {
           color: AppColors.white,
           fontSize: 12,
           fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+}
+
+class _WalletMetric extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _WalletMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: AppColors.white, size: 18),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: TextStyle(
+              color: AppColors.white.withValues(alpha: 0.72),
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WeekdayLabel extends StatelessWidget {
+  final String value;
+
+  const _WeekdayLabel(this.value);
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        value,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: AppColors.textGrey,
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
+class _CalendarDayCell extends StatelessWidget {
+  final DateTime day;
+  final bool isCurrentMonth;
+  final bool hasBooking;
+  final bool hasPriority;
+  final bool isSelected;
+  final int count;
+  final VoidCallback? onTap;
+
+  const _CalendarDayCell({
+    required this.day,
+    required this.isCurrentMonth,
+    required this.hasBooking,
+    required this.hasPriority,
+    required this.isSelected,
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bgColor = isSelected
+        ? AppColors.navy
+        : hasPriority
+            ? Colors.green.withValues(alpha: 0.14)
+            : hasBooking
+                ? AppColors.teal.withValues(alpha: 0.13)
+                : Colors.transparent;
+    final borderColor = isSelected
+        ? AppColors.navy
+        : hasPriority
+            ? Colors.green
+            : hasBooking
+                ? AppColors.teal
+                : Colors.grey.shade300;
+    final textColor = isSelected
+        ? AppColors.white
+        : isCurrentMonth
+            ? AppColors.navy
+            : Colors.grey.shade400;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: borderColor),
+        ),
+        child: Stack(
+          children: [
+            Center(
+              child: Text(
+                '${day.day}',
+                style: TextStyle(
+                  color: textColor,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+            if (hasBooking)
+              Positioned(
+                right: 4,
+                bottom: 4,
+                child: Container(
+                  width: count > 1 ? 16 : 7,
+                  height: 7,
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? AppColors.white
+                        : hasPriority
+                            ? Colors.green
+                            : AppColors.teal,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: count > 1
+                      ? Center(
+                          child: Text(
+                            '$count',
+                            style: TextStyle(
+                              color: isSelected
+                                  ? AppColors.navy
+                                  : AppColors.white,
+                              fontSize: 7,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+          ],
         ),
       ),
     );

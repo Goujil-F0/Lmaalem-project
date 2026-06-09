@@ -3,14 +3,14 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:socket_io_client/socket_io_client.dart' as IO;
+import 'package:socket_io_client/socket_io_client.dart' as socket_io;
 import '../data/models/message_model.dart';
 import '../core/constants/api_endpoints.dart';
 
 class ChatProvider with ChangeNotifier {
   List<Message> _messages = [];
   bool _isLoading = false;
-  IO.Socket? _socket;
+  socket_io.Socket? _socket;
 
   List<Message> get messages => _messages;
   bool get isLoading => _isLoading;
@@ -31,19 +31,19 @@ class ChatProvider with ChangeNotifier {
         _messages = data.map((m) => Message.fromJson(m)).toList();
       }
     } catch (e) {
-      print("Erreur historique chat: $e");
+      debugPrint("Erreur historique chat: $e");
     }
 
     // B. On se connecte au Socket en temps réel
-    _socket = IO.io(
+    _socket = socket_io.io(
         ApiEndpoints.socketUrl,
-        IO.OptionBuilder()
+        socket_io.OptionBuilder()
             .setTransports(['websocket']) // Obligatoire pour Flutter
             .enableAutoConnect()
             .build());
 
     _socket!.onConnect((_) {
-      print("🔌 Connecté au serveur Socket !");
+      debugPrint("Socket connecte au serveur.");
       // On rejoint la "Room" de cette réservation
       _socket!.emit('join_chat', bookingId);
 

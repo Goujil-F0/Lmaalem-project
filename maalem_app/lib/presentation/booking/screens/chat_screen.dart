@@ -66,11 +66,12 @@ class _ChatScreenState extends State<ChatScreen> {
             onPressed: () async {
               // Plus tard, on récupérera le vrai numéro de l'artisan depuis la BDD.
               // Pour le test, on met un faux numéro marocain.
+              final messenger = ScaffoldMessenger.of(context);
               final Uri callUri = Uri.parse('tel:+212600000000');
               if (await canLaunchUrl(callUri)) {
                 await launchUrl(callUri);
               } else {
-                ScaffoldMessenger.of(context).showSnackBar(
+                messenger.showSnackBar(
                   const SnackBar(content: Text("Impossible de lancer l'appel")),
                 );
               }
@@ -124,7 +125,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.05),
+                                color: Colors.black.withValues(alpha: 0.05),
                                 blurRadius: 5,
                                 offset: const Offset(0, 2),
                               )
@@ -150,7 +151,9 @@ class _ChatScreenState extends State<ChatScreen> {
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)
+                BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10)
               ],
             ),
             child: SafeArea(

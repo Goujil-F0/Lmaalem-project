@@ -13,6 +13,14 @@ const createBooking = async (clientId, artisanId, description, agreedPrice, book
     return rows[0]; // On retourne la réservation nouvellement créée
 };
 
+const getUserById = async (userId) => {
+    const { rows } = await pool.query(
+        'SELECT id, role FROM users WHERE id = $1',
+        [userId]
+    );
+    return rows[0] || null;
+};
+
 const getBookingsByUser = async (userId, role) => {
     let query = '';
     
@@ -45,6 +53,7 @@ const updateBookingStatus = async (bookingId, newStatus) => {
 // Mets à jour ton export à la fin du fichier
 module.exports = {
     createBooking,
+    getUserById,
     getBookingsByUser,
     updateBookingStatus
 };

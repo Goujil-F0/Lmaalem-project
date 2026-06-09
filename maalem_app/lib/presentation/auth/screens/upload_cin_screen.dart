@@ -87,15 +87,6 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
     );
   }
 
-  bool _isPdf(String name) => name.toLowerCase().endsWith('.pdf');
-
-  String _mimeTypeFor(String name) {
-    final lower = name.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'application/pdf';
-    if (lower.endsWith('.png')) return 'image/png';
-    return 'image/jpeg';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(

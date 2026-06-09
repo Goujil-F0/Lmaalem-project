@@ -41,6 +41,15 @@ class ArtisanModel {
 
   /// Factory constructor pour créer depuis JSON (API)
   factory ArtisanModel.fromJson(Map<String, dynamic> json) {
+    final latitude = _toDouble(json['latitude']) ?? 0.0;
+    final longitude = _toDouble(json['longitude']) ?? 0.0;
+    final city = json['city'] ?? '';
+
+    // Si pas de coordonnées valides, utiliser les coordonnées par défaut de la ville
+    final coords = (latitude == 0 && longitude == 0)
+        ? _getDefaultCoordinates(city)
+        : (latitude, longitude);
+
     return ArtisanModel(
       id: _toInt(json['id']) ?? _toInt(json['user_id']) ?? 0,
       fullName: json['fullName'] ?? json['full_name'] ?? '',
@@ -51,10 +60,10 @@ class ArtisanModel {
           json['specialite'] ??
           json['speciality_name'] ??
           '',
-      city: json['city'] ?? '',
+      city: city,
       bio: json['bio'] ?? json['description'],
-      latitude: _toDouble(json['latitude']) ?? 0.0,
-      longitude: _toDouble(json['longitude']) ?? 0.0,
+      latitude: coords.$1,
+      longitude: coords.$2,
       isAvailable: json['isAvailable'] ?? json['is_available'] ?? true,
       profileImage: json['profileImage'] ??
           json['profile_image'] ??
@@ -64,7 +73,8 @@ class ArtisanModel {
       reviewCount: _toInt(json['reviewCount']) ?? _toInt(json['review_count']),
       averageRating:
           _toDouble(json['averageRating']) ?? _toDouble(json['average_rating']),
-      hourlyRate: _toDouble(json['hourlyRate']) ?? _toDouble(json['hourly_rate']),
+      hourlyRate:
+          _toDouble(json['hourlyRate']) ?? _toDouble(json['hourly_rate']),
       portfolioImages: _toStringList(
         json['portfolioImages'] ?? json['portfolio_images'],
       ),
@@ -157,6 +167,51 @@ class ArtisanModel {
 
   @override
   int get hashCode => id.hashCode;
+}
+
+/// Mappe les villes marocaines aux coordonnées GPS par défaut
+(double, double) _getDefaultCoordinates(String city) {
+  const cityCoordinates = {
+    'agadir': (30.4278, -9.5981),
+    'al hoceïma': (35.2531, -3.9289),
+    'beni mellal': (32.3436, -6.3531),
+    'berkane': (34.9289, -2.3206),
+    'casablanca': (33.5731, -7.5898),
+    'chefchaouen': (35.1684, -5.2686),
+    'dakhla': (23.7635, -15.9582),
+    'essaouira': (31.5085, -9.7673),
+    'fez': (34.0333, -5.0),
+    'guelmim': (28.9864, -10.0615),
+    'ifrane': (33.5186, -5.1089),
+    'kenitra': (34.2598, -6.5898),
+    'khemisset': (33.8208, -5.6454),
+    'khouribga': (32.8829, -6.9081),
+    'larache': (35.1897, -6.1526),
+    'marrakech': (31.6295, -8.0088),
+    'meknès': (33.8935, -5.5898),
+    'midelt': (32.6833, -4.7417),
+    'mohammedia': (33.7667, -7.75),
+    'nador': (35.1667, -2.9333),
+    'ouarzazate': (30.9256, -6.8973),
+    'oujda': (34.6741, -1.9086),
+    'rabat': (34.0209, -6.8416),
+    'safi': (32.2964, -8.7606),
+    'salé': (34.0833, -6.8167),
+    'settat': (33.0043, -7.6187),
+    'tanger': (35.7595, -5.8342),
+    'taroudannt': (30.4740, -8.8783),
+    'taza': (34.2247, -4.0081),
+    'tetouan': (35.5731, -5.3636),
+    'tiznit': (29.6469, -9.7369),
+  };
+
+  final normalizedCity = city.toLowerCase().trim();
+  if (cityCoordinates.containsKey(normalizedCity)) {
+    return cityCoordinates[normalizedCity]!;
+  }
+
+  // Fallback: Casablanca si la ville n'est pas trouvée
+  return (33.5731, -7.5898);
 }
 
 int? _toInt(dynamic value) {

@@ -12,10 +12,6 @@ class CinScannerScreen extends StatefulWidget {
 }
 
 class _CinScannerScreenState extends State<CinScannerScreen> {
-  // Camera functionality disabled when the camera package is not available.
-  // Keep a flag to show a placeholder UI instead of a live preview.
-  bool _cameraAvailable = false;
-
   @override
   void initState() {
     super.initState();
@@ -60,7 +56,7 @@ class _CinScannerScreenState extends State<CinScannerScreen> {
           // 2. L'OVERLAY (Le cadre de scan)
           ColorFiltered(
             colorFilter: ColorFilter.mode(
-                Colors.black.withOpacity(0.7), BlendMode.srcOut),
+                Colors.black.withValues(alpha: 0.7), BlendMode.srcOut),
             child: Stack(
               children: [
                 Container(

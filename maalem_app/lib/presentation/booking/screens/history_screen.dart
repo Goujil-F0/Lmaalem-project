@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
+import '../../search/screens/map_screen.dart';
 import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -81,7 +82,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: Colors.grey.shade300),
                 ),
@@ -100,7 +101,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
               Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.6),
+                  color: Colors.white.withValues(alpha: 0.6),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -188,26 +189,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
       children: [
         // Le carré gris (placeholder pour une image future)
         Container(
-          width: 200,
-          height: 200,
+          width: 120,
+          height: 120,
           color: Colors.grey.shade300,
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 12),
         Text(
           'Aucun projet ${_selectedTab.toLowerCase()}',
           style: TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: titleColor,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         const Text(
           "Il semble que vous n'ayez pas de travaux de bricolage ou d'artisanat lancés pour le moment.",
           textAlign: TextAlign.center,
-          style: TextStyle(fontSize: 16, color: Colors.grey),
+          style: TextStyle(fontSize: 14, color: Colors.grey),
         ),
-        const SizedBox(height: 32),
+        const SizedBox(height: 16),
         SizedBox(
           width: double.infinity,
           height: 54,
@@ -219,7 +220,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ),
             onPressed: () {
-              // Plus tard: Naviguer vers l'écran de déclaration de besoin
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              );
             },
             icon: const Icon(Icons.add_circle, color: Colors.white),
             label: const Text(
@@ -237,13 +241,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
       Booking booking, Color titleColor, Color priceColor) {
     return GestureDetector(
       onTap: () {
+        final currentUserId = context.read<AuthProvider>().user?.id;
+        if (booking.id == null || currentUserId == null) return;
+
         // Navigation fluide vers le chat au clic sur la carte
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
-              currentUserId: 1, // ID temporaire pour le test
+              currentUserId: currentUserId,
             ),
           ),
         );
@@ -256,7 +263,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -282,13 +289,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     icon: Icon(Icons.more_horiz, color: Colors.grey.shade400),
                     onSelected: (value) async {
                       if (value == 'pay_cash') {
+                        final messenger = ScaffoldMessenger.of(context);
                         // 1. Appel du Provider pour passer au statut "completed"
                         await Provider.of<BookingProvider>(context,
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'completed');
 
+                        if (!mounted) return;
+
                         // 2. Affichage d'un petit message de succès en bas de l'écran
-                        ScaffoldMessenger.of(context).showSnackBar(
+                        messenger.showSnackBar(
                           const SnackBar(
                             content:
                                 Text("Paiement validé. Projet terminé ! ✅"),

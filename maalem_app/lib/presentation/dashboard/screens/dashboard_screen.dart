@@ -92,6 +92,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _error = null;
     });
 
+    final authUser = context.read<AuthProvider>().user;
+
     try {
       final token = context.read<AuthProvider>().token;
       if (token == null || token.isEmpty) {
@@ -107,11 +109,74 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
     } catch (e) {
       if (mounted) {
-        setState(() => _error = e.toString());
+        if (widget.artisan != null) {
+          setState(() {
+            _dashboardData = _fallbackDashboardData(widget.artisan!);
+            _error = null;
+          });
+        } else if (authUser != null && authUser.id == widget.artisanId) {
+          setState(() {
+            _dashboardData = _fallbackDashboardDataFromUser(authUser);
+            _error = null;
+          });
+        } else {
+          setState(() => _error = e.toString());
+        }
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Map<String, dynamic> _fallbackDashboardDataFromUser(dynamic user) {
+    final profile = user.profile;
+    return {
+      'averageRating': profile?.averageRating ?? 0,
+      'totalReviews': 0,
+      'artisanProfile': {
+        'id': user.id,
+        'full_name': user.fullName,
+        'email': user.email,
+        'phone': user.phone,
+        'city': user.city,
+        'speciality': profile?.specialty ?? 'Artisan general',
+        'bio': profile?.description,
+        'hourly_rate': profile?.hourlyRate,
+        'is_available': profile?.isAvailable ?? true,
+        'profile_image': user.photoUrl,
+        'portfolio_images': profile?.portfolioImages ?? const <String>[],
+      },
+      'recentReviews': const [],
+      'pendingBookings': 0,
+      'confirmedBookings': 0,
+      'cancelledBookings': 0,
+      'recentBookings': const [],
+    };
+  }
+
+  Map<String, dynamic> _fallbackDashboardData(ArtisanModel artisan) {
+    return {
+      'averageRating': artisan.averageRating ?? artisan.rating ?? 0,
+      'totalReviews': artisan.reviewCount ?? 0,
+      'artisanProfile': {
+        'id': artisan.id,
+        'full_name': artisan.fullName,
+        'email': artisan.email,
+        'phone': artisan.phone,
+        'city': artisan.city,
+        'speciality': artisan.speciality,
+        'bio': artisan.bio,
+        'hourly_rate': artisan.hourlyRate,
+        'is_available': artisan.isAvailable,
+        'profile_image': artisan.profileImage,
+        'portfolio_images': artisan.portfolioImages,
+      },
+      'recentReviews': const [],
+      'pendingBookings': 0,
+      'confirmedBookings': 0,
+      'cancelledBookings': 0,
+      'recentBookings': const [],
+    };
   }
 
   @override

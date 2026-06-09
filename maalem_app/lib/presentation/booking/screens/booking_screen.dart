@@ -54,6 +54,26 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
   void _submitBooking(int userId) async {
+    if (userId <= 0 || widget.artisanId <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Session ou artisan invalide. Reconnectez-vous.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    if (userId == widget.artisanId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous ne pouvez pas reserver votre propre profil.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     if (_formKey.currentState!.validate() && _selectedDate != null) {
       // On appelle le Provider
       final success =
@@ -65,6 +85,8 @@ class _BookingScreenState extends State<BookingScreen> {
             .hourlyRate, // On part du principe qu'on bloque 1h au tarif indiqué
         _selectedDate!,
       );
+
+      if (!mounted) return;
 
       // Résultat
       if (success) {
@@ -80,10 +102,19 @@ class _BookingScreenState extends State<BookingScreen> {
           MaterialPageRoute(builder: (context) => const HistoryScreen()),
         );
       } else {
+        final errorMessage = Provider.of<BookingProvider>(
+          context,
+          listen: false,
+        ).errorMessage;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Erreur lors de la réservation ❌'),
-              backgroundColor: Colors.red),
+          SnackBar(
+            content: Text(
+              errorMessage.isEmpty
+                  ? 'Erreur lors de la reservation'
+                  : errorMessage,
+            ),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     } else if (_selectedDate == null) {
@@ -131,7 +162,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: primaryTeal.withOpacity(0.2),
+                      backgroundColor: primaryTeal.withValues(alpha: 0.2),
                       child: const Icon(Icons.person,
                           size: 30, color: primaryTeal),
                     ),

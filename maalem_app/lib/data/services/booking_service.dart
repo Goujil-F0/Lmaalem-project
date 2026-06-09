@@ -3,13 +3,14 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
-import '../../core/constants/api_endpoints.dart';
+import 'api_client.dart';
 
 class BookingService {
   // 1. Récupérer l'historique des réservations
   Future<List<Booking>> getBookingHistory(int userId, String role) async {
     // Construit l'URL finale: http://localhost:8081/api/bookings/history/1/client
-    final url = Uri.parse('${ApiEndpoints.bookings}/history/$userId/$role');
+    final url =
+        Uri.parse('${ApiClient.baseUrl}/api/bookings/history/$userId/$role');
 
     try {
       final response = await http.get(url);
@@ -34,7 +35,7 @@ class BookingService {
 
   // 2. Mettre à jour le statut d'une réservation (Accepter/Refuser)
   Future<bool> updateBookingStatus(int bookingId, String newStatus) async {
-    final url = Uri.parse('${ApiEndpoints.bookings}/$bookingId/status');
+    final url = Uri.parse('${ApiClient.baseUrl}/api/bookings/$bookingId/status');
 
     try {
       final response = await http.patch(
@@ -53,7 +54,7 @@ class BookingService {
   // 3. Créer une nouvelle réservation (POST)
   Future<bool> createBooking(int clientId, int artisanId, String description,
       double agreedPrice, DateTime bookingDate) async {
-    final url = Uri.parse(ApiEndpoints.bookings);
+    final url = Uri.parse('${ApiClient.baseUrl}/api/bookings');
 
     try {
       final response = await http.post(
@@ -69,7 +70,23 @@ class BookingService {
         }),
       );
 
-      return response.statusCode == 201; // 201 = Created
+      if (response.statusCode == 201) {
+        return true; // 201 = Created
+      }
+
+      String message = 'Erreur serveur: ${response.statusCode}';
+      try {
+        final body = json.decode(response.body);
+        if (body is Map && body['message'] != null) {
+          message = body['message'].toString();
+        }
+      } catch (_) {
+        if (response.body.trim().isNotEmpty) {
+          message = response.body.trim();
+        }
+      }
+
+      throw Exception(message);
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la création de la réservation: $e');

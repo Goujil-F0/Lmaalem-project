@@ -53,48 +53,61 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
-  void _submitBooking(int userId) async {
-    if (_formKey.currentState!.validate() && _selectedDate != null) {
-      // On appelle le Provider
-      final success =
-          await Provider.of<BookingProvider>(context, listen: false).addBooking(
-        userId, // <-- 3. UTILISATION DU VRAI USER ID DYNAMIQUE
-        widget.artisanId,
-        _descriptionController.text,
-        widget
-            .hourlyRate, // On part du principe qu'on bloque 1h au tarif indiqué
-        _selectedDate!,
-      );
-
-      // Résultat
-      if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Réservation envoyée avec succès ! ✅'),
-              backgroundColor: Colors.green),
-        );
-
-        // Au lieu de "pop", on détruit cet écran et on le remplace par l'Historique
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HistoryScreen()),
-        );
-      } else {
-        final errorMessage =
-            Provider.of<BookingProvider>(context, listen: false).errorMessage;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text(errorMessage.isEmpty
-                  ? 'Erreur lors de la réservation'
-                  : errorMessage),
-              backgroundColor: Colors.red),
-        );
-      }
-    } else if (_selectedDate == null) {
+  void _submitBooking() async {
+    // 1. On vérifie que les champs sont remplis
+    if (!_formKey.currentState!.validate()) {
+      print("❌ Erreur : Le champ description est vide.");
+      return;
+    }
+    if (_selectedDate == null) {
+      print("❌ Erreur : La date n'a pas été sélectionnée.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
             content: Text('Veuillez choisir une date.'),
             backgroundColor: Colors.orange),
+      );
+      return;
+    }
+
+    print("✅ Formulaire valide ! Préparation de l'envoi...");
+
+    // 2. On récupère ton VRAI ID grâce au provider de Fatima
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Si tu testes l'écran directement sans être connecté, on met 1 par défaut, sinon on prend ton vrai ID
+    final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
+
+    print("👤 Tentative de réservation pour le client ID : $myUserId");
+
+    // 3. On envoie au backend
+    final success =
+        await Provider.of<BookingProvider>(context, listen: false).addBooking(
+      myUserId, // Ton vrai ID
+      widget.artisanId,
+      _descriptionController.text,
+      widget.hourlyRate,
+      _selectedDate!,
+    );
+
+    if (!mounted) return;
+
+    // 4. On gère le résultat
+    if (success) {
+      print("🎉 Réservation réussie dans la BDD !");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Réservation envoyée avec succès ! ✅'),
+            backgroundColor: Colors.green),
+      );
+
+      // On retourne à la page principale pour voir le suivi
+      Navigator.pop(context);
+    } else {
+      print("⚠️ Le backend a refusé la réservation !");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Erreur serveur lors de la réservation ❌'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -221,6 +234,7 @@ class _BookingScreenState extends State<BookingScreen> {
               const SizedBox(height: 40),
 
               // Bouton de validation
+              // Bouton de validation
               SizedBox(
                 width: double.infinity,
                 height: 54,
@@ -230,10 +244,13 @@ class _BookingScreenState extends State<BookingScreen> {
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16)),
                   ),
+
+                  // --- LA CORRECTION EST EXACTEMENT ICI 👇 ---
                   onPressed: Provider.of<BookingProvider>(context).isLoading
                       ? null
-                      : () => _submitBooking(
-                          currentUserId), // <-- 5. ENVOI DU VRAI ID AU SUBMIT
+                      : _submitBooking, // Sans parenthèses ni arguments !
+                  // ------------------------------------------
+
                   child: Provider.of<BookingProvider>(context).isLoading
                       ? const CircularProgressIndicator(color: Colors.white)
                       : const Text('Confirmer la réservation',

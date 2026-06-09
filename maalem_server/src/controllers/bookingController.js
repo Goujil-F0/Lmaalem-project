@@ -15,6 +15,8 @@ const createNewBooking = async (req, res) => {
             client_id, artisan_id, description, agreed_price, booking_date
         );
 
+        const io = req.app.get('socketio');
+
         res.status(201).json({
             success: true,
             message: "Réservation créée avec succès.",

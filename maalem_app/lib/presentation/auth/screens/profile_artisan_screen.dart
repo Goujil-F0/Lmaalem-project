@@ -456,91 +456,132 @@ class _ProfileHeader extends StatelessWidget {
 
     return Column(
       children: [
-        Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            Container(
-              width: 112,
-              height: 112,
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.teal.withValues(alpha: 0.2),
-                  width: 4,
+        // Photo Profile Container with Shadow
+        Container(
+          margin: const EdgeInsets.only(bottom: 28),
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                width: 130,
+                height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.teal.withValues(alpha: 0.25),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
                 ),
-              ),
-              child: CircleAvatar(
-                backgroundColor: AppColors.navy,
-                backgroundImage: providerImage,
-                child: providerImage != null
-                    ? null
-                    : Text(
-                        initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-              ),
-            ),
-            Material(
-              color: AppColors.teal,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: isUploading ? null : onEditPhoto,
-                child: SizedBox(
-                  width: 38,
-                  height: 38,
-                  child: isUploading
-                      ? const Padding(
-                          padding: EdgeInsets.all(10),
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AppColors.white,
+                      width: 4,
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    backgroundColor: AppColors.navy,
+                    backgroundImage: providerImage,
+                    child: providerImage != null
+                        ? null
+                        : Text(
+                            initials,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 36,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.5,
+                            ),
                           ),
-                        )
-                      : const Icon(Icons.edit, color: Colors.white, size: 18),
+                  ),
                 ),
               ),
-            ),
-          ],
+              // Edit Photo Button with Animation
+              Material(
+                color: AppColors.teal,
+                shape: const CircleBorder(),
+                elevation: 8,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: isUploading ? null : onEditPhoto,
+                  child: SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: isUploading
+                        ? const Padding(
+                            padding: EdgeInsets.all(10),
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
+                        : const Icon(Icons.camera_alt, 
+                            color: Colors.white, size: 20),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        const SizedBox(height: 15),
+        // Name
         Text(
           name,
           textAlign: TextAlign.center,
           style: const TextStyle(
             color: AppColors.navy,
-            fontSize: 24,
+            fontSize: 28,
             fontWeight: FontWeight.w900,
+            letterSpacing: -0.5,
           ),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 8),
+        // Specialty
         Text(
           specialty,
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: AppColors.navy.withValues(alpha: 0.62),
+            color: AppColors.teal,
+            fontSize: 15,
             fontWeight: FontWeight.w700,
+            letterSpacing: 0.3,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 14),
+        // Verified Badge
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: AppColors.teal.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: const Text(
-            'Artisan Verifie',
-            style: TextStyle(
-              color: AppColors.teal,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+            color: AppColors.teal.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(
+              color: AppColors.teal.withValues(alpha: 0.3),
+              width: 1,
             ),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.verified,
+                color: AppColors.teal,
+                size: 14,
+              ),
+              const SizedBox(width: 6),
+              const Text(
+                'Professionnel Vérifié',
+                style: TextStyle(
+                  color: AppColors.teal,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.2,
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -568,9 +609,23 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        height: 94,
-        padding: const EdgeInsets.all(12),
-        decoration: _cardDecoration(radius: 20),
+        height: 100,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.06),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
+            ),
+          ],
+          border: Border.all(
+            color: AppColors.navy.withValues(alpha: 0.05),
+            width: 1,
+          ),
+        ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -579,17 +634,19 @@ class _StatCard extends StatelessWidget {
               style: const TextStyle(
                 color: AppColors.teal,
                 fontWeight: FontWeight.w900,
-                fontSize: 18,
+                fontSize: 20,
+                letterSpacing: -0.3,
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 6),
             Text(
               label,
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: AppColors.navy.withValues(alpha: 0.55),
-                fontSize: 10,
+                color: AppColors.navy.withValues(alpha: 0.5),
+                fontSize: 11,
                 fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ],
@@ -623,8 +680,22 @@ class _ManagementCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(22),
-      decoration: _cardDecoration(radius: 24),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
+        border: Border.all(
+          color: AppColors.navy.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
       child: Column(
         children: [
           _ManagementItem(
@@ -945,17 +1016,25 @@ class _BioSection extends StatelessWidget {
           width: double.infinity,
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.72),
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.navy.withValues(alpha: 0.05)),
+            border: Border.all(color: AppColors.navy.withValues(alpha: 0.05), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Text(
             text,
-            style: const TextStyle(
-              color: AppColors.navy,
+            style: TextStyle(
+              color: AppColors.navy.withValues(alpha: 0.75),
               fontSize: 15,
-              fontStyle: FontStyle.italic,
-              height: 1.55,
+              fontWeight: FontWeight.w500,
+              height: 1.6,
+              letterSpacing: 0.2,
             ),
           ),
         ),
@@ -976,26 +1055,33 @@ class _FooterActions extends StatelessWidget {
       children: [
         SizedBox(
           width: double.infinity,
-          height: 56,
+          height: 58,
           child: ElevatedButton.icon(
             onPressed: onSupport,
-            icon: const Icon(Icons.contact_support, color: Colors.white),
+            icon: const Icon(Icons.headset_mic, color: Colors.white, size: 22),
             label: const Text(
-              'Contacter le support',
-              style: TextStyle(color: Colors.white, fontSize: 16),
+              'Support Client',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.3,
+              ),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.teal,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(22),
               ),
+              elevation: 6,
+              shadowColor: AppColors.teal.withValues(alpha: 0.4),
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         TextButton.icon(
           onPressed: onLogout,
-          icon: const Icon(Icons.logout, color: AppColors.textGrey),
+          icon: const Icon(Icons.logout, color: AppColors.textGrey, size: 20),
           label: const Text(
             'Deconnexion',
             style: TextStyle(color: AppColors.textGrey),

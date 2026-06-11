@@ -155,7 +155,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: primaryTeal.withOpacity(0.2),
+                      backgroundColor: primaryTeal.withValues(alpha: 0.2),
                       child: const Icon(Icons.person,
                           size: 30, color: primaryTeal),
                     ),

@@ -10,7 +10,8 @@ class BookingService {
   // 1. Récupérer l'historique des réservations
   Future<List<Booking>> getBookingHistory(int userId, String role) async {
     // Construit l'URL finale: http://localhost:8081/api/bookings/history/1/client
-    final url = Uri.parse('${ApiEndpoints.bookings}/history/$userId/$role');
+    final url =
+        Uri.parse('${ApiClient.baseUrl}/api/bookings/history/$userId/$role');
 
     try {
       final response = await http.get(url, headers: ApiClient.getHeaders(null));
@@ -35,7 +36,7 @@ class BookingService {
 
   // 2. Mettre à jour le statut d'une réservation (Accepter/Refuser)
   Future<bool> updateBookingStatus(int bookingId, String newStatus) async {
-    final url = Uri.parse('${ApiEndpoints.bookings}/$bookingId/status');
+    final url = Uri.parse('${ApiClient.baseUrl}/api/bookings/$bookingId/status');
 
     try {
       final response = await http.patch(
@@ -54,7 +55,7 @@ class BookingService {
   // 3. Créer une nouvelle réservation (POST)
   Future<bool> createBooking(int clientId, int artisanId, String description,
       double agreedPrice, DateTime bookingDate) async {
-    final url = Uri.parse(ApiEndpoints.bookings);
+    final url = Uri.parse('${ApiClient.baseUrl}/api/bookings');
 
     try {
       final response = await http.post(

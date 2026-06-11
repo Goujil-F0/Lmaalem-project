@@ -13,8 +13,6 @@ class ClientHomeScreen extends StatefulWidget {
 }
 
 class _ClientHomeScreenState extends State<ClientHomeScreen> {
-  final TextEditingController _searchController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -26,17 +24,13 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
   @override
   void dispose() {
-    _searchController.dispose();
     super.dispose();
   }
 
   void _openMapWithSearch([String? query]) {
-    final searchProvider = context.read<SearchProvider>();
-    final searchText = (query ?? _searchController.text).trim();
-    searchProvider.filterArtisans(searchText);
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => MapScreen(initialQuery: searchText)),
+      MaterialPageRoute(builder: (_) => const MapScreen()),
     );
   }
 
@@ -105,8 +99,11 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.location_on,
-                      color: AppColors.teal, size: 28),
+                  const Icon(
+                    Icons.location_on,
+                    color: AppColors.teal,
+                    size: 28,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -140,37 +137,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
             Consumer<SearchProvider>(
               builder: (context, provider, _) {
-                final suggestions = provider.artisans.take(3).toList();
-
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    TextField(
-                      controller: _searchController,
-                      onChanged: provider.filterArtisans,
-                      onSubmitted: _openMapWithSearch,
-                      textInputAction: TextInputAction.search,
-                      decoration: InputDecoration(
-                        hintText: 'Nom, categorie ou probleme: robinet fuit...',
-                        hintStyle: TextStyle(
-                            color: AppColors.navy.withValues(alpha: 0.52)),
-                        prefixIcon:
-                            const Icon(Icons.search, color: AppColors.teal),
-                        suffixIcon: IconButton(
-                          onPressed: () => _openMapWithSearch(),
-                          icon: const Icon(Icons.map, color: AppColors.teal),
-                          tooltip: 'Voir sur la carte',
-                        ),
-                        filled: true,
-                        fillColor: AppColors.white,
-                        contentPadding:
-                            const EdgeInsets.symmetric(vertical: 14),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(20),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
+                    // Specialty Filter
                     DropdownButtonFormField<String>(
                       initialValue: provider.allSpecialties
                               .contains(provider.selectedCategory)
@@ -208,15 +178,15 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       ],
                       onChanged: (value) {
                         final selected = value ?? '';
-                        _searchController.clear();
                         if (selected.isEmpty) {
-                          provider.resetFilters();
+                          provider.filterByCategory('');
                         } else {
-                          provider.filterArtisans('', category: selected);
+                          provider.filterByCategory(selected);
                         }
                       },
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                    // City Filter
                     DropdownButtonFormField<String>(
                       initialValue: provider.cities.contains(provider.selectedCity)
                           ? provider.selectedCity
@@ -253,28 +223,208 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                       ],
                       onChanged: (value) {
                         final selected = value ?? '';
-                        if (selected.isEmpty) {
-                          provider.filterByCity('');
-                        } else {
-                          provider.filterByCity(selected);
-                        }
+                        provider.filterByCity(selected);
                       },
                     ),
-                    if (_searchController.text.trim().isNotEmpty &&
-                        suggestions.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      ...suggestions.map(
-                        (artisan) => _SearchSuggestionTile(
-                          name: artisan.fullName,
-                          subtitle:
-                              '${artisan.speciality} - ${artisan.city.isEmpty ? 'Ville non renseignee' : artisan.city}',
-                          isAvailable: artisan.isAvailable,
-                          onTap: () => _openMapWithSearch(
-                            _searchController.text,
+                    const SizedBox(height: 12),
+                    // Average Rating Filter
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.navy.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Note minimale',
+                                style: TextStyle(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.teal.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${provider.minRating.toStringAsFixed(1)} ★',
+                                  style: const TextStyle(
+                                    color: AppColors.teal,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Slider(
+                            value: provider.minRating,
+                            onChanged: provider.filterByMinRating,
+                            min: 0,
+                            max: 5,
+                            divisions: 10,
+                            activeColor: AppColors.teal,
+                            inactiveColor: AppColors.navy.withValues(
+                              alpha: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Proximity/Distance Filter
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.navy.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text(
+                                'Proximité',
+                                style: TextStyle(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.teal.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${provider.maxDistanceKm.toStringAsFixed(0)} km',
+                                  style: const TextStyle(
+                                    color: AppColors.teal,
+                                    fontWeight: FontWeight.w700,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Slider(
+                            value: provider.maxDistanceKm,
+                            onChanged: provider.setMaxDistanceKm,
+                            min: 1,
+                            max: 80,
+                            divisions: 79,
+                            activeColor: AppColors.teal,
+                            inactiveColor: AppColors.navy.withValues(
+                              alpha: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Availability Filter
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.navy.withValues(alpha: 0.1),
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Disponibilité',
+                            style: TextStyle(
+                              color: AppColors.navy,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            children: [
+                              _AvailabilityChip(
+                                label: 'Tous',
+                                selected: provider.availabilityFilter == null,
+                                onTap: () =>
+                                    provider.filterByAvailability(null),
+                              ),
+                              _AvailabilityChip(
+                                label: 'Disponibles',
+                                selected: provider.availabilityFilter == true,
+                                onTap: () =>
+                                    provider.filterByAvailability(true),
+                              ),
+                              _AvailabilityChip(
+                                label: 'Indisponibles',
+                                selected: provider.availabilityFilter == false,
+                                onTap: () =>
+                                    provider.filterByAvailability(false),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Search Button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton.icon(
+                        onPressed: _openMapWithSearch,
+                        icon: const Icon(Icons.map, color: Colors.white),
+                        label: const Text(
+                          'Recherche',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.teal,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
                         ),
                       ),
-                    ],
+                    ),
                   ],
                 );
               },
@@ -299,12 +449,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
                 // Si les catégories ne sont pas chargées, afficher 4 par défaut
                 final displayCategories = categories.isEmpty
-                    ? [
-                        'Plomberie',
-                        'Électricité',
-                        'Peinture',
-                        'Carrelage',
-                      ]
+                    ? ['Plomberie', 'Électricité', 'Peinture', 'Carrelage']
                     : categories.take(4).toList();
 
                 return GridView.count(
@@ -315,19 +460,21 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   crossAxisSpacing: 14,
                   childAspectRatio: 1.1,
                   children: displayCategories
-                      .map((category) => _ServiceCard(
-                            label: category,
-                            onTap: () {
-                              // Filtrer par catégorie et aller à la carte
-                              _searchController.clear();
-                              provider.filterArtisans('', category: category);
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (_) => const MapScreen()),
-                              );
-                            },
-                          ))
+                      .map(
+                        (category) => _ServiceCard(
+                          label: category,
+                          onTap: () {
+                            // Filtrer par catégorie et aller à la carte
+                            provider.filterArtisans('', category: category);
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const MapScreen(),
+                              ),
+                            );
+                          },
+                        ),
+                      )
                       .toList(),
                 );
               },
@@ -429,10 +576,7 @@ class _ServiceCard extends StatelessWidget {
   final String label;
   final VoidCallback? onTap;
 
-  const _ServiceCard({
-    required this.label,
-    this.onTap,
-  });
+  const _ServiceCard({required this.label, this.onTap});
 
   /// Génère une icône basée sur le nom du service
   IconData _getIconForCategory(String category) {
@@ -467,11 +611,12 @@ class _ServiceCard extends StatelessWidget {
     final displayIcon = _getIconForCategory(label);
 
     return GestureDetector(
-      onTap: onTap ??
+      onTap:
+          onTap ??
           () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MapScreen()),
-              ),
+            context,
+            MaterialPageRoute(builder: (_) => const MapScreen()),
+          ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,
@@ -505,62 +650,41 @@ class _ServiceCard extends StatelessWidget {
   }
 }
 
-class _SearchSuggestionTile extends StatelessWidget {
-  final String name;
-  final String subtitle;
-  final bool isAvailable;
+class _AvailabilityChip extends StatelessWidget {
+  final String label;
+  final bool selected;
   final VoidCallback onTap;
 
-  const _SearchSuggestionTile({
-    required this.name,
-    required this.subtitle,
-    required this.isAvailable,
+  const _AvailabilityChip({
+    required this.label,
+    required this.selected,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.navy.withValues(alpha: 0.06)),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: AppColors.teal.withValues(alpha: 0.12),
-          child: const Icon(Icons.handyman, color: AppColors.teal),
-        ),
-        title: Text(
-          name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            color: AppColors.navy,
-            fontWeight: FontWeight.w800,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: selected
+              ? AppColors.teal.withValues(alpha: 0.12)
+              : AppColors.navy.withValues(alpha: 0.04),
+          border: Border.all(
+            color: selected
+                ? AppColors.teal
+                : AppColors.navy.withValues(alpha: 0.1),
+            width: selected ? 1.5 : 1,
           ),
+          borderRadius: BorderRadius.circular(16),
         ),
-        subtitle: Text(
-          subtitle,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: (isAvailable ? AppColors.teal : Colors.grey)
-                .withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Text(
-            isAvailable ? 'Dispo' : 'Indispo',
-            style: TextStyle(
-              color: isAvailable ? AppColors.teal : Colors.grey.shade700,
-              fontWeight: FontWeight.w800,
-              fontSize: 11,
-            ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? AppColors.teal : AppColors.navy,
+            fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+            fontSize: 12,
           ),
         ),
       ),

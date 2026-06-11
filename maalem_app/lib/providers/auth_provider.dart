@@ -94,6 +94,7 @@ class AuthProvider with ChangeNotifier {
         password: userData['password'] ?? '',
         role: userData['role'] ?? 'client',
         phone: userData['phone'],
+        specialty: userData['specialty'],
         city: userData['city'],
         neighborhood: userData['neighborhood'],
         latitude: userData['latitude'],

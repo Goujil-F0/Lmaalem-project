@@ -25,6 +25,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _cityController = TextEditingController();
+  final TextEditingController _specialtyController = TextEditingController();
   final TextEditingController _neighborhoodController = TextEditingController();
   final LocationService _locationService = LocationService();
 
@@ -36,6 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _confirmPasswordController.dispose();
     _phoneController.dispose();
     _cityController.dispose();
+    _specialtyController.dispose();
     _neighborhoodController.dispose();
     super.dispose();
   }
@@ -59,7 +61,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _handleRegister() async {
     if (_nameController.text.isEmpty ||
         _emailController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
+        _passwordController.text.isEmpty ||
+        (isArtisan && _specialtyController.text.isEmpty)) {
       _showSnackBar('Veuillez remplir les champs obligatoires');
       return;
     }
@@ -76,6 +79,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       'password': _passwordController.text,
       'role': isArtisan ? 'artisan' : 'client',
       'phone': isArtisan ? _phoneController.text.trim() : null,
+      'specialty': isArtisan ? _specialtyController.text.trim() : null,
       'city': _cityController.text.trim().isEmpty
           ? null
           : _cityController.text.trim(),
@@ -196,11 +200,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 isPassword: true,
               ),
               const SizedBox(height: 16),
-              _RegisterInput(
+              _RegisterDropdown(
                 controller: _cityController,
                 hintText: 'Ville',
                 icon: Icons.location_city,
-                keyboardType: TextInputType.streetAddress,
+                items: _moroccanCities,
               ),
               const SizedBox(height: 16),
               _RegisterInput(
@@ -211,6 +215,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               ),
               const SizedBox(height: 16),
               _LocationPickerBox(
+                isArtisan: isArtisan,
                 isLocating: _isLocating,
                 selectedLocation: _selectedLocation,
                 onPressed: _useCurrentLocation,
@@ -222,6 +227,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   hintText: 'Telephone',
                   icon: Icons.call,
                   keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 16),
+                _RegisterDropdown(
+                  controller: _specialtyController,
+                  hintText: 'Specialite',
+                  icon: Icons.handyman,
+                  items: _artisanSpecialties,
                 ),
                 const SizedBox(height: 16),
                 const _UploadCinBox(),
@@ -421,6 +433,58 @@ class _RegisterInput extends StatelessWidget {
   }
 }
 
+class _RegisterDropdown extends StatelessWidget {
+  final String hintText;
+  final IconData icon;
+  final TextEditingController controller;
+  final List<String> items;
+
+  const _RegisterDropdown({
+    required this.hintText,
+    required this.icon,
+    required this.controller,
+    required this.items,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return DropdownButtonFormField<String>(
+      initialValue: controller.text.isEmpty ? null : controller.text,
+      isExpanded: true,
+      decoration: InputDecoration(
+        hintText: hintText,
+        hintStyle: TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
+        prefixIcon: Icon(icon, color: AppColors.navy.withValues(alpha: 0.72)),
+        filled: true,
+        fillColor: AppColors.navy.withValues(alpha: 0.08),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: BorderSide(color: AppColors.navy.withValues(alpha: 0.03)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(20),
+          borderSide: const BorderSide(color: AppColors.teal, width: 1.4),
+        ),
+      ),
+      items: items
+          .map(
+            (item) => DropdownMenuItem<String>(
+              value: item,
+              child: Text(item, overflow: TextOverflow.ellipsis),
+            ),
+          )
+          .toList(),
+      onChanged: (value) => controller.text = value ?? '',
+    );
+  }
+}
+
 class _UploadCinBox extends StatelessWidget {
   const _UploadCinBox();
 
@@ -454,11 +518,13 @@ class _UploadCinBox extends StatelessWidget {
 }
 
 class _LocationPickerBox extends StatelessWidget {
+  final bool isArtisan;
   final bool isLocating;
   final UserLocation? selectedLocation;
   final VoidCallback onPressed;
 
   const _LocationPickerBox({
+    required this.isArtisan,
     required this.isLocating,
     required this.selectedLocation,
     required this.onPressed,
@@ -467,6 +533,15 @@ class _LocationPickerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasLocation = selectedLocation != null;
+    final title = isArtisan
+        ? 'Definir ma zone d intervention'
+        : 'Ajouter ma position actuelle';
+    final savedTitle = isArtisan
+        ? 'Zone d intervention enregistree'
+        : 'Position GPS enregistree';
+    final action = isArtisan
+        ? 'Utiliser cette position pour mes clients'
+        : 'Utiliser ma position';
 
     return Container(
       width: double.infinity,
@@ -488,9 +563,7 @@ class _LocationPickerBox extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  hasLocation
-                      ? 'Position GPS enregistree'
-                      : 'Ajouter ma position actuelle',
+                  hasLocation ? savedTitle : title,
                   style: const TextStyle(
                     color: AppColors.navy,
                     fontWeight: FontWeight.w800,
@@ -527,7 +600,7 @@ class _LocationPickerBox extends StatelessWidget {
               label: Text(
                 isLocating
                     ? 'Recherche de position...'
-                    : 'Utiliser ma position',
+                    : action,
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.teal,
@@ -577,3 +650,48 @@ class _PrimaryRegisterButton extends StatelessWidget {
     );
   }
 }
+
+const _moroccanCities = [
+  'Agadir',
+  'Beni Mellal',
+  'Casablanca',
+  'El Jadida',
+  'Essaouira',
+  'Fes',
+  'Kenitra',
+  'Marrakech',
+  'Meknes',
+  'Mohammedia',
+  'Nador',
+  'Oujda',
+  'Rabat',
+  'Safi',
+  'Sale',
+  'Settat',
+  'Tanger',
+  'Temara',
+  'Tetouan',
+  'Tiznit',
+];
+
+const _artisanSpecialties = [
+  'Plomberie',
+  'Electricite',
+  'Maconnerie',
+  'Platrerie / Staff',
+  'Etancheite',
+  'Isolation thermique & phonique',
+  'Demolition',
+  'Renovation generale',
+  'Climatisation',
+  'Domotique',
+  'Reparation electromenager',
+  'Installation TV / Satellite',
+  'Panneaux solaires',
+  'Peinture',
+  'Carrelage',
+  'Menuiserie',
+  'Serrurerie',
+  'Jardinage',
+  'Nettoyage',
+];

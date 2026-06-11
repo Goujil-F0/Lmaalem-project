@@ -32,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? _dashboardData;
   DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime? _selectedCalendarDate;
+  int _dashboardSectionIndex = 0;
 
   String? _resolveImageUrl(String? source) {
     if (source == null || source.trim().isEmpty) return null;
@@ -191,8 +192,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       backgroundColor: AppColors.beige,
       appBar: AppBar(
         title: Text(isOwnDashboard ? 'Mon Dashboard' : 'Profil Artisan'),
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.white,
+        centerTitle: false,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: AppColors.beige,
+        foregroundColor: AppColors.navy,
+        titleTextStyle: const TextStyle(
+          color: AppColors.navy,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
         actions: [
           if (!isOwnDashboard)
             IconButton(
@@ -201,7 +210,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: _toggleFavorite,
               icon: Icon(
                 _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? Colors.redAccent : AppColors.white,
+                color: _isFavorite ? AppColors.teal : AppColors.navy,
               ),
             ),
           IconButton(
@@ -229,20 +238,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onRefresh: _loadDashboard,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildDashboardSummary(),
-            const SizedBox(height: 24),
-            _buildCalendar(),
-            const SizedBox(height: 24),
-            _buildMessagingSection(),
-            const SizedBox(height: 24),
-            _buildRecentReviews(true),
-            const SizedBox(height: 24),
-            _buildRecentBookings(),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            _buildDashboardSections(),
           ],
         ),
       ),
@@ -255,7 +257,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onRefresh: _loadDashboard,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -270,6 +272,67 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Widget _buildDashboardSections() {
+    final sections = [
+      (
+        icon: Icons.calendar_month_outlined,
+        label: 'Agenda',
+        content: _buildCalendar(),
+      ),
+      (
+        icon: Icons.rate_review_outlined,
+        label: 'Avis',
+        content: _buildRecentReviews(true),
+      ),
+      (
+        icon: Icons.handyman_outlined,
+        label: 'Travaux',
+        content: _buildRecentBookings(),
+      ),
+    ];
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.10)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.07),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: List.generate(sections.length, (index) {
+              final section = sections[index];
+              return Expanded(
+                child: _DashboardSectionTab(
+                  icon: section.icon,
+                  label: section.label,
+                  isSelected: _dashboardSectionIndex == index,
+                  isFirst: index == 0,
+                  isLast: index == sections.length - 1,
+                  onTap: () {
+                    setState(() => _dashboardSectionIndex = index);
+                  },
+                ),
+              );
+            }),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+            child: sections[_dashboardSectionIndex].content,
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDashboardSummary() {
     final wallet = _dashboardData!['wallet'] is Map
         ? _dashboardData!['wallet'] as Map
@@ -277,18 +340,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final balance = _toDouble(wallet['balance']) ?? 0;
     final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
     final canAcceptBookings = wallet['canAcceptBookings'] == true;
+    final pendingBookings = _dashboardData!['pendingBookings'] ?? 0;
+    final confirmedBookings = _dashboardData!['confirmedBookings'] ?? 0;
+    final totalReviews = _dashboardData!['totalReviews'] ?? 0;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.navy,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.14),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: AppColors.navy.withValues(alpha: 0.22),
+            blurRadius: 26,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
@@ -307,7 +373,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: const Icon(
                   Icons.dashboard_customize_outlined,
                   color: AppColors.white,
-                  size: 22,
+                  size: 20,
                 ),
               ),
               const SizedBox(width: 12),
@@ -319,16 +385,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       'Tableau de bord',
                       style: TextStyle(
                         color: AppColors.white,
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Suivi du statut des commandes',
+                      'Suivi rapide de votre activite',
                       style: TextStyle(
-                        color: Color(0xCCFFFFFF),
-                        fontSize: 12,
+                        color: AppColors.lightBlue,
+                        fontSize: 11,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -339,67 +405,96 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (canAcceptBookings ? Colors.green : Colors.orange)
+                  color: (canAcceptBookings ? AppColors.teal : AppColors.lightBlue)
                       .withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(999),
                 ),
                 child: Text(
-                  canAcceptBookings ? 'Actif' : 'A recharger',
+                  canAcceptBookings ? 'ACTIF' : 'A RECHARGER',
                   style: TextStyle(
-                    color: canAcceptBookings ? Colors.greenAccent : Colors.orangeAccent,
-                    fontSize: 11,
+                    color: AppColors.white,
+                    fontSize: 10,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+          const SizedBox(height: 14),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
+            childAspectRatio: 2.35,
             children: [
-              _DashboardStatItem(
-                value: '${_dashboardData!['pendingBookings'] ?? 0}',
+              _SummaryMetricTile(
+                label: 'Wallet',
+                value: '${balance.toStringAsFixed(0)} MAD',
+                icon: Icons.account_balance_wallet_outlined,
+              ),
+              _SummaryMetricTile(
                 label: 'En attente',
+                value: '$pendingBookings',
+                icon: Icons.pending_actions_outlined,
               ),
-              _DashboardStatItem(
-                value: '${_dashboardData!['confirmedBookings'] ?? 0}',
-                label: 'Confirmées',
+              _SummaryMetricTile(
+                label: 'Confirmes',
+                value: '$confirmedBookings',
+                icon: Icons.task_alt_outlined,
               ),
-              _DashboardStatItem(
-                value: '${balance.toStringAsFixed(0)}',
-                label: 'MAD',
+              _SummaryMetricTile(
+                label: 'Commission',
+                value: '${expectedCommission.toStringAsFixed(0)} MAD',
+                icon: Icons.percent_outlined,
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: TextButton(
-                  onPressed: () {
-                    // Navigate to stats view
-                  },
-                  child: const Text(
-                    'Consulter les stats',
-                    style: TextStyle(
-                      color: AppColors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 13,
-                    ),
+                child: Container(
+                  height: 44,
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(
+                        Icons.rate_review_outlined,
+                        color: AppColors.navy,
+                        size: 17,
+                      ),
+                      const SizedBox(width: 7),
+                      Flexible(
+                        child: Text(
+                          '$totalReviews avis clients',
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 9),
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _isRechargingWallet
-                      ? null
-                      : () => _rechargeWallet(100),
+                  onPressed:
+                      _isRechargingWallet ? null : () => _rechargeWallet(100),
                   icon: _isRechargingWallet
                       ? const SizedBox(
-                          width: 16,
-                          height: 16,
+                          width: 15,
+                          height: 15,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
@@ -407,12 +502,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             ),
                           ),
                         )
-                      : const Icon(Icons.add_card_outlined, size: 17),
-                  label: const Text('Recharger 100 MAD'),
+                      : const Icon(Icons.credit_card_outlined, size: 16),
+                  label: const Text('Recharger'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.white,
                     foregroundColor: AppColors.navy,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    elevation: 0,
+                    padding: const EdgeInsets.symmetric(vertical: 13),
                     textStyle: const TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
@@ -423,8 +519,44 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
+              const SizedBox(width: 9),
+              IconButton(
+                tooltip: 'Actualiser',
+                onPressed: _isLoading ? null : _loadDashboard,
+                icon: const Icon(Icons.refresh, size: 18),
+                color: AppColors.white,
+                style: IconButton.styleFrom(
+                  fixedSize: const Size(44, 44),
+                  backgroundColor: AppColors.white.withValues(alpha: 0.11),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
             ],
           ),
+          if (!canAcceptBookings) ...[
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(11),
+              decoration: BoxDecoration(
+                color: AppColors.lightBlue.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: AppColors.lightBlue.withValues(alpha: 0.22),
+                ),
+              ),
+              child: const Text(
+                'Rechargez votre wallet pour accepter de nouvelles missions.',
+                style: TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -475,28 +607,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         icon: Icons.rate_review,
         title: 'Total Avis',
         value: '${_dashboardData!['totalReviews'] ?? 0}',
-        color: AppColors.lightBlue,
-      ),
+          color: AppColors.lightBlue,
+        ),
       if (isOwnDashboard)
         StatsCard(
           icon: Icons.pending_actions,
           title: 'En attente',
           value: '${_dashboardData!['pendingBookings'] ?? 0}',
-          color: Colors.orange,
+          color: AppColors.lightBlue,
         ),
       if (isOwnDashboard)
         StatsCard(
           icon: Icons.check_circle_outline,
           title: 'Confirmées',
           value: '${_dashboardData!['confirmedBookings'] ?? 0}',
-          color: Colors.green,
+          color: AppColors.teal,
         ),
       if (isOwnDashboard)
         StatsCard(
           icon: Icons.cancel_outlined,
           title: 'Annulées',
           value: '${_dashboardData!['cancelledBookings'] ?? 0}',
-          color: Colors.redAccent,
+          color: AppColors.textGrey,
         ),
     ];
 
@@ -563,7 +695,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Wallet recharge de ${amount.toStringAsFixed(0)} MAD'),
-          backgroundColor: Colors.green,
+          backgroundColor: AppColors.teal,
         ),
       );
     } catch (e) {
@@ -571,7 +703,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: Colors.red,
+          backgroundColor: AppColors.textGrey,
         ),
       );
     } finally {
@@ -588,7 +720,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final commissionDebited = _toDouble(wallet['commissionDebited']) ?? 0;
     final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
     final canAcceptBookings = wallet['canAcceptBookings'] == true;
-    final statusColor = canAcceptBookings ? Colors.greenAccent : Colors.orange;
+    final statusColor = canAcceptBookings ? AppColors.lightBlue : AppColors.white;
 
     return Container(
       width: double.infinity,
@@ -1347,219 +1479,300 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(22),
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.16),
-            blurRadius: 22,
-            offset: const Offset(0, 12),
+            color: AppColors.navy.withValues(alpha: 0.10),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.white.withValues(alpha: 0.18),
-                  ),
-                  image: imageUrl == null
-                      ? null
-                      : DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                        ),
-                ),
-                child: imageUrl == null
-                    ? Center(
-                        child: Text(
-                          _initials(fullName),
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _AvailabilityBadge(isAvailable: isAvailable),
-                    const SizedBox(height: 8),
-                    Text(
-                      fullName,
-                      style: const TextStyle(
-                        color: AppColors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w900,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+          SizedBox(
+            height: 180,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (portfolioImages.isNotEmpty || imageUrl != null)
+                  Image.network(
+                    portfolioImages.isNotEmpty ? portfolioImages.first : imageUrl!,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      color: AppColors.teal.withValues(alpha: 0.16),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      specialty,
-                      style: TextStyle(
-                        color: AppColors.white.withValues(alpha: 0.78),
-                        fontWeight: FontWeight.w700,
+                  )
+                else
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          AppColors.navy,
+                          AppColors.teal,
+                        ],
+                      ),
+                    ),
+                  ),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        AppColors.navy.withValues(alpha: 0.10),
+                        AppColors.navy.withValues(alpha: 0.82),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 14,
+                  right: 14,
+                  child: _AvailabilityBadge(isAvailable: isAvailable),
+                ),
+                Positioned(
+                  left: 16,
+                  right: 16,
+                  bottom: 16,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        width: 76,
+                        height: 76,
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(22),
+                          border: Border.all(
+                            color: AppColors.white,
+                            width: 3,
+                          ),
+                          image: imageUrl == null
+                              ? null
+                              : DecorationImage(
+                                  image: NetworkImage(imageUrl),
+                                  fit: BoxFit.cover,
+                                ),
+                        ),
+                        child: imageUrl == null
+                            ? Center(
+                                child: Text(
+                                  _initials(fullName),
+                                  style: const TextStyle(
+                                    color: AppColors.navy,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              fullName,
+                              style: const TextStyle(
+                                color: AppColors.white,
+                                fontSize: 23,
+                                fontWeight: FontWeight.w900,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 3),
+                            Text(
+                              specialty,
+                              style: TextStyle(
+                                color: AppColors.white.withValues(alpha: 0.84),
+                                fontWeight: FontWeight.w800,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: _ProfileInfoTile(
+                        icon: Icons.star_rounded,
+                        label: 'Note',
+                        value: averageRating.toStringAsFixed(1),
+                        color: AppColors.teal,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _ProfileInfoTile(
+                        icon: Icons.reviews_outlined,
+                        label: 'Avis',
+                        value: '$totalReviews',
+                        color: AppColors.teal,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _ProfileInfoTile(
+                        icon: Icons.payments_outlined,
+                        label: 'Tarif',
+                        value: hourlyRate == null
+                            ? '--'
+                            : '${hourlyRate.toStringAsFixed(0)}',
+                        color: AppColors.lightBlue,
                       ),
                     ),
                   ],
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: AppColors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Row(
-              children: [
-                StarRatingWidget(rating: averageRating, size: 20),
-                const SizedBox(width: 8),
+                const SizedBox(height: 14),
+                Row(
+                  children: [
+                    StarRatingWidget(rating: averageRating, size: 19),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        totalReviews == 0
+                            ? 'Nouveau profil artisan'
+                            : '$totalReviews avis clients',
+                        style: const TextStyle(
+                          color: AppColors.textGrey,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                    if (hourlyRate != null)
+                      Text(
+                        '${hourlyRate.toStringAsFixed(0)} MAD/h',
+                        style: const TextStyle(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 14),
                 Text(
-                  averageRating.toStringAsFixed(1),
+                  description,
                   style: const TextStyle(
-                    color: AppColors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 16,
+                    color: AppColors.textGrey,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '($totalReviews avis)',
+                const SizedBox(height: 14),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    _ProfilePill(
+                      icon: Icons.location_on_outlined,
+                      label: city?.toString().trim().isNotEmpty == true
+                          ? city.toString()
+                          : 'Ville non renseignee',
+                    ),
+                    if (phone?.toString().trim().isNotEmpty == true)
+                      _ProfilePill(
+                        icon: Icons.call_outlined,
+                        label: phone.toString(),
+                      ),
+                    _ProfilePill(
+                      icon: Icons.verified_user_outlined,
+                      label:
+                          isAvailable ? 'Pret a intervenir' : 'Non disponible',
+                    ),
+                  ],
+                ),
+                if (!isOwnDashboard) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => BookingScreen(
+                              artisanId: widget.artisanId,
+                              artisanName: fullName,
+                              hourlyRate: hourlyRate ?? 0,
+                            ),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.calendar_month_outlined),
+                      label: const Text('Reserver cet artisan'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.navy,
+                        foregroundColor: AppColors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+                if (portfolioImages.length > 1) ...[
+                  const SizedBox(height: 18),
+                  const Text(
+                    'Travaux realises',
                     style: TextStyle(
-                      color: AppColors.white.withValues(alpha: 0.72),
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-                if (hourlyRate != null)
-                  Text(
-                    '${hourlyRate.toStringAsFixed(0)} MAD/h',
-                    style: const TextStyle(
-                      color: AppColors.white,
+                      color: AppColors.navy,
                       fontWeight: FontWeight.w900,
+                      fontSize: 16,
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: portfolioImages.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 10),
+                      itemBuilder: (context, index) {
+                        return ClipRRect(
+                          borderRadius: BorderRadius.circular(14),
+                          child: Image.network(
+                            portfolioImages[index],
+                            width: 116,
+                            height: 92,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
-          const SizedBox(height: 16),
-          Text(
-            description,
-            style: TextStyle(
-              color: AppColors.white.withValues(alpha: 0.82),
-              height: 1.4,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _ProfilePill(
-                icon: Icons.location_on_outlined,
-                label: city?.toString().trim().isNotEmpty == true
-                    ? city.toString()
-                    : 'Ville non renseignee',
-              ),
-              if (phone?.toString().trim().isNotEmpty == true)
-                _ProfilePill(
-                  icon: Icons.call_outlined,
-                  label: phone.toString(),
-                ),
-              _ProfilePill(
-                icon: Icons.verified_user_outlined,
-                label: totalReviews == 0
-                    ? 'Nouveau profil'
-                    : '$totalReviews avis client',
-              ),
-            ],
-          ),
-          if (!isOwnDashboard) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => BookingScreen(
-                        artisanId: widget.artisanId,
-                        artisanName: fullName,
-                        hourlyRate: hourlyRate ?? 0,
-                      ),
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.calendar_month_outlined),
-                label: const Text('Réserver cet artisan'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.white,
-                  foregroundColor: AppColors.navy,
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                ),
-              ),
-            ),
-          ],
-          if (portfolioImages.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'Travaux réalisés',
-              style: TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-            const SizedBox(height: 8),
-            SizedBox(
-              height: 86,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: portfolioImages.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      portfolioImages[index],
-                      width: 112,
-                      height: 86,
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -1585,6 +1798,199 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+class _DashboardSectionTab extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool isSelected;
+  final bool isFirst;
+  final bool isLast;
+  final VoidCallback onTap;
+
+  const _DashboardSectionTab({
+    required this.icon,
+    required this.label,
+    required this.isSelected,
+    required this.isFirst,
+    required this.isLast,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.only(
+      topLeft: Radius.circular(isFirst ? 18 : 0),
+      topRight: Radius.circular(isLast ? 18 : 0),
+    );
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: radius,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          height: 64,
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.teal : AppColors.white,
+            borderRadius: radius,
+            border: Border(
+              right: isLast
+                  ? BorderSide.none
+                  : BorderSide(
+                      color: AppColors.teal.withValues(alpha: 0.10),
+                    ),
+              bottom: BorderSide(
+                color: AppColors.teal.withValues(alpha: 0.10),
+              ),
+            ),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? AppColors.white : AppColors.navy,
+                size: 19,
+              ),
+              const SizedBox(height: 5),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isSelected ? AppColors.white : AppColors.navy,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SummaryMetricTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _SummaryMetricTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.08)),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, color: AppColors.white, size: 16),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.white.withValues(alpha: 0.64),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileInfoTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color color;
+
+  const _ProfileInfoTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, color: color, size: 18),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 16,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.textGrey,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfilePill extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -1599,21 +2005,28 @@ class _ProfilePill extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.11),
+        color: AppColors.teal.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.white.withValues(alpha: 0.12)),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.white, size: 15),
+          Icon(icon, color: AppColors.teal, size: 15),
           const SizedBox(width: 6),
-          Text(
-            label,
-            style: const TextStyle(
-              color: AppColors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.62,
+            ),
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
             ),
           ),
         ],

@@ -16,6 +16,7 @@ class _AuthScreenState extends State<AuthScreen> {
   // 1. AJOUT : Contrôleurs pour récupérer le texte
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  bool _isPasswordVisible = false;
 
   @override
   void dispose() {
@@ -25,7 +26,7 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   void _openRegister() {
-    Navigator.pushReplacement(
+    Navigator.push(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 600),
@@ -118,6 +119,10 @@ class _AuthScreenState extends State<AuthScreen> {
                 hintText: "Mot de passe",
                 icon: Icons.lock,
                 isPassword: true,
+                isPasswordVisible: _isPasswordVisible,
+                onTogglePasswordVisibility: () {
+                  setState(() => _isPasswordVisible = !_isPasswordVisible);
+                },
               ),
               const SizedBox(height: 36),
 
@@ -166,27 +171,40 @@ class _AuthInput extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool isPassword;
+  final bool isPasswordVisible;
   final TextInputType? keyboardType;
   final TextEditingController controller; // AJOUTÉ
+  final VoidCallback? onTogglePasswordVisibility;
 
   const _AuthInput({
     required this.hintText,
     required this.icon,
     required this.controller, // AJOUTÉ
     this.isPassword = false,
+    this.isPasswordVisible = false,
     this.keyboardType,
+    this.onTogglePasswordVisibility,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller, // LIÉ ICI
-      obscureText: isPassword,
+      obscureText: isPassword && !isPasswordVisible,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
         prefixIcon: Icon(icon, color: AppColors.navy.withValues(alpha: 0.72)),
+        suffixIcon: isPassword
+            ? IconButton(
+                onPressed: onTogglePasswordVisibility,
+                icon: Icon(
+                  isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                  color: AppColors.navy.withValues(alpha: 0.62),
+                ),
+              )
+            : null,
         filled: true,
         fillColor: AppColors.navy.withValues(alpha: 0.08),
         contentPadding: const EdgeInsets.symmetric(vertical: 20),

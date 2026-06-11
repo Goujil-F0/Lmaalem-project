@@ -145,6 +145,11 @@ class AuthProvider with ChangeNotifier {
       }
 
       return result;
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Erreur upload CIN : $e',
+      };
     } finally {
       _isLoading = false;
       notifyListeners();

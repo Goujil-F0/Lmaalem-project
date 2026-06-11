@@ -158,15 +158,6 @@ class CinUploadCard extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.teal.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.cloud_upload, color: AppColors.teal, size: 32),
-            ),
-            const SizedBox(height: 12),
             Text(
               label,
               style: const TextStyle(

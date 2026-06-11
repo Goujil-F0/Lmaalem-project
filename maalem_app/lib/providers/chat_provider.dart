@@ -56,9 +56,9 @@ class ChatProvider with ChangeNotifier {
       }
 
       // 2. On crée la nouvelle connexion
-      _socket = IO.io(
+      _socket = socket_io.io(
           ApiEndpoints.socketUrl,
-          IO.OptionBuilder()
+          socket_io.OptionBuilder()
               .setTransports(['websocket'])
               .enableAutoConnect()
               .build());

@@ -18,11 +18,29 @@ const getBookingsByUser = async (userId, role) => {
     
     // Si c'est un client, on cherche ses réservations
     if (role === 'client') {
-        query = `SELECT * FROM bookings WHERE client_id = $1 ORDER BY created_at DESC;`;
+        query = `
+            SELECT b.*, artisan.full_name AS artisan_name, client.full_name AS client_name,
+                   (r.id IS NOT NULL) AS has_review
+            FROM bookings b
+            JOIN users artisan ON artisan.id = b.artisan_id
+            JOIN users client ON client.id = b.client_id
+            LEFT JOIN reviews r ON r.booking_id = b.id
+            WHERE b.client_id = $1
+            ORDER BY b.created_at DESC;
+        `;
     } 
     // Si c'est un artisan, on cherche les siennes
     else if (role === 'artisan') {
-        query = `SELECT * FROM bookings WHERE artisan_id = $1 ORDER BY created_at DESC;`;
+        query = `
+            SELECT b.*, artisan.full_name AS artisan_name, client.full_name AS client_name,
+                   (r.id IS NOT NULL) AS has_review
+            FROM bookings b
+            JOIN users artisan ON artisan.id = b.artisan_id
+            JOIN users client ON client.id = b.client_id
+            LEFT JOIN reviews r ON r.booking_id = b.id
+            WHERE b.artisan_id = $1
+            ORDER BY b.created_at DESC;
+        `;
     } else {
         throw new Error("Rôle invalide");
     }

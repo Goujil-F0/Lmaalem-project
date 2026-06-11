@@ -26,6 +26,19 @@ class _ReviewScreenState extends State<ReviewScreen> {
   final TextEditingController _commentController = TextEditingController();
   bool _isLoading = false;
 
+  void _handleRatingChanged(double value) {
+    setState(() => _rating = value);
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(
+          content: Text('Évaluation enregistrée'),
+          backgroundColor: AppColors.teal,
+          duration: Duration(seconds: 1),
+        ),
+      );
+  }
+
   Future<void> _submitReview() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,11 +66,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Avis envoyé avec succès !'),
+            content: Text('Votre avis est enregistré. Merci !'),
             backgroundColor: AppColors.teal,
           ),
         );
-        Navigator.pop(context);
+        Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
@@ -132,7 +145,7 @@ class _ReviewScreenState extends State<ReviewScreen> {
               const SizedBox(height: 24),
               StarRatingInput(
                 initialRating: _rating,
-                onRatingChanged: (value) => setState(() => _rating = value),
+                onRatingChanged: _handleRatingChanged,
                 size: 48,
               ),
               const SizedBox(height: 10),

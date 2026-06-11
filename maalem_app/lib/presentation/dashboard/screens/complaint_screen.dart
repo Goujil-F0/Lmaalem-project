@@ -81,13 +81,25 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Réclamation envoyée avec succès !'),
-            backgroundColor: AppColors.teal,
+        await showDialog<void>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Réclamation envoyée'),
+            content: const Text(
+              'Votre réclamation a été enregistrée et sera traitée par l’équipe.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
         _descriptionController.clear();
+        if (mounted && !widget.isAdmin) {
+          Navigator.pop(context);
+        }
       }
     } catch (e) {
       if (mounted) {

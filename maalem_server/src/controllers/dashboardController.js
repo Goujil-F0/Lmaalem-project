@@ -17,9 +17,18 @@ const getArtisanDashboard = async (req, res) => {
       `SELECT
         COUNT(*) FILTER (WHERE status = 'pending') as pending_bookings,
         COUNT(*) FILTER (WHERE status = 'accepted') as confirmed_bookings,
-        COUNT(*) FILTER (WHERE status IN ('cancelled', 'rejected')) as cancelled_bookings
+        COUNT(*) FILTER (WHERE status IN ('cancelled', 'rejected')) as cancelled_bookings,
+        COALESCE(SUM(agreed_price) FILTER (WHERE status = 'completed'), 0) as completed_revenue,
+        COALESCE(SUM(agreed_price) FILTER (WHERE status IN ('pending', 'accepted')), 0) as expected_revenue
        FROM bookings
        WHERE artisan_id = $1`,
+      [artisanId]
+    );
+
+    const walletQuery = await pool.query(
+      `SELECT balance
+       FROM wallets
+       WHERE user_id = $1`,
       [artisanId]
     );
 
@@ -40,6 +49,20 @@ const getArtisanDashboard = async (req, res) => {
        WHERE b.artisan_id = $1
        ORDER BY b.created_at DESC
        LIMIT 5`,
+      [artisanId]
+    );
+
+    const upcomingBookingsQuery = await pool.query(
+      `SELECT b.id, b.booking_date, b.status, b.description, b.agreed_price,
+        b.created_at, u.full_name as client_name, u.phone as client_phone
+       FROM bookings b
+       JOIN users u ON b.client_id = u.id
+       WHERE b.artisan_id = $1
+         AND b.status IN ('pending', 'accepted')
+       ORDER BY
+         CASE WHEN b.status = 'accepted' THEN 0 ELSE 1 END,
+         b.booking_date ASC
+       LIMIT 8`,
       [artisanId]
     );
 
@@ -70,7 +93,13 @@ const getArtisanDashboard = async (req, res) => {
       pendingBookings: parseInt(bookingStatsQuery.rows[0].pending_bookings || 0),
       confirmedBookings: parseInt(bookingStatsQuery.rows[0].confirmed_bookings || 0),
       cancelledBookings: parseInt(bookingStatsQuery.rows[0].cancelled_bookings || 0),
+      wallet: {
+        balance: parseFloat(walletQuery.rows[0]?.balance || 0),
+        received: parseFloat(bookingStatsQuery.rows[0].completed_revenue || 0),
+        expected: parseFloat(bookingStatsQuery.rows[0].expected_revenue || 0),
+      },
       recentBookings: recentBookingsQuery.rows,
+      upcomingBookings: upcomingBookingsQuery.rows,
     });
   } catch (error) {
     res.status(500).json({ message: 'Erreur serveur', error: error.message });

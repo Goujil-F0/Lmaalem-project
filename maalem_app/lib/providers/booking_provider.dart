@@ -53,6 +53,9 @@ class BookingProvider with ChangeNotifier {
             status: newStatus,
             description: oldBooking.description,
             agreedPrice: oldBooking.agreedPrice,
+            artisanName: oldBooking.artisanName,
+            clientName: oldBooking.clientName,
+            hasReview: oldBooking.hasReview,
           );
           notifyListeners(); // 🔄 Met à jour l'écran instantanément
         }
@@ -86,5 +89,25 @@ class BookingProvider with ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  void markBookingReviewed(int bookingId) {
+    final index = _bookings.indexWhere((b) => b.id == bookingId);
+    if (index == -1) return;
+
+    final oldBooking = _bookings[index];
+    _bookings[index] = Booking(
+      id: oldBooking.id,
+      clientId: oldBooking.clientId,
+      artisanId: oldBooking.artisanId,
+      bookingDate: oldBooking.bookingDate,
+      status: oldBooking.status,
+      description: oldBooking.description,
+      agreedPrice: oldBooking.agreedPrice,
+      artisanName: oldBooking.artisanName,
+      clientName: oldBooking.clientName,
+      hasReview: true,
+    );
+    notifyListeners();
   }
 }

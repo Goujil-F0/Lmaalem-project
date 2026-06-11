@@ -8,6 +8,9 @@ class Booking {
   final double agreedPrice;
   final String status;
   final DateTime bookingDate;
+  final String? artisanName;
+  final String? clientName;
+  final bool hasReview;
 
   Booking({
     this.id,
@@ -17,6 +20,9 @@ class Booking {
     required this.agreedPrice,
     this.status = 'pending',
     required this.bookingDate,
+    this.artisanName,
+    this.clientName,
+    this.hasReview = false,
   });
 
   // Depuis le JSON (Backend -> Flutter)
@@ -30,6 +36,9 @@ class Booking {
       agreedPrice: double.tryParse(json['agreed_price'].toString()) ?? 0.0,
       status: json['status'] ?? 'pending',
       bookingDate: DateTime.parse(json['booking_date']),
+      artisanName: json['artisan_name'],
+      clientName: json['client_name'],
+      hasReview: json['has_review'] == true,
     );
   }
 

@@ -3,6 +3,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/providers/search_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -72,14 +73,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
+          child: ProfileAvatar(
+            name: user?.fullName ?? 'Client Lmaalem',
+            imageUrl: user?.photoUrl,
+            size: 40,
             backgroundColor: AppColors.navy,
-            child: Text(
-              _initials(user?.fullName),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -268,6 +269,7 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                           name: artisan.fullName,
                           subtitle:
                               '${artisan.speciality} - ${artisan.city.isEmpty ? 'Ville non renseignee' : artisan.city}',
+                          imageUrl: artisan.profileImage,
                           isAvailable: artisan.isAvailable,
                           onTap: () => _openMapWithSearch(
                             _searchController.text,
@@ -418,11 +420,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
     );
   }
 
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return 'CL';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    return parts.take(2).map((part) => part[0].toUpperCase()).join();
-  }
 }
 
 class _ServiceCard extends StatelessWidget {
@@ -508,12 +505,14 @@ class _ServiceCard extends StatelessWidget {
 class _SearchSuggestionTile extends StatelessWidget {
   final String name;
   final String subtitle;
+  final String? imageUrl;
   final bool isAvailable;
   final VoidCallback onTap;
 
   const _SearchSuggestionTile({
     required this.name,
     required this.subtitle,
+    this.imageUrl,
     required this.isAvailable,
     required this.onTap,
   });
@@ -529,9 +528,11 @@ class _SearchSuggestionTile extends StatelessWidget {
       ),
       child: ListTile(
         onTap: onTap,
-        leading: CircleAvatar(
-          backgroundColor: AppColors.teal.withValues(alpha: 0.12),
-          child: const Icon(Icons.handyman, color: AppColors.teal),
+        leading: ProfileAvatar(
+          name: name,
+          imageUrl: imageUrl,
+          size: 40,
+          backgroundColor: AppColors.teal,
         ),
         title: Text(
           name,

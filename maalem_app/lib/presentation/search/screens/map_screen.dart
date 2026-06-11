@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/models/artisan_model.dart';
@@ -205,24 +206,16 @@ class _MapScreenState extends State<MapScreen> {
             ),
             Row(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: BoxDecoration(
-                    color: _Colors.blue,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Center(
-                    child: Text(
-                      artisan.fullName.isNotEmpty
-                          ? artisan.fullName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                ProfileAvatar(
+                  name: artisan.fullName,
+                  imageUrl: artisan.profileImage,
+                  size: 52,
+                  borderRadius: 14,
+                  backgroundColor: _Colors.blue,
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(width: 14),

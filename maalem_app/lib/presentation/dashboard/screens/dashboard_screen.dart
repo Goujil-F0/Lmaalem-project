@@ -7,6 +7,7 @@ import 'package:maalem_app/presentation/booking/screens/booking_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -838,11 +839,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         dashboardProfile['is_available'] ??
         ownProfile?.isAvailable ??
         true;
-    final imageUrl = _resolveImageUrl(
-      artisan?.profileImage ??
-          dashboardProfile['profile_image'] ??
-          authUser?.photoUrl,
-    );
+    final imageSource = isOwnDashboard
+        ? authUser?.photoUrl ?? dashboardProfile['profile_image'] ?? artisan?.profileImage
+        : artisan?.profileImage ?? dashboardProfile['profile_image'] ?? authUser?.photoUrl;
     final portfolioImages = (artisan?.portfolioImages.isNotEmpty == true
             ? artisan!.portfolioImages
             : _toStringList(dashboardProfile['portfolio_images']).isNotEmpty
@@ -872,31 +871,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(18),
-                  image: imageUrl == null
-                      ? null
-                      : DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit.cover,
-                        ),
+              ProfileAvatar(
+                name: fullName,
+                imageUrl: imageSource?.toString(),
+                size: 72,
+                borderRadius: 18,
+                backgroundColor: AppColors.white.withValues(alpha: 0.12),
+                textStyle: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
                 ),
-                child: imageUrl == null
-                    ? Center(
-                        child: Text(
-                          _initials(fullName),
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      )
-                    : null,
               ),
               const SizedBox(width: 14),
               Expanded(

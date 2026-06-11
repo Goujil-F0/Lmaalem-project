@@ -58,6 +58,8 @@ class ArtisanModel {
       isAvailable: json['isAvailable'] ?? json['is_available'] ?? true,
       profileImage: json['profileImage'] ??
           json['profile_image'] ??
+          json['photo_url'] ??
+          json['photoUrl'] ??
           json['profile_photo_url'] ??
           json['profilePhotoUrl'],
       rating: _toDouble(json['rating']) ?? _toDouble(json['average_rating']),

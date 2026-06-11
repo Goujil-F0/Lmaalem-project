@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/location_service.dart';
-import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/upload_cin_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -16,6 +15,8 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   bool isArtisan = false;
   bool _isLocating = false;
+  bool _isPasswordVisible = false;
+  bool _isConfirmPasswordVisible = false;
   UserLocation? _selectedLocation;
 
   final TextEditingController _nameController = TextEditingController();
@@ -128,21 +129,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _openLogin() {
-    Navigator.pushReplacement(
-      context,
-      PageRouteBuilder(
-        transitionDuration: const Duration(milliseconds: 600),
-        pageBuilder: (_, __, ___) => const AuthScreen(),
-        transitionsBuilder: (_, animation, __, child) {
-          final slideUp = Tween<Offset>(
-            begin: const Offset(0, 1),
-            end: Offset.zero,
-          ).animate(
-              CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-          return SlideTransition(position: slideUp, child: child);
-        },
-      ),
-    );
+    Navigator.pop(context);
   }
 
   @override
@@ -191,6 +178,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 hintText: 'Mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
+                isPasswordVisible: _isPasswordVisible,
+                onTogglePasswordVisibility: () {
+                  setState(() => _isPasswordVisible = !_isPasswordVisible);
+                },
               ),
               const SizedBox(height: 16),
               _RegisterInput(
@@ -198,6 +189,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 hintText: 'Confirmer le mot de passe',
                 icon: Icons.lock,
                 isPassword: true,
+                isPasswordVisible: _isConfirmPasswordVisible,
+                onTogglePasswordVisibility: () {
+                  setState(
+                    () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                  );
+                },
               ),
               const SizedBox(height: 16),
               _RegisterDropdown(
@@ -392,27 +389,40 @@ class _RegisterInput extends StatelessWidget {
   final String hintText;
   final IconData icon;
   final bool isPassword;
+  final bool isPasswordVisible;
   final TextInputType? keyboardType;
   final TextEditingController controller;
+  final VoidCallback? onTogglePasswordVisibility;
 
   const _RegisterInput({
     required this.hintText,
     required this.icon,
     required this.controller,
     this.isPassword = false,
+    this.isPasswordVisible = false,
     this.keyboardType,
+    this.onTogglePasswordVisibility,
   });
 
   @override
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
-      obscureText: isPassword,
+      obscureText: isPassword && !isPasswordVisible,
       keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: TextStyle(color: AppColors.navy.withValues(alpha: 0.52)),
         prefixIcon: Icon(icon, color: AppColors.navy.withValues(alpha: 0.72)),
+        suffixIcon: isPassword
+            ? IconButton(
+                onPressed: onTogglePasswordVisibility,
+                icon: Icon(
+                  isPasswordVisible ? Icons.visibility_off : Icons.visibility,
+                  color: AppColors.navy.withValues(alpha: 0.62),
+                ),
+              )
+            : null,
         filled: true,
         fillColor: AppColors.navy.withValues(alpha: 0.08),
         contentPadding: const EdgeInsets.symmetric(vertical: 20),

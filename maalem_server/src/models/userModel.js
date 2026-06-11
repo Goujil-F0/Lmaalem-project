@@ -10,7 +10,7 @@ const createUser = async (full_name, email, password_hash, role, phone, city, ne
       `INSERT INTO users 
         (full_name, email, password_hash, role, phone, city, neighborhood, latitude, longitude)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-       RETURNING id, full_name, email, role, phone, city, neighborhood, latitude, longitude`,
+       RETURNING id, full_name, email, role, phone, city, neighborhood, latitude, longitude, profile_photo_url AS photo_url`,
       [full_name, email, password_hash, role, phone, city, neighborhood, latitude, longitude]
     );
 

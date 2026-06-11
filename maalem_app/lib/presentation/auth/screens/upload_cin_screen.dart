@@ -1,9 +1,10 @@
+import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/widgets/cin_upload_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -36,6 +37,12 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
       return;
     }
 
+    final validation = await _validateCinImage(bytes);
+    if (!validation.isValid) {
+      _showSnackBar(validation.message, Colors.redAccent);
+      return;
+    }
+
     final fileName = selected.name;
 
     if (!mounted) return;
@@ -64,27 +71,76 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
     }
 
     setState(() => _isLoading = true);
-    final auth = context.read<AuthProvider>();
-    final result = await auth.uploadCin(_rectoFile!, _versoFile!);
+
+    Map<String, dynamic> result;
+    try {
+      final auth = context.read<AuthProvider>();
+      result = await auth.uploadCin(_rectoFile!, _versoFile!);
+    } catch (e) {
+      result = {
+        'success': false,
+        'error': 'Erreur upload : $e',
+      };
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
 
     if (!mounted) return;
-    setState(() => _isLoading = false);
 
-    if (result['success']) {
-      _showSnackBar(
-        'CIN uploadee avec succes. Connectez-vous maintenant.',
-        Colors.green,
-      );
-      await Future.delayed(const Duration(milliseconds: 500));
-      if (!mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const AuthScreen()),
-      );
+    if (result['success'] == true) {
+      final messenger = ScaffoldMessenger.of(context);
+      Navigator.of(context).popUntil((route) => route.isFirst);
+      messenger
+        ..clearSnackBars()
+        ..showSnackBar(
+          const SnackBar(
+            content: Text('Compte cree avec succes. Connectez-vous maintenant.'),
+            backgroundColor: Colors.green,
+          ),
+        );
       return;
     }
 
     _showSnackBar(result['error'] ?? 'Erreur upload', Colors.redAccent);
+  }
+
+  Future<_CinValidationResult> _validateCinImage(Uint8List bytes) async {
+    try {
+      final image = await _decodeImage(bytes);
+      final width = image.width;
+      final height = image.height;
+      image.dispose();
+
+      final shortestSide = width < height ? width : height;
+      final longestSide = width > height ? width : height;
+      if (shortestSide < 180 || longestSide < 320) {
+        return const _CinValidationResult(
+          false,
+          'Image trop petite. Choisissez une photo un peu plus nette de la CIN.',
+        );
+      }
+
+      final ratio = width > height ? width / height : height / width;
+      if (ratio < 1.15 || ratio > 2.25) {
+        return const _CinValidationResult(
+          false,
+          'Image difficile a verifier. Essayez de cadrer la carte CIN de plus pres.',
+        );
+      }
+
+      return const _CinValidationResult(true, '');
+    } catch (_) {
+      return const _CinValidationResult(
+        false,
+        'Impossible de verifier cette image. Reessayez avec une photo nette.',
+      );
+    }
+  }
+
+  Future<ui.Image> _decodeImage(Uint8List bytes) {
+    final completer = Completer<ui.Image>();
+    ui.decodeImageFromList(bytes, completer.complete);
+    return completer.future;
   }
 
   void _showSnackBar(String message, Color color) {
@@ -130,7 +186,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'Ajoutez le recto et le verso de votre CIN pour finaliser votre demande artisan.',
+                'Ajoutez le recto et le verso de votre CIN. Cadrez uniquement la carte, sans decor autour.',
                 style: TextStyle(
                   color: AppColors.navy.withValues(alpha: 0.7),
                   fontSize: 14,
@@ -182,7 +238,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Formats acceptes: JPG, PNG ou PDF. Les deux cotes sont obligatoires.',
+                        'Formats acceptes: JPG ou PNG. Les images doivent etre nettes et cadrees comme une carte CIN.',
                         style: TextStyle(
                           color: AppColors.navy.withValues(alpha: 0.8),
                           fontSize: 13,
@@ -233,4 +289,11 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
       ),
     );
   }
+}
+
+class _CinValidationResult {
+  final bool isValid;
+  final String message;
+
+  const _CinValidationResult(this.isValid, this.message);
 }

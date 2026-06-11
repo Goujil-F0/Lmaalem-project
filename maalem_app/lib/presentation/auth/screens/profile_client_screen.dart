@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/presentation/auth/screens/favorite_artisans_screen.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
@@ -63,9 +64,8 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
     );
     if (result == null) return;
 
-    await Future.delayed(Duration.zero);
+    await _waitForUiToSettle();
     if (!mounted) return;
-    FocusScope.of(context).unfocus();
     final response = await context.read<AuthProvider>().updateClientProfile(
           fullName: result['fullName'],
           email: result['email'],
@@ -89,6 +89,8 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
       longitude: user?.longitude,
     );
     if (updated == null) return;
+
+    await _waitForUiToSettle();
     if (!mounted) return;
 
     final response = await context.read<AuthProvider>().updateClientProfile(
@@ -294,104 +296,14 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
     required String email,
     required String phone,
   }) async {
-    final nameController = TextEditingController(text: fullName);
-    final emailController = TextEditingController(text: email);
-    final phoneController = TextEditingController(text: phone);
-    final nameFocus = FocusNode();
-    final emailFocus = FocusNode();
-    final phoneFocus = FocusNode();
-
     final result = await showDialog<Map<String, String>>(
       context: context,
-      builder: (dialogContext) {
-        return GestureDetector(
-          onTap: () => FocusScope.of(dialogContext).unfocus(),
-          child: AlertDialog(
-            title: const Text('Modifier mes informations'),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nameController,
-                    focusNode: nameFocus,
-                    autofocus: true,
-                    textInputAction: TextInputAction.next,
-                    keyboardType: TextInputType.name,
-                    onSubmitted: (_) => emailFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: 'Nom complet',
-                      prefixIcon: Icon(Icons.person_outline),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: emailController,
-                    focusNode: emailFocus,
-                    textInputAction: TextInputAction.next,
-                    keyboardType: TextInputType.emailAddress,
-                    onSubmitted: (_) => phoneFocus.requestFocus(),
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: phoneController,
-                    focusNode: phoneFocus,
-                    textInputAction: TextInputAction.done,
-                    keyboardType: TextInputType.phone,
-                    onSubmitted: (_) {
-                      FocusScope.of(dialogContext).unfocus();
-                      Navigator.pop(dialogContext, {
-                        'fullName': nameController.text.trim(),
-                        'email': emailController.text.trim(),
-                        'phone': phoneController.text.trim(),
-                      });
-                    },
-                    decoration: const InputDecoration(
-                      labelText: 'Telephone',
-                      prefixIcon: Icon(Icons.phone_outlined),
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  FocusScope.of(dialogContext).unfocus();
-                  Navigator.pop(dialogContext, {
-                    'fullName': nameController.text.trim(),
-                    'email': emailController.text.trim(),
-                    'phone': phoneController.text.trim(),
-                  });
-                },
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
-                child: const Text('Enregistrer',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (_) => _PersonalInfoDialog(
+        fullName: fullName,
+        email: email,
+        phone: phone,
+      ),
     );
-
-    nameController.dispose();
-    emailController.dispose();
-    phoneController.dispose();
-    nameFocus.dispose();
-    emailFocus.dispose();
-    phoneFocus.dispose();
 
     if (result == null ||
         (result['fullName'] ?? '').isEmpty ||
@@ -415,6 +327,12 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
 
   String _successMessage(String message, Map<String, dynamic> result) {
     return result['mocked'] == true ? '$message (Simulation locale)' : message;
+  }
+
+  Future<void> _waitForUiToSettle() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(Duration.zero);
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   @override
@@ -510,6 +428,128 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
   }
 }
 
+class _PersonalInfoDialog extends StatefulWidget {
+  final String fullName;
+  final String email;
+  final String phone;
+
+  const _PersonalInfoDialog({
+    required this.fullName,
+    required this.email,
+    required this.phone,
+  });
+
+  @override
+  State<_PersonalInfoDialog> createState() => _PersonalInfoDialogState();
+}
+
+class _PersonalInfoDialogState extends State<_PersonalInfoDialog> {
+  late final TextEditingController _nameController;
+  late final TextEditingController _emailController;
+  late final TextEditingController _phoneController;
+  final FocusNode _nameFocus = FocusNode();
+  final FocusNode _emailFocus = FocusNode();
+  final FocusNode _phoneFocus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _nameController = TextEditingController(text: widget.fullName);
+    _emailController = TextEditingController(text: widget.email);
+    _phoneController = TextEditingController(text: widget.phone);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _nameFocus.dispose();
+    _emailFocus.dispose();
+    _phoneFocus.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    FocusScope.of(context).unfocus();
+    Navigator.pop(context, {
+      'fullName': _nameController.text.trim(),
+      'email': _emailController.text.trim(),
+      'phone': _phoneController.text.trim(),
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: AlertDialog(
+        title: const Text('Modifier mes informations'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nameController,
+                focusNode: _nameFocus,
+                autofocus: true,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.name,
+                onSubmitted: (_) => _emailFocus.requestFocus(),
+                decoration: const InputDecoration(
+                  labelText: 'Nom complet',
+                  prefixIcon: Icon(Icons.person_outline),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _emailController,
+                focusNode: _emailFocus,
+                textInputAction: TextInputAction.next,
+                keyboardType: TextInputType.emailAddress,
+                onSubmitted: (_) => _phoneFocus.requestFocus(),
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _phoneController,
+                focusNode: _phoneFocus,
+                textInputAction: TextInputAction.done,
+                keyboardType: TextInputType.phone,
+                onSubmitted: (_) => _submit(),
+                decoration: const InputDecoration(
+                  labelText: 'Telephone',
+                  prefixIcon: Icon(Icons.phone_outlined),
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: _submit,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
+            child: const Text(
+              'Enregistrer',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _TopBar extends StatelessWidget {
   const _TopBar();
 
@@ -582,7 +622,10 @@ class _ProfileHeader extends StatelessWidget {
         }
       }
     } else if (hasPhoto) {
-      providerImage = NetworkImage(photoUrl!);
+      final resolvedPhotoUrl = _resolveImageUrl(photoUrl!);
+      if (resolvedPhotoUrl != null) {
+        providerImage = NetworkImage(resolvedPhotoUrl);
+      }
     }
 
     return Column(
@@ -670,6 +713,16 @@ class _ProfileHeader extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String? _resolveImageUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('data:image')) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) return '${ApiClient.baseUrl}$trimmed';
+    return '${ApiClient.baseUrl}/$trimmed';
   }
 }
 

@@ -171,7 +171,7 @@ const getAllArtisans = async (req, res) => {
              COALESCE(ap.average_rating, 0) AS average_rating,
              COALESCE(review_stats.review_count, 0) AS review_count,
              COALESCE(ap.portfolio_images, ARRAY[]::TEXT[]) AS portfolio_images,
-             ap.profile_photo_url AS profile_image
+             COALESCE(u.profile_photo_url, ap.profile_photo_url) AS profile_image
       FROM users u
       LEFT JOIN artisan_profiles ap ON ap.user_id = u.id
       LEFT JOIN specialties s ON ap.specialty_id = s.id

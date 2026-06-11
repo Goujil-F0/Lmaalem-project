@@ -47,8 +47,7 @@ class BookingService {
       if (response.statusCode == 200) return true;
       throw Exception(_errorMessage(response));
     } catch (e) {
-      throw Exception(
-          'Erreur de connexion lors de la mise à jour du statut: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 

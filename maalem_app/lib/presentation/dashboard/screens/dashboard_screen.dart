@@ -27,6 +27,7 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _isLoading = true;
   bool _isFavorite = false;
+  bool _isRechargingWallet = false;
   String? _error;
   Map<String, dynamic>? _dashboardData;
   DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
@@ -147,41 +148,220 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(color: AppColors.teal))
+              child: CircularProgressIndicator(color: AppColors.teal),
+            )
           : _error != null || _dashboardData == null
               ? _buildErrorState()
-              : RefreshIndicator(
-                  color: AppColors.teal,
-                  onRefresh: _loadDashboard,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (!isOwnDashboard) ...[
-                          _buildProfileHeader(context),
-                          const SizedBox(height: 18),
-                        ],
-                        if (isOwnDashboard) ...[
-                          _buildWallet(),
-                          const SizedBox(height: 24),
-                          _buildStats(isOwnDashboard),
-                          const SizedBox(height: 24),
-                          _buildCalendar(),
-                          const SizedBox(height: 24),
-                          _buildRecentReviews(isOwnDashboard),
-                          const SizedBox(height: 24),
-                          _buildRecentBookings(),
-                        ] else ...[
-                          _buildStats(isOwnDashboard),
-                          const SizedBox(height: 24),
-                          _buildRecentReviews(isOwnDashboard),
-                        ],
-                      ],
+              : isOwnDashboard
+                  ? _buildOwnDashboard()
+                  : _buildClientProfileDashboard(context),
+    );
+  }
+
+  Widget _buildOwnDashboard() {
+    return RefreshIndicator(
+      color: AppColors.teal,
+      onRefresh: _loadDashboard,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildDashboardSummary(),
+            const SizedBox(height: 24),
+            _buildCalendar(),
+            const SizedBox(height: 24),
+            _buildMessagingSection(),
+            const SizedBox(height: 24),
+            _buildRecentReviews(true),
+            const SizedBox(height: 24),
+            _buildRecentBookings(),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildClientProfileDashboard(BuildContext context) {
+    return RefreshIndicator(
+      color: AppColors.teal,
+      onRefresh: _loadDashboard,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildProfileHeader(context),
+            const SizedBox(height: 18),
+            _buildStats(false),
+            const SizedBox(height: 24),
+            _buildRecentReviews(false),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDashboardSummary() {
+    final wallet = _dashboardData!['wallet'] is Map
+        ? _dashboardData!['wallet'] as Map
+        : const {};
+    final balance = _toDouble(wallet['balance']) ?? 0;
+    final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
+    final canAcceptBookings = wallet['canAcceptBookings'] == true;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.14),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.white.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.dashboard_customize_outlined,
+                  color: AppColors.white,
+                  size: 22,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Tableau de bord',
+                      style: TextStyle(
+                        color: AppColors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Suivi du statut des commandes',
+                      style: TextStyle(
+                        color: Color(0xCCFFFFFF),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                decoration: BoxDecoration(
+                  color: (canAcceptBookings ? Colors.green : Colors.orange)
+                      .withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  canAcceptBookings ? 'Actif' : 'A recharger',
+                  style: TextStyle(
+                    color: canAcceptBookings ? Colors.greenAccent : Colors.orangeAccent,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _DashboardStatItem(
+                value: '${_dashboardData!['pendingBookings'] ?? 0}',
+                label: 'En attente',
+              ),
+              _DashboardStatItem(
+                value: '${_dashboardData!['confirmedBookings'] ?? 0}',
+                label: 'Confirmées',
+              ),
+              _DashboardStatItem(
+                value: '${balance.toStringAsFixed(0)}',
+                label: 'MAD',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: TextButton(
+                  onPressed: () {
+                    // Navigate to stats view
+                  },
+                  child: const Text(
+                    'Consulter les stats',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13,
                     ),
                   ),
                 ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isRechargingWallet
+                      ? null
+                      : () => _rechargeWallet(100),
+                  icon: _isRechargingWallet
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.navy,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.add_card_outlined, size: 17),
+                  label: const Text('Recharger 100 MAD'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.white,
+                    foregroundColor: AppColors.navy,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    textStyle: const TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -301,13 +481,49 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  Future<void> _rechargeWallet(double amount) async {
+    setState(() => _isRechargingWallet = true);
+
+    try {
+      final token = context.read<AuthProvider>().token;
+      if (token == null || token.isEmpty) {
+        throw Exception('Utilisateur non connecté');
+      }
+
+      final service = DashboardService(token: token);
+      await service.rechargeWallet(widget.artisanId, amount);
+      await _loadDashboard();
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Wallet recharge de ${amount.toStringAsFixed(0)} MAD'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString().replaceFirst('Exception: ', '')),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isRechargingWallet = false);
+    }
+  }
+
   Widget _buildWallet() {
     final wallet = _dashboardData!['wallet'] is Map
         ? _dashboardData!['wallet'] as Map
         : const {};
-    final received = _toDouble(wallet['received']) ?? 0;
-    final expected = _toDouble(wallet['expected']) ?? 0;
-    final balance = _toDouble(wallet['balance']) ?? received;
+    final balance = _toDouble(wallet['balance']) ?? 0;
+    final grossCash = _toDouble(wallet['grossCash']) ?? 0;
+    final commissionDebited = _toDouble(wallet['commissionDebited']) ?? 0;
+    final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
+    final canAcceptBookings = wallet['canAcceptBookings'] == true;
+    final statusColor = canAcceptBookings ? Colors.greenAccent : Colors.orange;
 
     return Container(
       width: double.infinity,
@@ -344,7 +560,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(width: 12),
               const Expanded(
                 child: Text(
-                  'Wallet',
+                  'Wallet crédits',
                   style: TextStyle(
                     color: AppColors.white,
                     fontSize: 20,
@@ -359,10 +575,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   color: AppColors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  'MAD',
+                child: Text(
+                  canAcceptBookings ? 'Actif' : 'A recharger',
                   style: TextStyle(
-                    color: AppColors.white,
+                    color: statusColor,
                     fontWeight: FontWeight.w900,
                     fontSize: 12,
                   ),
@@ -372,7 +588,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(height: 18),
           Text(
-            '${received.toStringAsFixed(0)} MAD',
+            '${balance.toStringAsFixed(0)} MAD',
             style: const TextStyle(
               color: AppColors.white,
               fontSize: 34,
@@ -380,7 +596,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Text(
-            'Montant reçu',
+            'Crédits disponibles pour accepter les missions',
             style: TextStyle(
               color: AppColors.white.withValues(alpha: 0.72),
               fontWeight: FontWeight.w700,
@@ -391,20 +607,177 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Expanded(
                 child: _WalletMetric(
-                  icon: Icons.account_balance_outlined,
-                  label: 'Solde',
-                  value: '${balance.toStringAsFixed(0)} MAD',
+                  icon: Icons.point_of_sale_outlined,
+                  label: 'Cash encaissé',
+                  value: '${grossCash.toStringAsFixed(0)} MAD',
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: _WalletMetric(
-                  icon: Icons.trending_up,
-                  label: 'À venir',
-                  value: '${expected.toStringAsFixed(0)} MAD',
+                  icon: Icons.percent,
+                  label: 'Commissions',
+                  value: '${commissionDebited.toStringAsFixed(0)} MAD',
                 ),
               ),
             ],
+          ),
+          const SizedBox(height: 10),
+          _WalletMetric(
+            icon: Icons.pending_actions_outlined,
+            label: 'Commission prévue sur les missions en cours',
+            value: '${expectedCommission.toStringAsFixed(0)} MAD',
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _isRechargingWallet
+                      ? null
+                      : () => _rechargeWallet(100),
+                  icon: _isRechargingWallet
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.add_card_outlined),
+                  label: const Text('Recharger 100 MAD'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.white,
+                    side: BorderSide(
+                      color: AppColors.white.withValues(alpha: 0.28),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              IconButton(
+                tooltip: 'Recharger 200 MAD',
+                onPressed:
+                    _isRechargingWallet ? null : () => _rechargeWallet(200),
+                icon: const Icon(Icons.add_circle_outline),
+                color: AppColors.white,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.white.withValues(alpha: 0.12),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessagingSection() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.mail_outlined,
+                  color: AppColors.teal,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Messagerie',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.navy,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.green.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: const Text(
+                  'LIVE ACTIVE',
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Center(
+            child: Text(
+              '${_dashboardData?['unreadMessages'] ?? 120} ',
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          const Center(
+            child: Text(
+              'Messages en attente',
+              style: TextStyle(
+                color: AppColors.textGrey,
+                fontSize: 13,
+              ),
+            ),
+          ),
+          const SizedBox(height: 14),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () {
+                // Navigate to messaging
+              },
+              icon: const Icon(Icons.chat_bubble_outline),
+              label: const Text('Voir les messages'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.teal,
+                foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
@@ -438,116 +811,155 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _SectionTitle(
-          icon: Icons.calendar_month_outlined,
-          title: 'Calendrier',
+        Row(
+          children: [
+            const Expanded(
+              child: _SectionTitle(
+                icon: Icons.calendar_month_outlined,
+                title: 'Calendrier',
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              decoration: BoxDecoration(
+                color: AppColors.teal.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: Text(
+                '${bookings.length} RDV',
+                style: const TextStyle(
+                  color: AppColors.teal,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: AppColors.white,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.navy.withValues(alpha: 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    tooltip: 'Mois précédent',
-                    onPressed: () {
-                      setState(() {
-                        _calendarMonth = DateTime(
-                          _calendarMonth.year,
-                          _calendarMonth.month - 1,
-                        );
-                        _selectedCalendarDate = null;
-                      });
-                    },
-                    icon: const Icon(Icons.chevron_left),
-                    color: AppColors.navy,
+        Align(
+          alignment: Alignment.centerLeft,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.circular(18),
+                border:
+                    Border.all(color: AppColors.teal.withValues(alpha: 0.10)),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.navy.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
                   ),
-                  Expanded(
-                    child: Text(
-                      _monthLabel(_calendarMonth),
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        tooltip: 'Mois précédent',
+                        onPressed: () {
+                          setState(() {
+                            _calendarMonth = DateTime(
+                              _calendarMonth.year,
+                              _calendarMonth.month - 1,
+                            );
+                            _selectedCalendarDate = null;
+                          });
+                        },
+                        icon: const Icon(Icons.chevron_left),
                         color: AppColors.navy,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              AppColors.beige.withValues(alpha: 0.7),
+                        ),
                       ),
+                      Expanded(
+                        child: Text(
+                          _monthLabel(_calendarMonth),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: AppColors.navy,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Mois suivant',
+                        onPressed: () {
+                          setState(() {
+                            _calendarMonth = DateTime(
+                              _calendarMonth.year,
+                              _calendarMonth.month + 1,
+                            );
+                            _selectedCalendarDate = null;
+                          });
+                        },
+                        icon: const Icon(Icons.chevron_right),
+                        color: AppColors.navy,
+                        style: IconButton.styleFrom(
+                          backgroundColor:
+                              AppColors.beige.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  const Row(
+                    children: [
+                      _WeekdayLabel('L'),
+                      _WeekdayLabel('M'),
+                      _WeekdayLabel('M'),
+                      _WeekdayLabel('J'),
+                      _WeekdayLabel('V'),
+                      _WeekdayLabel('S'),
+                      _WeekdayLabel('D'),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: days.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                      childAspectRatio: 1.08,
                     ),
-                  ),
-                  IconButton(
-                    tooltip: 'Mois suivant',
-                    onPressed: () {
-                      setState(() {
-                        _calendarMonth = DateTime(
-                          _calendarMonth.year,
-                          _calendarMonth.month + 1,
-                        );
-                        _selectedCalendarDate = null;
-                      });
-                    },
-                    icon: const Icon(Icons.chevron_right),
-                    color: AppColors.navy,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              const Row(
-                children: [
-                  _WeekdayLabel('L'),
-                  _WeekdayLabel('M'),
-                  _WeekdayLabel('M'),
-                  _WeekdayLabel('J'),
-                  _WeekdayLabel('V'),
-                  _WeekdayLabel('S'),
-                  _WeekdayLabel('D'),
-                ],
-              ),
-              const SizedBox(height: 8),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: days.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 7,
-                  mainAxisSpacing: 8,
-                  crossAxisSpacing: 8,
-                ),
-                itemBuilder: (context, index) {
-                  final day = days[index];
-                  final isCurrentMonth = day.month == _calendarMonth.month;
-                  final key = DateTime(day.year, day.month, day.day);
-                  final dayBookings = markedDays[key] ?? const [];
-                  final hasBooking = dayBookings.isNotEmpty;
-                  final hasPriority =
-                      dayBookings.any((b) => b['status'] == 'accepted');
-                  final isSelected = selectedKey == key;
+                    itemBuilder: (context, index) {
+                      final day = days[index];
+                      final isCurrentMonth = day.month == _calendarMonth.month;
+                      final key = DateTime(day.year, day.month, day.day);
+                      final dayBookings = markedDays[key] ?? const [];
+                      final hasBooking = dayBookings.isNotEmpty;
+                      final hasPriority =
+                          dayBookings.any((b) => b['status'] == 'accepted');
+                      final isSelected = selectedKey == key;
 
-                  return _CalendarDayCell(
-                    day: day,
-                    isCurrentMonth: isCurrentMonth,
-                    hasBooking: hasBooking,
-                    hasPriority: hasPriority,
-                    isSelected: isSelected,
-                    count: dayBookings.length,
-                    onTap: hasBooking
-                        ? () => setState(() => _selectedCalendarDate = key)
-                        : null,
-                  );
-                },
+                      return _CalendarDayCell(
+                        day: day,
+                        isCurrentMonth: isCurrentMonth,
+                        hasBooking: hasBooking,
+                        hasPriority: hasPriority,
+                        isSelected: isSelected,
+                        count: dayBookings.length,
+                        onTap: hasBooking
+                            ? () => setState(() => _selectedCalendarDate = key)
+                            : null,
+                      );
+                    },
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -568,9 +980,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final date = DateTime.tryParse('${booking['booking_date'] ?? ''}');
     final price = _toDouble(booking['agreed_price']);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: (isPriority ? Colors.green : Colors.orange)
+              .withValues(alpha: 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -838,6 +1264,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         dashboardProfile['is_available'] ??
         ownProfile?.isAvailable ??
         true;
+    final phone = dashboardProfile['phone'] ?? authUser?.phone;
+    final city = dashboardProfile['city'] ?? authUser?.city;
     final imageUrl = _resolveImageUrl(
       artisan?.profileImage ??
           dashboardProfile['profile_image'] ??
@@ -857,12 +1285,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.navy,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.05),
-            blurRadius: 14,
-            offset: const Offset(0, 8),
+            color: AppColors.navy.withValues(alpha: 0.16),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -877,7 +1305,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 height: 72,
                 decoration: BoxDecoration(
                   color: AppColors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.white.withValues(alpha: 0.18),
+                  ),
                   image: imageUrl == null
                       ? null
                       : DecorationImage(
@@ -976,6 +1407,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
               height: 1.4,
             ),
           ),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _ProfilePill(
+                icon: Icons.location_on_outlined,
+                label: city?.toString().trim().isNotEmpty == true
+                    ? city.toString()
+                    : 'Ville non renseignee',
+              ),
+              if (phone?.toString().trim().isNotEmpty == true)
+                _ProfilePill(
+                  icon: Icons.call_outlined,
+                  label: phone.toString(),
+                ),
+              _ProfilePill(
+                icon: Icons.verified_user_outlined,
+                label: totalReviews == 0
+                    ? 'Nouveau profil'
+                    : '$totalReviews avis client',
+              ),
+            ],
+          ),
           if (!isOwnDashboard) ...[
             const SizedBox(height: 16),
             SizedBox(
@@ -996,15 +1451,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 icon: const Icon(Icons.calendar_month_outlined),
                 label: const Text('Réserver cet artisan'),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.teal,
-                  foregroundColor: AppColors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  backgroundColor: AppColors.white,
+                  foregroundColor: AppColors.navy,
+                  padding: const EdgeInsets.symmetric(vertical: 15),
                   textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                     fontSize: 15,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
@@ -1062,6 +1517,132 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<String> _toStringList(dynamic value) {
     if (value is List) return value.whereType<String>().toList();
     return const [];
+  }
+}
+
+class _ProfilePill extends StatelessWidget {
+  final IconData icon;
+  final String label;
+
+  const _ProfilePill({
+    required this.icon,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.12)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.white, size: 15),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DashboardStatItem extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _DashboardStatItem({
+    required this.value,
+    required this.label,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            color: AppColors.white,
+            fontSize: 22,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            color: AppColors.white.withValues(alpha: 0.72),
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CompactStatChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+
+  const _CompactStatChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.10)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: AppColors.white, size: 17),
+          const SizedBox(width: 7),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  color: AppColors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                label,
+                style: TextStyle(
+                  color: AppColors.white.withValues(alpha: 0.68),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -1325,6 +1906,7 @@ class _StatusBadge extends StatelessWidget {
 
   String _statusLabel(String status) {
     if (status == 'accepted') return 'Confirmée';
+    if (status == 'paid_cash') return 'Payé cash';
     if (status == 'completed') return 'Terminée';
     if (status == 'cancelled') return 'Annulée';
     if (status == 'rejected') return 'Refusée';
@@ -1333,6 +1915,7 @@ class _StatusBadge extends StatelessWidget {
 
   Color _statusColor(String status) {
     if (status == 'accepted') return Colors.green;
+    if (status == 'paid_cash') return AppColors.lightBlue;
     if (status == 'completed') return AppColors.teal;
     if (status == 'cancelled' || status == 'rejected') return Colors.red;
     return Colors.orange;

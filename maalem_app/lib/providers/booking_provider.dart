@@ -34,7 +34,7 @@ class BookingProvider with ChangeNotifier {
   }
 
   // Fonction pour mettre à jour le statut (Accepter / Refuser / Terminer)
-  Future<void> changeBookingStatus(int bookingId, String newStatus) async {
+  Future<bool> changeBookingStatus(int bookingId, String newStatus) async {
     try {
       final success =
           await _bookingService.updateBookingStatus(bookingId, newStatus);
@@ -60,9 +60,11 @@ class BookingProvider with ChangeNotifier {
           notifyListeners(); // 🔄 Met à jour l'écran instantanément
         }
       }
+      return success;
     } catch (e) {
-      _errorMessage = "Erreur de mise à jour du statut";
+      _errorMessage = e.toString().replaceFirst('Exception: ', '');
       notifyListeners();
+      return false;
     }
   }
 

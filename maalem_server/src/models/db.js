@@ -3,15 +3,24 @@ const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../../../.env') });
 
 const pool = new Pool({
-  host:     process.env.DB_HOST,
-  port:     process.env.DB_PORT,
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
   database: process.env.DB_NAME,
-  user:     process.env.DB_USER,
+  user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
 });
 
 pool.connect()
-  .then(() => console.log('✅ Connecté à PostgreSQL !'))
-  .catch(err => console.error('❌ Erreur PostgreSQL :', err.message));
+  .then(async (client) => {
+    try {
+      await client.query(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo_url TEXT'
+      );
+      console.log('Connecte a PostgreSQL');
+    } finally {
+      client.release();
+    }
+  })
+  .catch((err) => console.error('Erreur PostgreSQL :', err.message));
 
 module.exports = pool;

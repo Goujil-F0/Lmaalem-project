@@ -24,13 +24,23 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final user = context.watch<AuthProvider>().user;
-    final isArtisan = user?.isArtisan ?? false;
-    final isAdmin = user?.isAdmin ?? false;
+    final shellUser = context.select<AuthProvider,
+        ({int? id, bool isArtisan, bool isAdmin})>(
+      (auth) {
+        final user = auth.user;
+        return (
+          id: user?.id,
+          isArtisan: user?.isArtisan ?? false,
+          isAdmin: user?.isAdmin ?? false,
+        );
+      },
+    );
+    final isArtisan = shellUser.isArtisan;
+    final isAdmin = shellUser.isAdmin;
     final pages = isAdmin
         ? _adminPages
         : isArtisan
-            ? _artisanPages(user?.id ?? 0)
+            ? _artisanPages(shellUser.id ?? 0)
             : _clientPages;
     final items = isAdmin
         ? _adminItems

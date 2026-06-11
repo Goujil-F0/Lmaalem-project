@@ -105,9 +105,8 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     );
     if (value == null) return;
 
-    await Future.delayed(Duration.zero);
+    await _waitForUiToSettle();
     if (!mounted) return;
-    FocusScope.of(context).unfocus();
     final result = await context.read<AuthProvider>().updateArtisanProfile(
           specialty: value.trim(),
         );
@@ -136,9 +135,8 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
       return;
     }
 
-    await Future.delayed(Duration.zero);
+    await _waitForUiToSettle();
     if (!mounted) return;
-    FocusScope.of(context).unfocus();
     final result = await context.read<AuthProvider>().updateArtisanProfile(
           hourlyRate: parsed,
         );
@@ -162,9 +160,8 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     );
     if (value == null) return;
 
-    await Future.delayed(Duration.zero);
+    await _waitForUiToSettle();
     if (!mounted) return;
-    FocusScope.of(context).unfocus();
     final result = await context.read<AuthProvider>().updateArtisanProfile(
           description: value.trim(),
         );
@@ -185,60 +182,17 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     required TextInputAction textInputAction,
     int maxLines = 1,
   }) async {
-    final controller = TextEditingController(text: initialValue);
-    final focusNode = FocusNode();
-
     final result = await showDialog<String>(
       context: context,
-      builder: (dialogContext) {
-        return GestureDetector(
-          onTap: () => FocusScope.of(dialogContext).unfocus(),
-          child: AlertDialog(
-            title: Text(title),
-            content: TextField(
-              controller: controller,
-              focusNode: focusNode,
-              autofocus: true,
-              maxLines: maxLines,
-              keyboardType: keyboardType,
-              textInputAction: textInputAction,
-              onSubmitted: maxLines == 1
-                  ? (_) {
-                      FocusScope.of(dialogContext).unfocus();
-                      Navigator.pop(dialogContext, controller.text);
-                    }
-                  : null,
-              decoration: InputDecoration(
-                labelText: label,
-                focusedBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: AppColors.teal),
-                ),
-                border: const OutlineInputBorder(),
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext),
-                child: const Text('Annuler'),
-              ),
-              ElevatedButton(
-                onPressed: () {
-                  FocusScope.of(dialogContext).unfocus();
-                  Navigator.pop(dialogContext, controller.text);
-                },
-                style:
-                    ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
-                child: const Text('Enregistrer',
-                    style: TextStyle(color: Colors.white)),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (_) => _SingleFieldDialog(
+        title: title,
+        label: label,
+        initialValue: initialValue,
+        keyboardType: keyboardType,
+        textInputAction: textInputAction,
+        maxLines: maxLines,
+      ),
     );
-
-    focusNode.dispose();
-    controller.dispose();
 
     final trimmed = result?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
@@ -259,6 +213,12 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
 
   String _successMessage(String message, Map<String, dynamic> result) {
     return result['mocked'] == true ? '$message (Simulation locale)' : message;
+  }
+
+  Future<void> _waitForUiToSettle() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    await Future<void>.delayed(Duration.zero);
+    await WidgetsBinding.instance.endOfFrame;
   }
 
   double? _toDouble(dynamic value) {
@@ -368,6 +328,90 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
   }
 }
 
+class _SingleFieldDialog extends StatefulWidget {
+  final String title;
+  final String label;
+  final String initialValue;
+  final TextInputType keyboardType;
+  final TextInputAction textInputAction;
+  final int maxLines;
+
+  const _SingleFieldDialog({
+    required this.title,
+    required this.label,
+    required this.initialValue,
+    required this.keyboardType,
+    required this.textInputAction,
+    required this.maxLines,
+  });
+
+  @override
+  State<_SingleFieldDialog> createState() => _SingleFieldDialogState();
+}
+
+class _SingleFieldDialogState extends State<_SingleFieldDialog> {
+  late final TextEditingController _controller;
+  final FocusNode _focusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialValue);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    FocusScope.of(context).unfocus();
+    Navigator.pop(context, _controller.text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: AlertDialog(
+        title: Text(widget.title),
+        content: TextField(
+          controller: _controller,
+          focusNode: _focusNode,
+          autofocus: true,
+          maxLines: widget.maxLines,
+          keyboardType: widget.keyboardType,
+          textInputAction: widget.textInputAction,
+          onSubmitted: widget.maxLines == 1 ? (_) => _submit() : null,
+          decoration: InputDecoration(
+            labelText: widget.label,
+            focusedBorder: const OutlineInputBorder(
+              borderSide: BorderSide(color: AppColors.teal),
+            ),
+            border: const OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: _submit,
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.teal),
+            child: const Text(
+              'Enregistrer',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProfileHeader extends StatelessWidget {
   final String name;
   final String specialty;
@@ -404,7 +448,10 @@ class _ProfileHeader extends StatelessWidget {
         }
       }
     } else if (hasPhoto) {
-      providerImage = NetworkImage(photoUrl!);
+      final resolvedPhotoUrl = _resolveImageUrl(photoUrl!);
+      if (resolvedPhotoUrl != null) {
+        providerImage = NetworkImage(resolvedPhotoUrl);
+      }
     }
 
     return Column(
@@ -498,6 +545,16 @@ class _ProfileHeader extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  String? _resolveImageUrl(String value) {
+    final trimmed = value.trim();
+    if (trimmed.isEmpty || trimmed.startsWith('data:image')) return null;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      return trimmed;
+    }
+    if (trimmed.startsWith('/')) return '${ApiClient.baseUrl}$trimmed';
+    return '${ApiClient.baseUrl}/$trimmed';
   }
 }
 

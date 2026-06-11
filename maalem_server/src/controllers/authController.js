@@ -16,7 +16,7 @@ const getUserWithProfile = async (userId) => {
             u.neighborhood,
             u.latitude,
             u.longitude,
-            ap.profile_photo_url AS photo_url,
+            COALESCE(u.profile_photo_url, ap.profile_photo_url) AS photo_url,
             json_build_object(
               'user_id', ap.user_id,
               'specialty_id', ap.specialty_id,
@@ -206,11 +206,12 @@ const updateClientProfile = async (req, res) => {
            latitude = COALESCE($6, latitude),
            longitude = COALESCE($7, longitude)
        WHERE id = $8
-       RETURNING id, full_name, email, role, phone, city, neighborhood, latitude, longitude`,
+       RETURNING id`,
       [full_name, email, phone, city, neighborhood, latitude, longitude, req.user.id]
     );
 
-    res.json({ message: 'Profil mis a jour', user: result.rows[0] });
+    const user = result.rows[0] ? await getUserWithProfile(result.rows[0].id) : null;
+    res.json({ message: 'Profil mis a jour', user });
   } catch (error) {
     console.error('Update profile error:', error.message);
     res.status(500).json({ error: 'Erreur serveur' });
@@ -258,6 +259,13 @@ const uploadProfilePhotoHandler = async (req, res) => {
     }
 
     const photoUrl = `/uploads/profile/${req.user.id}/${req.file.filename}`;
+
+    await db.query(
+      `UPDATE users
+       SET profile_photo_url = $1
+       WHERE id = $2`,
+      [photoUrl, req.user.id]
+    );
 
     if (req.user.role === 'artisan') {
       await db.query(

@@ -35,11 +35,10 @@ class StorageHelper {
     return prefs.getString(_mockUserKey);
   }
 
-static Future<void> clearToken() async {
+  static Future<void> clearToken() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_tokenKey);
     await prefs.remove(_userKey);
-    await prefs.remove(_mockUserKey);
   }
 
   static Future<void> clearMockUser() async {

@@ -178,7 +178,7 @@ class AuthProvider with ChangeNotifier {
             profile: currentProfile.copyWith(isAvailable: isAvailable),
           );
           await _persistUser();
-          if (result['success'] != true) await _persistMockUser();
+          await _persistMockUser();
         }
         if (result['success'] != true) return _mockedSuccess();
       }
@@ -212,16 +212,18 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ??
-            _user!.copyWith(
-              profile: _updatedArtisanProfile(
-                specialty: specialty,
-                hourlyRate: hourlyRate,
-                description: description,
-              ),
-            );
+        final responseUser = _userFromResponse(result);
+        _user = responseUser != null
+            ? _mergeProfileUpdate(_user!, responseUser)
+            : _user!.copyWith(
+                profile: _updatedArtisanProfile(
+                  specialty: specialty,
+                  hourlyRate: hourlyRate,
+                  description: description,
+                ),
+              );
         await _persistUser();
-        if (result['success'] != true) await _persistMockUser();
+        await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
       }
 
@@ -262,18 +264,20 @@ class AuthProvider with ChangeNotifier {
 
       if ((result['success'] == true || _shouldMockProfileSuccess(result)) &&
           _user != null) {
-        _user = _userFromResponse(result) ??
-            _user!.copyWith(
-              fullName: fullName,
-              email: email,
-              phone: phone,
-              city: city,
-              neighborhood: neighborhood,
-              latitude: latitude,
-              longitude: longitude,
-            );
+        final responseUser = _userFromResponse(result);
+        _user = responseUser != null
+            ? _mergeProfileUpdate(_user!, responseUser)
+            : _user!.copyWith(
+                fullName: fullName,
+                email: email,
+                phone: phone,
+                city: city,
+                neighborhood: neighborhood,
+                latitude: latitude,
+                longitude: longitude,
+              );
         await _persistUser();
-        if (result['success'] != true) await _persistMockUser();
+        await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
       }
 
@@ -306,10 +310,19 @@ class AuthProvider with ChangeNotifier {
             : null;
         final mockPhotoUrl =
             result['success'] == true ? null : await _imageToDataUrl(image);
-        _user = _userFromResponse(result) ??
-            _user!.copyWith(photoUrl: photoUrl ?? mockPhotoUrl ?? image.path);
+        final responseUser = _userFromResponse(result);
+        final resolvedPhotoUrl =
+            photoUrl ?? mockPhotoUrl ?? await _imageToDataUrl(image);
+        _user = responseUser != null
+            ? _mergeProfileUpdate(
+                _user!,
+                responseUser.copyWith(
+                  photoUrl: responseUser.photoUrl ?? resolvedPhotoUrl,
+                ),
+              )
+            : _user!.copyWith(photoUrl: resolvedPhotoUrl);
         await _persistUser();
-        if (result['success'] != true) await _persistMockUser();
+        await _persistMockUser();
         if (result['success'] != true) return _mockedSuccess();
       }
 
@@ -337,8 +350,10 @@ class AuthProvider with ChangeNotifier {
       if (result['success'] == true || _shouldMockProfileSuccess(result)) {
         final updatedUser = _userFromResponse(result);
         if (updatedUser != null) {
-          _user = updatedUser;
+          _user =
+              _user == null ? updatedUser : _mergeProfileUpdate(_user!, updatedUser);
           await _persistUser();
+          await _persistMockUser();
         } else if (_user != null && result['success'] != true) {
           final imageUrl = await _imageToDataUrl(image);
           _user = _user!.copyWith(
@@ -383,7 +398,6 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     _pendingCinToken = null;
     await StorageHelper.clearToken();
-    await StorageHelper.clearMockUser();
     notifyListeners();
   }
 
@@ -452,6 +466,18 @@ class AuthProvider with ChangeNotifier {
     }
 
     return null;
+  }
+
+  User _mergeProfileUpdate(User current, User updated) {
+    return updated.copyWith(
+      phone: updated.phone ?? current.phone,
+      city: updated.city ?? current.city,
+      neighborhood: updated.neighborhood ?? current.neighborhood,
+      latitude: updated.latitude ?? current.latitude,
+      longitude: updated.longitude ?? current.longitude,
+      photoUrl: updated.photoUrl ?? current.photoUrl,
+      profile: updated.profile ?? current.profile,
+    );
   }
 
   bool _shouldMockProfileSuccess(Map<String, dynamic> result) {

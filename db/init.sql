@@ -61,8 +61,12 @@ CREATE TABLE IF NOT EXISTS users (
     neighborhood  VARCHAR(100),
     latitude      DOUBLE PRECISION,
     longitude     DOUBLE PRECISION,
+    profile_photo_url TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
 
 -- Test Users (password: Test1234!)
 -- Hash: $2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm (bcrypt)

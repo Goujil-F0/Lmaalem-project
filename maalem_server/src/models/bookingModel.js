@@ -97,7 +97,15 @@ const updateBookingStatus = async (bookingId, newStatus) => {
         }
 
         if (newStatus === 'paid_cash') {
-            if (booking.status === 'paid_cash' || booking.status === 'completed') {
+            // On ne peut passer en paid_cash que si on est en 'accepted' ou 'completed'
+            if (!['accepted', 'completed'].includes(booking.status)) {
+                const error = new Error(`Vous ne pouvez marquer comme payé que les réservations acceptées ou terminées. Statut actuel: ${booking.status}`);
+                error.statusCode = 400;
+                throw error;
+            }
+
+            // Si déjà payé, retourner le booking tel quel
+            if (booking.status === 'paid_cash') {
                 await client.query('COMMIT');
                 return booking;
             }
@@ -109,7 +117,7 @@ const updateBookingStatus = async (bookingId, newStatus) => {
             const balance = parseFloat(wallet.balance || 0);
 
             if (balance < commission) {
-                const error = new Error(`Solde wallet insuffisant pour declarer le paiement cash. Commission requise: ${commission.toFixed(2)} MAD.`);
+                const error = new Error(`Solde wallet insuffisant pour déclarer le paiement cash. Commission requise: ${commission.toFixed(2)} MAD. Solde actuel: ${balance.toFixed(2)} MAD.`);
                 error.statusCode = 409;
                 throw error;
             }

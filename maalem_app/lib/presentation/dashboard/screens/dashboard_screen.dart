@@ -33,6 +33,52 @@ class _DashboardScreenState extends State<DashboardScreen> {
   DateTime _calendarMonth = DateTime(DateTime.now().year, DateTime.now().month);
   DateTime? _selectedCalendarDate;
   int _dashboardSectionIndex = 0;
+  int _currentHeaderImageIndex = 0;
+
+  void _openImageZoom(BuildContext context, String imageUrl) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                color: Colors.transparent,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.broken_image, color: Colors.white, size: 48),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   String? _resolveImageUrl(String? source) {
     if (source == null || source.trim().isEmpty) return null;
@@ -1656,12 +1702,68 @@ class _DashboardScreenState extends State<DashboardScreen> {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                if (portfolioImages.isNotEmpty || imageUrl != null)
-                  Image.network(
-                    portfolioImages.isNotEmpty ? portfolioImages.first : imageUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: AppColors.teal.withValues(alpha: 0.16),
+                if (portfolioImages.isNotEmpty) ...[
+                  PageView.builder(
+                    itemCount: portfolioImages.length,
+                    onPageChanged: (index) {
+                      setState(() {
+                        _currentHeaderImageIndex = index;
+                      });
+                    },
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () => _openImageZoom(context, portfolioImages[index]),
+                        child: Image.network(
+                          portfolioImages[index],
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            color: AppColors.teal.withValues(alpha: 0.16),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  if (portfolioImages.length > 1)
+                    Positioned(
+                      top: 14,
+                      left: 0,
+                      right: 0,
+                      child: Center(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withValues(alpha: 0.35),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: List.generate(
+                              portfolioImages.length,
+                              (index) => Container(
+                                margin: const EdgeInsets.symmetric(horizontal: 3),
+                                width: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index) ? 8 : 6,
+                                height: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index) ? 8 : 6,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index)
+                                      ? AppColors.white
+                                      : AppColors.white.withValues(alpha: 0.5),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ] else if (imageUrl != null)
+                  GestureDetector(
+                    onTap: () => _openImageZoom(context, imageUrl),
+                    child: Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: AppColors.teal.withValues(alpha: 0.16),
+                      ),
                     ),
                   )
                 else
@@ -1900,7 +2002,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ),
                 ],
-                if (portfolioImages.length > 1) ...[
+                if (portfolioImages.isNotEmpty) ...[
                   const SizedBox(height: 20),
                   const Text(
                     'Réalisations',
@@ -1918,23 +2020,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       itemCount: portfolioImages.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        return Container(
-                          decoration: BoxDecoration(
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.05),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                        return GestureDetector(
+                          onTap: () => _openImageZoom(context, portfolioImages[index]),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.05),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.network(
+                                portfolioImages[index],
+                                width: 120,
+                                height: 96,
+                                fit: BoxFit.cover,
                               ),
-                            ],
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(14),
-                            child: Image.network(
-                              portfolioImages[index],
-                              width: 120,
-                              height: 96,
-                              fit: BoxFit.cover,
                             ),
                           ),
                         );

@@ -3,6 +3,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/complaint_service.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ComplaintScreen extends StatefulWidget {
   final int bookingId;
@@ -166,6 +167,22 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
         artisanId: widget.artisanId,
         description: description,
       );
+
+      final message = "Bonjour, je souhaite déposer une réclamation.\n\n"
+          "Détails :\n"
+          "${widget.bookingId > 0 ? '- Réservation ID: #${widget.bookingId}\n' : ''}"
+          "${widget.artisanId > 0 ? '- Artisan ID: #${widget.artisanId}\n' : ''}"
+          "- Description : $description";
+
+      final uri = Uri.https('wa.me', '/212658416668', {
+        'text': message,
+      });
+
+      try {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } catch (e) {
+        debugPrint('Failed to launch WhatsApp: $e');
+      }
 
       if (mounted) {
         _descriptionController.clear();

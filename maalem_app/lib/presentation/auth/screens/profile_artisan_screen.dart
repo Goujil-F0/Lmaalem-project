@@ -921,45 +921,95 @@ class _PortfolioImageTile extends StatelessWidget {
     required this.onReplace,
   });
 
+  void _openImageZoom(BuildContext context, ImageProvider imageProvider) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.zero,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.of(context).pop(),
+              child: Container(
+                color: Colors.transparent,
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            InteractiveViewer(
+              panEnabled: true,
+              boundaryMargin: const EdgeInsets.all(20),
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: Image(
+                image: imageProvider,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) => const Center(
+                  child: Icon(Icons.broken_image, color: Colors.white, size: 48),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 40,
+              right: 20,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final imageProvider = _imageProvider(image);
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(20),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.navy.withValues(alpha: 0.05)),
-          image: imageProvider == null
-              ? null
-              : DecorationImage(image: imageProvider, fit: BoxFit.cover),
-        ),
-        child: imageProvider == null
-            ? const _PortfolioPlaceholder()
-            : Stack(
-                children: [
-                  const SizedBox.expand(),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Material(
-                      color: Colors.black.withValues(alpha: 0.48),
-                      borderRadius: BorderRadius.circular(14),
-                      child: IconButton(
-                        tooltip: 'Modifier',
-                        onPressed: isLoading ? null : onReplace,
-                        icon: const Icon(
-                          Icons.edit,
-                          color: Colors.white,
-                          size: 18,
+      child: GestureDetector(
+        onTap: imageProvider == null
+            ? null
+            : () => _openImageZoom(context, imageProvider),
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: AppColors.navy.withValues(alpha: 0.05)),
+            image: imageProvider == null
+                ? null
+                : DecorationImage(image: imageProvider, fit: BoxFit.cover),
+          ),
+          child: imageProvider == null
+              ? const _PortfolioPlaceholder()
+              : Stack(
+                  children: [
+                    const SizedBox.expand(),
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Material(
+                        color: Colors.black.withValues(alpha: 0.48),
+                        borderRadius: BorderRadius.circular(14),
+                        child: IconButton(
+                          tooltip: 'Modifier',
+                          onPressed: isLoading ? null : onReplace,
+                          icon: const Icon(
+                            Icons.edit,
+                            color: Colors.white,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                ),
+        ),
       ),
     );
   }

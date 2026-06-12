@@ -7,7 +7,7 @@ import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/dashboard_service.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
-import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
+import 'package:maalem_app/main.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -331,7 +331,7 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                     await context.read<AuthProvider>().logout();
                     if (context.mounted) {
                       Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const AuthScreen()),
+                        MaterialPageRoute(builder: (context) => const AppGate()),
                         (route) => false,
                       );
                     }

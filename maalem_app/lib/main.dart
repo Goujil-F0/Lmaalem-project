@@ -42,19 +42,19 @@ class MaalemApp extends StatelessWidget {
         primarySwatch: Colors.blue,
         scaffoldBackgroundColor: Colors.white,
       ),
-      home: const _AppGate(),
+      home: const AppGate(),
     );
   }
 }
 
-class _AppGate extends StatefulWidget {
-  const _AppGate();
+class AppGate extends StatefulWidget {
+  const AppGate({super.key});
 
   @override
-  State<_AppGate> createState() => _AppGateState();
+  State<AppGate> createState() => AppGateState();
 }
 
-class _AppGateState extends State<_AppGate> {
+class AppGateState extends State<AppGate> {
   bool _showSplash = true;
 
   @override

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
+import 'history_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final int artisanId; // L'artisan qu'on veut réserver
@@ -55,33 +56,39 @@ class _BookingScreenState extends State<BookingScreen> {
   void _submitBooking() async {
     // 1. On vérifie que les champs sont remplis
     if (!_formKey.currentState!.validate()) {
-      print("❌ Erreur : Le champ description est vide.");
       return;
     }
+
     if (_selectedDate == null) {
       print("❌ Erreur : La date n'a pas été sélectionnée.");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Veuillez choisir une date.'),
-            backgroundColor: Colors.orange),
+          content: Text('Veuillez choisir une date.'),
+          backgroundColor: Colors.orange,
+        ),
       );
       return;
     }
 
-    print("✅ Formulaire valide ! Préparation de l'envoi...");
+    // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
+    final int? userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Utilisateur non connecté. Veuillez vous reconnecter.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
-    // 2. On récupère ton VRAI ID grâce au provider de Fatima
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    print(
+        "✅ Formulaire valide ! Préparation de l'envoi pour le client ID : $userId");
 
-    // Si tu testes l'écran directement sans être connecté, on met 1 par défaut, sinon on prend ton vrai ID
-    final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
-
-    print("👤 Tentative de réservation pour le client ID : $myUserId");
-
-    // 3. On envoie au backend
+    // 4. On appelle le Provider
     final success =
         await Provider.of<BookingProvider>(context, listen: false).addBooking(
-      myUserId, // Ton vrai ID
+      userId,
       widget.artisanId,
       _descriptionController.text,
       widget.hourlyRate,
@@ -90,41 +97,37 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (!mounted) return;
 
-    // 4. On gère le résultat
+    // 5. Résultat
     if (success) {
-      print("🎉 Réservation réussie dans la BDD !");
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Réservation enregistrée'),
-          content: const Text(
-            "Votre réservation a été envoyée. Elle reste en attente jusqu'à l'acceptation de l'artisan.",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-
-      // On retourne à la page principale pour voir le suivi
-      if (!mounted) return;
-      Navigator.pop(context);
-    } else {
-      print("⚠️ Le backend a refusé la réservation !");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Erreur serveur lors de la réservation ❌'),
-            backgroundColor: Colors.red),
+            content: Text('Réservation envoyée avec succès ! ✅'),
+            backgroundColor: Colors.green),
+      );
+
+      // On remplace l'écran actuel par l'historique
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+      );
+    } else {
+      final errorMessage =
+          Provider.of<BookingProvider>(context, listen: false).errorMessage;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            errorMessage.isEmpty
+                ? 'Erreur lors de la réservation ❌'
+                : errorMessage,
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
     const Color primaryDarkBlue = Color(0xFF0C2C55);
     const Color primaryTeal = Color(0xFF296374);
     const Color bgColor = Color(0xFFF1F3E1);

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/models/artisan_model.dart';
-import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/artisan_service.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -80,14 +80,6 @@ class _FavoriteArtisansScreenState extends State<FavoriteArtisansScreen> {
     );
   }
 
-  String? _resolveImageUrl(String? source) {
-    if (source == null || source.trim().isEmpty) return null;
-    final value = source.trim();
-    if (value.startsWith('http') || value.startsWith('data:')) return value;
-    if (value.startsWith('/')) return '${ApiClient.baseUrl}$value';
-    return '${ApiClient.baseUrl}/$value';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +115,6 @@ class _FavoriteArtisansScreenState extends State<FavoriteArtisansScreen> {
                           final artisan = _favorites[index];
                           return _FavoriteArtisanCard(
                             artisan: artisan,
-                            imageUrl: _resolveImageUrl(artisan.profileImage),
                             onOpen: () {
                               Navigator.push(
                                 context,
@@ -146,13 +137,11 @@ class _FavoriteArtisansScreenState extends State<FavoriteArtisansScreen> {
 
 class _FavoriteArtisanCard extends StatelessWidget {
   final ArtisanModel artisan;
-  final String? imageUrl;
   final VoidCallback onOpen;
   final VoidCallback onRemove;
 
   const _FavoriteArtisanCard({
     required this.artisan,
-    required this.imageUrl,
     required this.onOpen,
     required this.onRemove,
   });
@@ -170,31 +159,17 @@ class _FavoriteArtisanCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 62,
-                height: 62,
-                decoration: BoxDecoration(
-                  color: AppColors.navy,
-                  borderRadius: BorderRadius.circular(16),
-                  image: imageUrl == null
-                      ? null
-                      : DecorationImage(
-                          image: NetworkImage(imageUrl!),
-                          fit: BoxFit.cover,
-                        ),
+              ProfileAvatar(
+                name: artisan.fullName,
+                imageUrl: artisan.profileImage,
+                size: 62,
+                borderRadius: 16,
+                backgroundColor: AppColors.navy,
+                textStyle: const TextStyle(
+                  color: AppColors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
                 ),
-                child: imageUrl == null
-                    ? Center(
-                        child: Text(
-                          _initials(artisan.fullName),
-                          style: const TextStyle(
-                            color: AppColors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                          ),
-                        ),
-                      )
-                    : null,
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -289,11 +264,6 @@ class _FavoriteArtisanCard extends StatelessWidget {
     );
   }
 
-  String _initials(String name) {
-    final parts = name.trim().split(RegExp(r'\s+'));
-    if (parts.isEmpty || parts.first.isEmpty) return 'A';
-    return parts.take(2).map((part) => part[0].toUpperCase()).join();
-  }
 }
 
 class _EmptyFavorites extends StatelessWidget {

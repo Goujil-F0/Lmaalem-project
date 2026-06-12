@@ -7,6 +7,7 @@ import 'package:maalem_app/presentation/booking/screens/booking_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -298,7 +299,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             Text(
-              "${authUser?.fullName ?? 'Artisan'}",
+              authUser?.fullName ?? 'Artisan',
               style: const TextStyle(
                 color: AppColors.navy,
                 fontSize: 24,
@@ -477,10 +478,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: (canAcceptBookings ? AppColors.teal : AppColors.lightBlue)
-                      .withValues(alpha: 0.18),
+                  color:
+                      (canAcceptBookings ? AppColors.teal : AppColors.lightBlue)
+                          .withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(
                     color: AppColors.white.withValues(alpha: 0.15),
@@ -668,7 +671,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.teal,
                 foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -804,7 +808,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final commissionDebited = _toDouble(wallet['commissionDebited']) ?? 0;
     final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
     final canAcceptBookings = wallet['canAcceptBookings'] == true;
-    final statusColor = canAcceptBookings ? Colors.greenAccent : Colors.orangeAccent;
+    final statusColor =
+        canAcceptBookings ? Colors.greenAccent : Colors.orangeAccent;
 
     return Container(
       width: double.infinity,
@@ -856,7 +861,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
                   color: statusColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(20),
@@ -923,14 +929,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
             children: [
               Expanded(
                 child: ElevatedButton.icon(
-                  onPressed: _isRechargingWallet
-                      ? null
-                      : () => _rechargeWallet(100),
+                  onPressed:
+                      _isRechargingWallet ? null : () => _rechargeWallet(100),
                   icon: _isRechargingWallet
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: AppColors.navy),
                         )
                       : const Icon(Icons.add_circle_outline_rounded, size: 18),
                   label: const Text('Recharger 100 MAD'),
@@ -939,7 +945,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     foregroundColor: AppColors.navy,
                     padding: const EdgeInsets.symmetric(vertical: 14),
                     elevation: 0,
-                    textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
+                    textStyle: const TextStyle(
+                        fontWeight: FontWeight.w900, fontSize: 13),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -1143,8 +1150,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             decoration: BoxDecoration(
               color: AppColors.white,
               borderRadius: BorderRadius.circular(20),
-              border:
-                  Border.all(color: AppColors.teal.withValues(alpha: 0.08)),
+              border: Border.all(color: AppColors.teal.withValues(alpha: 0.08)),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.navy.withValues(alpha: 0.03),
@@ -1171,9 +1177,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       icon: const Icon(Icons.chevron_left_rounded),
                       color: AppColors.navy,
                       style: IconButton.styleFrom(
-                        backgroundColor:
-                            AppColors.beige.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: AppColors.beige.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                     Expanded(
@@ -1201,9 +1207,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       icon: const Icon(Icons.chevron_right_rounded),
                       color: AppColors.navy,
                       style: IconButton.styleFrom(
-                        backgroundColor:
-                            AppColors.beige.withValues(alpha: 0.5),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        backgroundColor: AppColors.beige.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10)),
                       ),
                     ),
                   ],
@@ -1225,8 +1231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
                   itemCount: days.length,
-                  gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 7,
                     mainAxisSpacing: 6,
                     crossAxisSpacing: 6,
@@ -1263,7 +1268,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         if (bookings.isEmpty)
           _buildEmptyBox('Aucun rendez-vous planifié')
         else if (selectedBookings.isEmpty)
-          _buildEmptyBox('Sélectionnez une date avec badge pour voir les rendez-vous')
+          _buildEmptyBox(
+              'Sélectionnez une date avec badge pour voir les rendez-vous')
         else
           ...selectedBookings.map(_buildCalendarAppointment),
       ],
@@ -1309,7 +1315,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                isPriority ? Icons.priority_high_rounded : Icons.schedule_rounded,
+                isPriority
+                    ? Icons.priority_high_rounded
+                    : Icons.schedule_rounded,
                 color: isPriority ? Colors.green : Colors.orange,
               ),
             ),
@@ -1363,7 +1371,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   if (price != null) ...[
                     const SizedBox(height: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(
                         color: AppColors.beige.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(8),
@@ -1446,7 +1455,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     color: AppColors.teal.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.person_outline_rounded, color: AppColors.teal, size: 20),
+                  child: const Icon(Icons.person_outline_rounded,
+                      color: AppColors.teal, size: 20),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
@@ -1551,7 +1561,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: AppColors.teal.withValues(alpha: 0.08),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.rate_review_rounded, color: AppColors.teal, size: 16),
+                      child: const Icon(Icons.rate_review_rounded,
+                          color: AppColors.teal, size: 16),
                     ),
                     const SizedBox(width: 8),
                     Text(
@@ -1608,7 +1619,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Row(
         children: [
-          const Icon(Icons.info_outline_rounded, color: AppColors.teal, size: 22),
+          const Icon(Icons.info_outline_rounded,
+              color: AppColors.teal, size: 22),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
@@ -1900,7 +1912,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         label: 'Tarif',
                         value: hourlyRate == null
                             ? '--'
-                            : '${hourlyRate.toStringAsFixed(0)}',
+                            : hourlyRate.toStringAsFixed(0),
                         color: AppColors.lightBlue,
                       ),
                     ),
@@ -1962,8 +1974,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ),
                     _ProfilePill(
                       icon: Icons.verified_user_rounded,
-                      label:
-                          isAvailable ? 'Disponible pour intervention' : 'Non disponible',
+                      label: isAvailable
+                          ? 'Disponible pour intervention'
+                          : 'Non disponible',
                     ),
                   ],
                 ),
@@ -2558,7 +2571,8 @@ class _CalendarDayCell extends StatelessWidget {
                           child: Text(
                             '$count',
                             style: TextStyle(
-                              color: isSelected ? AppColors.navy : AppColors.white,
+                              color:
+                                  isSelected ? AppColors.navy : AppColors.white,
                               fontSize: 8,
                               fontWeight: FontWeight.w900,
                             ),

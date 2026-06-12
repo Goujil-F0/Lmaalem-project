@@ -90,7 +90,6 @@ class _MainShellState extends State<MainShell> {
   List<Widget> _artisanPages(int artisanId) => [
         DashboardScreen(artisanId: artisanId),
         const HistoryScreen(),
-        const MapScreen(),
         const _ConstructionScreen(title: 'Maison'),
         const ProfileArtisanScreen(),
       ];
@@ -129,8 +128,6 @@ class _MainShellState extends State<MainShell> {
         SalomonBottomBarItem(
             icon: const Icon(Icons.work_outline),
             title: const Text('Missions')),
-        SalomonBottomBarItem(
-            icon: const Icon(Icons.map_outlined), title: const Text('Map')),
         SalomonBottomBarItem(
             icon: const Icon(Icons.house_outlined),
             title: const Text('Maison')),

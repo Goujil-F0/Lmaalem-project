@@ -1,6 +1,7 @@
 // lib/presentation/booking/screens/history_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
@@ -242,12 +243,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                         onPressed: () {
-                          // Retourne à la page principale (Accueil) et vide l'historique de navigation
-                          Navigator.pushAndRemoveUntil(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const MainShell()),
-                            (route) => false,
+                                builder: (_) => const MapScreen()),
                           );
                         },
                         icon: const Icon(Icons.add_circle, color: Colors.white),
@@ -275,9 +274,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole =
         authProvider.user?.role ?? 'client'; // 'client' ou 'artisan'
-    final personName = userRole == 'artisan'
-        ? booking.clientName
-        : booking.artisanName;
+    final personName =
+        userRole == 'artisan' ? booking.clientName : booking.artisanName;
     final cardTitle = personName != null && personName.trim().isNotEmpty
         ? personName.trim()
         : 'Service #${booking.id}';
@@ -296,9 +294,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
     } else if (booking.status == 'completed' || booking.status == 'paid_cash') {
-      statusText = booking.status == 'paid_cash'
-          ? 'Payé en espèces'
-          : 'Projet terminé';
+      statusText =
+          booking.status == 'paid_cash' ? 'Payé en espèces' : 'Projet terminé';
       statusColor = Colors.blue;
       statusIcon = booking.status == 'paid_cash'
           ? Icons.qr_code_scanner
@@ -474,8 +471,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content:
-                                Text("Paiement cash confirmé. Commission déduite du wallet."),
+                            content: Text(
+                                "Paiement cash confirmé. Commission déduite du wallet."),
                             backgroundColor: Colors.green,
                           ),
                         );

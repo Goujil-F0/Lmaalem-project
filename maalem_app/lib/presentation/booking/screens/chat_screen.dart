@@ -152,8 +152,7 @@ class _ChatScreenState extends State<ChatScreen> {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10)
+                    color: Colors.black.withValues(alpha: 0.05), blurRadius: 10)
               ],
             ),
             child: SafeArea(

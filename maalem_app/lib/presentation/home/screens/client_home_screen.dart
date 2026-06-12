@@ -3,6 +3,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/providers/search_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -66,14 +67,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         ),
         leading: Padding(
           padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
+          child: ProfileAvatar(
+            name: user?.fullName ?? 'Client Lmaalem',
+            imageUrl: user?.photoUrl,
+            size: 40,
             backgroundColor: AppColors.navy,
-            child: Text(
-              _initials(user?.fullName),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
+            textStyle: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ),
@@ -188,9 +189,10 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     const SizedBox(height: 12),
                     // City Filter
                     DropdownButtonFormField<String>(
-                      initialValue: provider.cities.contains(provider.selectedCity)
-                          ? provider.selectedCity
-                          : null,
+                      initialValue:
+                          provider.cities.contains(provider.selectedCity)
+                              ? provider.selectedCity
+                              : null,
                       isExpanded: true,
                       decoration: InputDecoration(
                         hintText: 'Choisir une ville',
@@ -564,12 +566,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
     );
   }
-
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return 'CL';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    return parts.take(2).map((part) => part[0].toUpperCase()).join();
-  }
 }
 
 class _ServiceCard extends StatelessWidget {
@@ -611,12 +607,11 @@ class _ServiceCard extends StatelessWidget {
     final displayIcon = _getIconForCategory(label);
 
     return GestureDetector(
-      onTap:
-          onTap ??
+      onTap: onTap ??
           () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MapScreen()),
-          ),
+                context,
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,

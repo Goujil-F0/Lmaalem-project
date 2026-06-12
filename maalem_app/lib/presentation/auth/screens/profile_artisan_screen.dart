@@ -536,7 +536,7 @@ class _ProfileHeader extends StatelessWidget {
                               strokeWidth: 2.5,
                             ),
                           )
-                        : const Icon(Icons.camera_alt, 
+                        : const Icon(Icons.camera_alt,
                             color: Colors.white, size: 20),
                   ),
                 ),
@@ -560,7 +560,7 @@ class _ProfileHeader extends StatelessWidget {
         Text(
           specialty,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             color: AppColors.teal,
             fontSize: 15,
             fontWeight: FontWeight.w700,
@@ -579,7 +579,7 @@ class _ProfileHeader extends StatelessWidget {
               width: 1,
             ),
           ),
-          child: Row(
+          child: const Row(
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
@@ -587,8 +587,8 @@ class _ProfileHeader extends StatelessWidget {
                 color: AppColors.teal,
                 size: 14,
               ),
-              const SizedBox(width: 6),
-              const Text(
+              SizedBox(width: 6),
+              Text(
                 'Professionnel Vérifié',
                 style: TextStyle(
                   color: AppColors.teal,
@@ -1118,7 +1118,8 @@ class _BioSection extends StatelessWidget {
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: AppColors.navy.withValues(alpha: 0.05), width: 1),
+            border: Border.all(
+                color: AppColors.navy.withValues(alpha: 0.05), width: 1),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.05),

@@ -23,7 +23,18 @@ const getMessagesByBooking = async (bookingId) => {
     return rows;
 };
 
-module.exports = {
-    saveMessage,
-    getMessagesByBooking
+// Compter les messages non lus par l'utilisateur actuel
+const countUnreadMessages = async (bookingId, userId) => {
+    const query = `
+        SELECT COUNT(*) FROM messages 
+        WHERE booking_id = $1 AND sender_id != $2 AND is_read = FALSE;
+    `;
+    const { rows } = await pool.query(query, [bookingId, userId]);
+    return parseInt(rows[0].count, 10);
 };
+
+const markAsRead = async (bookingId, userId) => {
+    // Met is_read = TRUE pour tous les messages de ce chat qui n'ont pas été envoyés par moi
+    await pool.query(`UPDATE messages SET is_read = TRUE WHERE booking_id = $1 AND sender_id != $2`, [bookingId, userId]);
+};
+module.exports = { saveMessage, getMessagesByBooking, countUnreadMessages, markAsRead };

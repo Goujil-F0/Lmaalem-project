@@ -98,4 +98,13 @@ class ChatProvider with ChangeNotifier {
     _socket?.disconnect();
     _socket?.dispose();
   }
+
+  Future<void> markMessagesAsRead(int bookingId, int userId) async {
+    try {
+      final url = Uri.parse('${ApiEndpoints.messages}/read/$bookingId/$userId');
+      await http.patch(url); // On dit au backend "C'est bon, j'ai tout lu !"
+    } catch (e) {
+      print("Erreur markAsRead: $e");
+    }
+  }
 }

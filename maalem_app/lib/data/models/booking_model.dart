@@ -11,6 +11,8 @@ class Booking {
   final String? artisanName;
   final String? clientName;
   final bool hasReview;
+  final int unreadCount;
+  final String otherPartyName;
 
   Booking({
     this.id,
@@ -23,6 +25,8 @@ class Booking {
     this.artisanName,
     this.clientName,
     this.hasReview = false,
+    this.unreadCount = 0,
+    this.otherPartyName = 'Utilisateur Inconnu',
   });
 
   // Depuis le JSON (Backend -> Flutter)
@@ -32,13 +36,14 @@ class Booking {
       clientId: json['client_id'],
       artisanId: json['artisan_id'],
       description: json['description'] ?? '',
-      // On s'assure de bien parser en double même si Postgres renvoie un String
       agreedPrice: double.tryParse(json['agreed_price'].toString()) ?? 0.0,
       status: json['status'] ?? 'pending',
       bookingDate: DateTime.parse(json['booking_date']),
       artisanName: json['artisan_name'],
       clientName: json['client_name'],
       hasReview: json['has_review'] == true,
+      unreadCount: int.tryParse(json['unread_count'].toString()) ?? 0,
+      otherPartyName: json['other_party_name'] ?? 'Utilisateur Inconnu',
     );
   }
 

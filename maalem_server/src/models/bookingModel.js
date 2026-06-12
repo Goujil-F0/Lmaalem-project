@@ -24,11 +24,12 @@ const getUserById = async (userId) => {
 const getBookingsByUser = async (userId, role) => {
     let query = '';
     
-    // Si c'est un client, on cherche ses réservations
     if (role === 'client') {
         query = `
             SELECT b.*, artisan.full_name AS artisan_name, client.full_name AS client_name,
-                   (r.id IS NOT NULL) AS has_review
+                   (r.id IS NOT NULL) AS has_review,
+                   artisan.full_name AS other_party_name,
+                   (SELECT COUNT(*) FROM messages m WHERE m.booking_id = b.id AND m.sender_id != $1 AND m.is_read = FALSE) AS unread_count
             FROM bookings b
             JOIN users artisan ON artisan.id = b.artisan_id
             JOIN users client ON client.id = b.client_id
@@ -36,12 +37,12 @@ const getBookingsByUser = async (userId, role) => {
             WHERE b.client_id = $1
             ORDER BY b.created_at DESC;
         `;
-    } 
-    // Si c'est un artisan, on cherche les siennes
-    else if (role === 'artisan') {
+    } else if (role === 'artisan') {
         query = `
             SELECT b.*, artisan.full_name AS artisan_name, client.full_name AS client_name,
-                   (r.id IS NOT NULL) AS has_review
+                   (r.id IS NOT NULL) AS has_review,
+                   client.full_name AS other_party_name,
+                   (SELECT COUNT(*) FROM messages m WHERE m.booking_id = b.id AND m.sender_id != $1 AND m.is_read = FALSE) AS unread_count
             FROM bookings b
             JOIN users artisan ON artisan.id = b.artisan_id
             JOIN users client ON client.id = b.client_id

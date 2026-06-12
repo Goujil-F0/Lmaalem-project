@@ -7,6 +7,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/presentation/auth/screens/favorite_artisans_screen.dart';
+import 'package:maalem_app/main.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
@@ -402,7 +403,15 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                 ),
                 const SizedBox(height: 22),
                 _LogoutButton(
-                  onLogout: () => context.read<AuthProvider>().logout(),
+                  onLogout: () async {
+                    await context.read<AuthProvider>().logout();
+                    if (context.mounted) {
+                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (context) => const AppGate()),
+                        (route) => false,
+                      );
+                    }
+                  },
                 ),
                 const SizedBox(height: 18),
                 Text(

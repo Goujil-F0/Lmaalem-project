@@ -2,7 +2,9 @@ const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 
-const uploadsRoot = path.join(__dirname, '..', '..', '..', 'uploads');
+const uploadsRoot = fs.existsSync('/app/uploads')
+  ? '/app/uploads'
+  : path.join(__dirname, '..', '..', '..', 'uploads');
 const uploadRoot = path.join(uploadsRoot, 'cin');
 if (!fs.existsSync(uploadRoot)) {
   fs.mkdirSync(uploadRoot, { recursive: true });

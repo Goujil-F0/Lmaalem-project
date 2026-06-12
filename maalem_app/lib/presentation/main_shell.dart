@@ -13,14 +13,32 @@ import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:maalem_app/presentation/booking/screens/history_screen.dart';
 
 class MainShell extends StatefulWidget {
-  const MainShell({super.key});
+  final int initialIndex;
+  final String? successMessage;
+  const MainShell({super.key, this.initialIndex = 0, this.successMessage});
 
   @override
   State<MainShell> createState() => _MainShellState();
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 0;
+  late int _currentIndex;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+    if (widget.successMessage != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(widget.successMessage!),
+            backgroundColor: Colors.green,
+          ),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

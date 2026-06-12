@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
-import 'history_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
 
 class BookingScreen extends StatefulWidget {
   final int artisanId; // L'artisan qu'on veut réserver
@@ -99,16 +99,16 @@ class _BookingScreenState extends State<BookingScreen> {
 
     // 5. Résultat
     if (success) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Réservation envoyée avec succès ! ✅'),
-            backgroundColor: Colors.green),
-      );
-
-      // On remplace l'écran actuel par l'historique
-      Navigator.pushReplacement(
+      // On redirige vers le MainShell avec l'index de l'onglet "Suivi" (qui est 1)
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+        MaterialPageRoute(
+          builder: (context) => const MainShell(
+            initialIndex: 1,
+            successMessage: 'Réservation envoyée avec succès ! ✅',
+          ),
+        ),
+        (route) => false,
       );
     } else {
       final errorMessage =

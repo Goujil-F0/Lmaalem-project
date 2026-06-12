@@ -1,15 +1,18 @@
-﻿const express = require('express');
+const express = require('express');
 const dotenv = require('dotenv');
 const path = require('path');
 const cors = require('cors');
 const http = require('http');
+const fs = require('fs');
 const { Server } = require('socket.io');
 const { createMessage } = require('./controllers/messageController');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const app = express(); // ← une seule fois
-const publicUploadsPath = path.join(__dirname, '..', '..', 'uploads');
+const publicUploadsPath = fs.existsSync('/app/uploads')
+  ? '/app/uploads'
+  : path.join(__dirname, '..', '..', 'uploads');
 const legacyUploadsPath = path.join(__dirname, '..', 'uploads');
 
 // On englobe l'application Express dans un serveur HTTP classique

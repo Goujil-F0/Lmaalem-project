@@ -158,7 +158,10 @@ const uploadCinHandler = async (req, res) => {
       });
     }
 
-    const userDir = path.join(__dirname, '..', '..', '..', 'uploads', 'cin', String(req.user.id));
+    const uploadsRoot = fs.existsSync('/app/uploads')
+      ? '/app/uploads'
+      : path.join(__dirname, '..', '..', '..', 'uploads');
+    const userDir = path.join(uploadsRoot, 'cin', String(req.user.id));
     fs.mkdirSync(userDir, { recursive: true });
 
     const rectoUrl = `/uploads/cin/${req.user.id}/${req.files.cin_recto[0].filename}`;

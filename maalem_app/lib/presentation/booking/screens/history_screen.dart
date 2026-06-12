@@ -7,7 +7,10 @@ import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
+<<<<<<< HEAD
 import '../../search/screens/map_screen.dart';
+=======
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
 import 'chat_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 
@@ -43,7 +46,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
           .where((b) => b.status == 'pending' || b.status == 'accepted')
           .toList();
     } else if (_selectedTab == 'Terminé') {
-      return allBookings.where((b) => b.status == 'completed').toList();
+      return allBookings
+          .where((b) => b.status == 'completed' || b.status == 'paid_cash')
+          .toList();
     } else if (_selectedTab == 'Annulé') {
       // On inclut rejected (refusé par l'artisan) et cancelled (annulé par le client)
       return allBookings
@@ -290,10 +295,14 @@ class _HistoryScreenState extends State<HistoryScreen> {
       statusText = 'Artisan en route / En cours';
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
-    } else if (booking.status == 'completed') {
-      statusText = 'Projet terminé';
+    } else if (booking.status == 'completed' || booking.status == 'paid_cash') {
+      statusText = booking.status == 'paid_cash'
+          ? 'Payé en espèces'
+          : 'Projet terminé';
       statusColor = Colors.blue;
-      statusIcon = Icons.done_all;
+      statusIcon = booking.status == 'paid_cash'
+          ? Icons.qr_code_scanner
+          : Icons.done_all;
     } else {
       statusText = 'Projet annulé/refusé';
       statusColor = Colors.red;
@@ -340,7 +349,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               Icon(Icons.payments_outlined, color: Colors.green),
               SizedBox(width: 8),
-              Text('Marquer comme payé'),
+              Text('Confirmer paiement cash'),
             ],
           ),
         ),
@@ -349,7 +358,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     // Option B : LE CLIENT laisse un avis (seulement si le projet est terminé)
     if (userRole == 'client' &&
-        booking.status == 'completed' &&
+        (booking.status == 'completed' || booking.status == 'paid_cash') &&
         !booking.hasReview) {
       menuOptions.add(
         const PopupMenuItem<String>(
@@ -367,7 +376,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     // Option C : LE CLIENT fait une réclamation seulement après acceptation.
     if (userRole == 'client' &&
-        (booking.status == 'accepted' || booking.status == 'completed')) {
+        (booking.status == 'accepted' ||
+            booking.status == 'completed' ||
+            booking.status == 'paid_cash')) {
       menuOptions.add(
         const PopupMenuItem<String>(
           value: 'complaint',
@@ -384,16 +395,23 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return GestureDetector(
       onTap: () {
+<<<<<<< HEAD
         final currentUserId = context.read<AuthProvider>().user?.id;
         if (booking.id == null || currentUserId == null) return;
 
         // Navigation fluide vers le chat au clic sur la carte
+=======
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
+<<<<<<< HEAD
               currentUserId: currentUserId,
+=======
+              currentUserId: authProvider.user!.id,
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
             ),
           ),
         );
@@ -433,10 +451,22 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onSelected: (value) async {
                       // --- NOUVELLES ACTIONS ARTISAN ---
                       if (value == 'accept_booking') {
-                        await Provider.of<BookingProvider>(context,
+                        final ok = await Provider.of<BookingProvider>(context,
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'accepted');
                         if (!mounted) return;
+                        if (!ok) {
+                          final error = Provider.of<BookingProvider>(context,
+                                  listen: false)
+                              .errorMessage;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text(
@@ -444,10 +474,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                               backgroundColor: Colors.green),
                         );
                       } else if (value == 'reject_booking') {
-                        await Provider.of<BookingProvider>(context,
+                        final ok = await Provider.of<BookingProvider>(context,
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'rejected');
                         if (!mounted) return;
+                        if (!ok) return;
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                               content: Text("Réservation refusée."),
@@ -456,19 +487,39 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       }
                       // Action : Payer
                       if (value == 'pay_cash') {
+<<<<<<< HEAD
                         final messenger = ScaffoldMessenger.of(context);
                         // 1. Appel du Provider pour passer au statut "completed"
                         await Provider.of<BookingProvider>(context,
+=======
+                        final ok = await Provider.of<BookingProvider>(context,
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                                 listen: false)
-                            .changeBookingStatus(booking.id!, 'completed');
+                            .changeBookingStatus(booking.id!, 'paid_cash');
 
                         if (!mounted) return;
+<<<<<<< HEAD
 
                         // 2. Affichage d'un petit message de succès en bas de l'écran
                         messenger.showSnackBar(
+=======
+                        if (!ok) {
+                          final error = Provider.of<BookingProvider>(context,
+                                  listen: false)
+                              .errorMessage;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(error),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                          return;
+                        }
+                        ScaffoldMessenger.of(context).showSnackBar(
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                           const SnackBar(
                             content:
-                                Text("Paiement validé. Projet terminé ! ✅"),
+                                Text("Paiement cash confirmé. Commission déduite du wallet."),
                             backgroundColor: Colors.green,
                           ),
                         );

@@ -54,7 +54,10 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
+          SnackBar(
+            content: Text('Erreur : $e'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -62,11 +65,95 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     }
   }
 
+  Future<void> _showComplaintConfirmationDialog() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade50,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.orange.shade200,
+                      width: 2.5,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.gavel_rounded,
+                    color: Colors.orange.shade800,
+                    size: 40,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Réclamation envoyée',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.navy,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Votre dossier a bien été enregistré. Notre équipe support va étudier les détails de votre réservation pour résoudre le différend sous 24 heures.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.textGrey,
+                    height: 1.5,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    child: const Text('Compris'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submitComplaint() async {
     final description = _descriptionController.text.trim();
     if (description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez écrire une description')),
+        const SnackBar(
+          content: Text('Veuillez écrire une description'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -81,22 +168,8 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
       );
 
       if (mounted) {
-        await showDialog<void>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Réclamation envoyée'),
-            content: const Text(
-              'Votre réclamation a été enregistrée et sera traitée par l’équipe.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
         _descriptionController.clear();
+        await _showComplaintConfirmationDialog();
         if (mounted && !widget.isAdmin) {
           Navigator.pop(context);
         }
@@ -104,7 +177,10 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
+          SnackBar(
+            content: Text('Erreur : $e'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -120,7 +196,10 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
+          SnackBar(
+            content: Text('Erreur : $e'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -140,66 +219,153 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     return Scaffold(
       backgroundColor: AppColors.beige,
       appBar: AppBar(
-        title:
-            Text(widget.isAdmin ? 'Réclamations' : 'Déposer une réclamation'),
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.white,
+        title: Text(widget.isAdmin ? 'Réclamations' : 'Déposer une réclamation'),
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: AppColors.beige,
+        foregroundColor: AppColors.navy,
+        titleTextStyle: const TextStyle(
+          color: AppColors.navy,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
       ),
       body: widget.isAdmin ? _buildAdminView() : _buildClientView(),
     );
   }
 
   Widget _buildClientView() {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Décrivez votre problème',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.navy,
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      child: Container(
+        padding: const EdgeInsets.all(22),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.navy.withValues(alpha: 0.04),
+              blurRadius: 24,
+              offset: const Offset(0, 10),
             ),
+          ],
+          border: Border.all(
+            color: AppColors.navy.withValues(alpha: 0.04),
+            width: 1,
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _descriptionController,
-            maxLines: 5,
-            maxLength: 1000,
-            decoration: InputDecoration(
-              hintText: 'Expliquez votre réclamation...',
-              filled: true,
-              fillColor: AppColors.white,
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.orange.shade100, width: 1.5),
               ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: AppColors.teal),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline_rounded, color: Colors.orange.shade800, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Notre équipe s\'engage à examiner votre réclamation sous 24h. Veuillez décrire le problème de manière précise.',
+                      style: TextStyle(
+                        color: Colors.orange.shade900,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w700,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _submitComplaint,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.teal,
-                foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 24),
+            const Text(
+              'Décrivez votre problème',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w900,
+                color: AppColors.navy,
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 5,
+              maxLength: 1000,
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+              decoration: InputDecoration(
+                hintText: 'Expliquez en détail le différend ou le problème rencontré avec l\'artisan...',
+                hintStyle: TextStyle(
+                  color: AppColors.textGrey.withValues(alpha: 0.5),
+                  fontSize: 13,
+                ),
+                filled: true,
+                fillColor: AppColors.beige.withValues(alpha: 0.25),
+                counterStyle: const TextStyle(
+                  color: AppColors.textGrey,
+                  fontWeight: FontWeight.w700,
+                ),
+                contentPadding: const EdgeInsets.all(16),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: AppColors.teal.withValues(alpha: 0.15),
+                  ),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(
+                    color: AppColors.teal.withValues(alpha: 0.15),
+                  ),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppColors.teal, width: 2),
                 ),
               ),
-              child: _isLoading
-                  ? const CircularProgressIndicator(color: AppColors.white)
-                  : const Text('Envoyer', style: TextStyle(fontSize: 16)),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _isLoading ? null : _submitComplaint,
+                icon: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: AppColors.white,
+                          strokeWidth: 2.5,
+                        ),
+                      )
+                    : const Icon(Icons.send_rounded, size: 18),
+                label: const Text('Envoyer la réclamation'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.teal,
+                  foregroundColor: AppColors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  elevation: 0,
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -243,28 +409,60 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
     final resolvedCount = _complaints.length - openCount;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(12),
+        gradient: const LinearGradient(
+          colors: [AppColors.navy, AppColors.teal],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.16),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.support_agent_outlined,
-            color: AppColors.white,
-            size: 34,
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.white.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.support_agent_rounded,
+              color: AppColors.white,
+              size: 28,
+            ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           Expanded(
-            child: Text(
-              '$openCount à traiter • $resolvedCount résolues',
-              style: const TextStyle(
-                color: AppColors.white,
-                fontWeight: FontWeight.w900,
-                fontSize: 16,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Support Réclamations',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$openCount en attente • $resolvedCount résolues',
+                  style: const TextStyle(
+                    color: AppColors.beige,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -274,24 +472,38 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
 
   Widget _buildFilters() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 16),
       child: SegmentedButton<String>(
         segments: const [
-          ButtonSegment(value: 'open', label: Text('Ouvertes')),
-          ButtonSegment(value: 'resolved', label: Text('Résolues')),
-          ButtonSegment(value: 'all', label: Text('Toutes')),
+          ButtonSegment(
+            value: 'open', 
+            label: Text('Ouvertes', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+            icon: Icon(Icons.hourglass_empty_rounded, size: 16),
+          ),
+          ButtonSegment(
+            value: 'resolved', 
+            label: Text('Résolues', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+            icon: Icon(Icons.check_circle_outline_rounded, size: 16),
+          ),
+          ButtonSegment(
+            value: 'all', 
+            label: Text('Toutes', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+            icon: Icon(Icons.list_alt_rounded, size: 16),
+          ),
         ],
         selected: {_selectedFilter},
         onSelectionChanged: (selection) {
           setState(() => _selectedFilter = selection.first);
         },
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-            if (states.contains(WidgetState.selected)) {
-              return AppColors.teal.withValues(alpha: 0.16);
-            }
-            return null;
-          }),
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: AppColors.teal.withValues(alpha: 0.16),
+          selectedForegroundColor: AppColors.teal,
+          foregroundColor: AppColors.navy,
+          backgroundColor: AppColors.white,
+          side: BorderSide(color: AppColors.teal.withValues(alpha: 0.16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
         ),
       ),
     );
@@ -309,39 +521,48 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.04)),
       ),
       child: Column(
         children: [
-          const Icon(Icons.inbox_outlined, color: AppColors.teal, size: 34),
-          const SizedBox(height: 8),
+          const Icon(Icons.inbox_outlined, color: AppColors.teal, size: 44),
+          const SizedBox(height: 12),
           Text(
             title,
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: AppColors.navy,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
+              fontSize: 16,
             ),
           ),
           const SizedBox(height: 6),
           Text(
             message,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: AppColors.textGrey, fontSize: 13),
+            style: const TextStyle(color: AppColors.textGrey, fontSize: 13, fontWeight: FontWeight.w600),
           ),
           if (hasSearch) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextButton.icon(
               onPressed: () {
                 _searchController.clear();
                 setState(() {});
               },
-              icon: const Icon(Icons.close, size: 18),
+              icon: const Icon(Icons.close_rounded, size: 18),
               label: const Text('Effacer la recherche'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.teal),
+              style: TextButton.styleFrom(foregroundColor: AppColors.teal, textStyle: const TextStyle(fontWeight: FontWeight.w800)),
             ),
           ],
         ],
@@ -351,18 +572,19 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
 
   Widget _buildAdminToolbar() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: AppColors.navy.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.04), width: 1),
       ),
       child: Column(
         children: [
@@ -370,9 +592,18 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
             controller: _searchController,
             onChanged: (_) => setState(() {}),
             textInputAction: TextInputAction.search,
+            style: const TextStyle(
+              color: AppColors.navy,
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: InputDecoration(
               hintText: 'Rechercher client, artisan, booking...',
-              prefixIcon: const Icon(Icons.search, color: AppColors.teal),
+              hintStyle: TextStyle(
+                color: AppColors.textGrey.withValues(alpha: 0.5),
+                fontSize: 13,
+              ),
+              prefixIcon: const Icon(Icons.search_rounded, color: AppColors.teal, size: 22),
               suffixIcon: _searchController.text.trim().isEmpty
                   ? null
                   : IconButton(
@@ -381,21 +612,22 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                         _searchController.clear();
                         setState(() {});
                       },
-                      icon: const Icon(Icons.close, color: AppColors.textGrey),
+                      icon: const Icon(Icons.close_rounded, color: AppColors.textGrey),
                     ),
               filled: true,
-              fillColor: AppColors.beige.withValues(alpha: 0.45),
+              fillColor: AppColors.beige.withValues(alpha: 0.25),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
                 borderSide: BorderSide.none,
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(10),
-                borderSide: const BorderSide(color: AppColors.teal),
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(color: AppColors.teal, width: 1.5),
               ),
             ),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
@@ -403,8 +635,8 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                   '${_filteredComplaints().length} résultat(s)',
                   style: const TextStyle(
                     color: AppColors.textGrey,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12,
                   ),
                 ),
               ),
@@ -427,27 +659,27 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
                   ),
                 ],
                 child: Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlue.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(8),
+                    color: AppColors.teal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.12)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       const Icon(
-                        Icons.sort,
+                        Icons.sort_rounded,
                         color: AppColors.teal,
-                        size: 18,
+                        size: 16,
                       ),
                       const SizedBox(width: 6),
                       Text(
                         _sortLabel(_selectedSort),
                         style: const TextStyle(
                           color: AppColors.teal,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -546,13 +778,25 @@ class _ComplaintCard extends StatelessWidget {
     final description = '${item['description'] ?? ''}'.trim();
     final complaintId = _toInt(item['id']);
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      elevation: 0,
-      color: AppColors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+        border: Border.all(
+          color: AppColors.navy.withValues(alpha: 0.05),
+          width: 1,
+        ),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -560,18 +804,19 @@ class _ComplaintCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 42,
-                  height: 42,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
-                    color: AppColors.lightBlue.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(10),
+                    color: Colors.red.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.red.shade100),
                   ),
                   child: const Icon(
-                    Icons.report_problem_outlined,
-                    color: AppColors.teal,
+                    Icons.warning_amber_rounded,
+                    color: Colors.redAccent,
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -594,7 +839,7 @@ class _ComplaintCard extends StatelessWidget {
                         style: const TextStyle(
                           color: AppColors.textGrey,
                           fontSize: 13,
-                          fontWeight: FontWeight.w600,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
@@ -604,7 +849,7 @@ class _ComplaintCard extends StatelessWidget {
                 _ComplaintStatusBadge(isOpen: isOpen),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -626,35 +871,47 @@ class _ComplaintCard extends StatelessWidget {
               ],
             ),
             if (description.isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                description,
-                style: const TextStyle(
-                  color: AppColors.textGrey,
-                  height: 1.35,
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.beige.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.teal.withValues(alpha: 0.08)),
+                ),
+                child: Text(
+                  description,
+                  style: const TextStyle(
+                    color: AppColors.textGrey,
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    height: 1.45,
+                  ),
                 ),
               ),
             ],
             if (isOpen) ...[
-              const SizedBox(height: 14),
+              const SizedBox(height: 16),
               Align(
                 alignment: Alignment.centerRight,
                 child: ElevatedButton.icon(
                   onPressed: complaintId == null
                       ? null
                       : () => onResolve(complaintId),
-                  icon: const Icon(Icons.check_circle_outline, size: 18),
+                  icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
                   label: const Text('Marquer résolu'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.teal,
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
+                      horizontal: 16,
                       vertical: 12,
                     ),
-                    textStyle: const TextStyle(fontWeight: FontWeight.w800),
+                    elevation: 0,
+                    textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),

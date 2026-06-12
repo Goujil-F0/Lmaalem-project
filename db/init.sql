@@ -143,12 +143,19 @@ CREATE TABLE IF NOT EXISTS bookings (
     artisan_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     booking_date   TIMESTAMP NOT NULL,
     status         VARCHAR(20) DEFAULT 'pending'
-                   CHECK (status IN ('pending','accepted','rejected','completed','cancelled')),
+                   CHECK (status IN ('pending','accepted','rejected','completed','paid_cash','cancelled')),
     description    TEXT,
     agreed_price   DECIMAL(10,2),
     commission_pct DECIMAL(5,2) DEFAULT 10.00,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE bookings
+    DROP CONSTRAINT IF EXISTS bookings_status_check;
+
+ALTER TABLE bookings
+    ADD CONSTRAINT bookings_status_check
+    CHECK (status IN ('pending','accepted','rejected','completed','paid_cash','cancelled'));
 
 -- 8. REVIEWS
 CREATE TABLE IF NOT EXISTS reviews (

@@ -143,9 +143,14 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   children: [
                     // Specialty Filter
                     DropdownButtonFormField<String>(
+<<<<<<< HEAD
                       initialValue: provider.allSpecialties.contains(
                         provider.selectedCategory,
                       )
+=======
+                      initialValue: provider.allSpecialties
+                              .contains(provider.selectedCategory)
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                           ? provider.selectedCategory
                           : null,
                       isExpanded: true,
@@ -190,10 +195,16 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     const SizedBox(height: 12),
                     // City Filter
                     DropdownButtonFormField<String>(
+<<<<<<< HEAD
                       initialValue:
                           provider.cities.contains(provider.selectedCity)
                               ? provider.selectedCity
                               : null,
+=======
+                      initialValue: provider.cities.contains(provider.selectedCity)
+                          ? provider.selectedCity
+                          : null,
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                       isExpanded: true,
                       decoration: InputDecoration(
                         hintText: 'Choisir une ville',

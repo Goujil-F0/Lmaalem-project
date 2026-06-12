@@ -3,6 +3,10 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
+<<<<<<< HEAD
+=======
+import '../../core/constants/api_endpoints.dart';
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
 import 'api_client.dart';
 
 class BookingService {
@@ -48,8 +52,7 @@ class BookingService {
       if (response.statusCode == 200) return true;
       throw Exception(_errorMessage(response));
     } catch (e) {
-      throw Exception(
-          'Erreur de connexion lors de la mise à jour du statut: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -72,6 +75,7 @@ class BookingService {
         }),
       );
 
+<<<<<<< HEAD
       if (response.statusCode == 201) {
         return true; // 201 = Created
       }
@@ -89,6 +93,10 @@ class BookingService {
       }
 
       throw Exception(message);
+=======
+      if (response.statusCode == 201) return true;
+      throw Exception(_errorMessage(response));
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la création de la réservation: $e');

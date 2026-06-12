@@ -25,7 +25,7 @@ const createReview = async (req, res) => {
       return res.status(404).json({ message: 'Réservation introuvable pour ce client et cet artisan.' });
     }
 
-    if (booking.status !== 'completed') {
+    if (!['completed', 'paid_cash'].includes(booking.status)) {
       return res.status(400).json({ message: 'Un avis peut être laissé seulement après une réservation terminée.' });
     }
 

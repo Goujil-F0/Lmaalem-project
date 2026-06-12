@@ -103,7 +103,10 @@ const updateStatus = async (req, res) => {
         });
     } catch (error) {
         console.error("Erreur lors de la mise à jour du statut:", error);
-        res.status(500).json({ success: false, message: "Erreur interne du serveur." });
+        res.status(error.statusCode || 500).json({
+            success: false,
+            message: error.statusCode ? error.message : "Erreur interne du serveur."
+        });
     }
 };
 

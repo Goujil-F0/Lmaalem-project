@@ -54,6 +54,7 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
   void _submitBooking() async {
+<<<<<<< HEAD
     // 1. On récupère le VRAI ID grâce au provider
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
@@ -80,11 +81,18 @@ class _BookingScreenState extends State<BookingScreen> {
     }
 
     // 3. Vérification du formulaire
+=======
+    // 1. On vérifie que les champs sont remplis
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     if (_selectedDate == null) {
+<<<<<<< HEAD
+=======
+      print("❌ Erreur : La date n'a pas été sélectionnée.");
+>>>>>>> origin/feature/wissal-avis-dashboard-reclamations
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Veuillez choisir une date.'),

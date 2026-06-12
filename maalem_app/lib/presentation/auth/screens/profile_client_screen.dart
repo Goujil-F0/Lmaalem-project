@@ -140,7 +140,15 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
       try {
         final location = await _locationService.getCurrentLocation();
         if (!mounted) return;
-        setSheetState(() => selectedLocation = location);
+        setSheetState(() {
+          selectedLocation = location;
+          if (location.city?.isNotEmpty == true) {
+            cityController.text = location.city!;
+          }
+          if (location.neighborhood?.isNotEmpty == true) {
+            neighborhoodController.text = location.neighborhood!;
+          }
+        });
       } catch (e) {
         if (!mounted) return;
         _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -380,12 +388,11 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                 ),
                 const SizedBox(height: 16),
                 _LocationCard(
-                  location: location.isEmpty
-                      ? 'Casablanca, Quartier Habous'
-                      : location,
+                  location:
+                      location.isEmpty ? 'Localisation non renseignee' : location,
                   details: coordinates ??
                       user?.neighborhood ??
-                      'Residence Al-Amal, N 45',
+                      'Utilisez votre position actuelle',
                   isUpdating: auth.isUpdatingProfile,
                   onUpdate: _updateLocation,
                 ),

@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/dashboard_service.dart';
+import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/main.dart';
 import 'package:provider/provider.dart';
@@ -18,8 +20,23 @@ class ProfileArtisanScreen extends StatefulWidget {
   State<ProfileArtisanScreen> createState() => _ProfileArtisanScreenState();
 }
 
+class _LocationUpdate {
+  final String? city;
+  final String? neighborhood;
+  final double? latitude;
+  final double? longitude;
+
+  const _LocationUpdate({
+    required this.city,
+    required this.neighborhood,
+    required this.latitude,
+    required this.longitude,
+  });
+}
+
 class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
   final ImagePicker _picker = ImagePicker();
+  final LocationService _locationService = LocationService();
   Uint8List? _localPhotoBytes;
   Map<String, dynamic>? _dashboardStats;
 
@@ -111,28 +128,214 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     }
   }
 
-  Future<void> _editSpecialty(String current) async {
-    final value = await _showSingleFieldDialog(
-      title: 'Modifier la specialite',
-      label: 'Specialite',
-      initialValue: current,
-      keyboardType: TextInputType.text,
-      textInputAction: TextInputAction.done,
+  Future<void> _updateLocation() async {
+    final user = context.read<AuthProvider>().user;
+    final updated = await _showLocationDialog(
+      city: user?.city ?? '',
+      neighborhood: user?.neighborhood ?? '',
+      latitude: user?.latitude,
+      longitude: user?.longitude,
     );
-    if (value == null) return;
+    if (updated == null) return;
 
     await _waitForUiToSettle();
     if (!mounted) return;
-    final result = await context.read<AuthProvider>().updateArtisanProfile(
-          specialty: value.trim(),
+
+    final response = await context.read<AuthProvider>().updateClientProfile(
+          city: updated.city,
+          neighborhood: updated.neighborhood,
+          latitude: updated.latitude,
+          longitude: updated.longitude,
         );
     if (!mounted) return;
 
-    if (result['success'] == true) {
-      _showSuccess(_successMessage('Specialite mise a jour', result));
+    if (response['success'] == true) {
+      _showSuccess(_successMessage('Localisation mise a jour', response));
+      await Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const MapScreen()),
+      );
     } else {
-      _showError(result['error'] ?? 'Erreur lors de la mise a jour');
+      _showError(response['error'] ?? 'Erreur lors de la mise a jour');
     }
+  }
+
+  Future<_LocationUpdate?> _showLocationDialog({
+    required String city,
+    required String neighborhood,
+    double? latitude,
+    double? longitude,
+  }) async {
+    final cityController = TextEditingController(text: city);
+    final neighborhoodController = TextEditingController(text: neighborhood);
+    UserLocation? selectedLocation = latitude != null && longitude != null
+        ? UserLocation(latitude: latitude, longitude: longitude)
+        : null;
+    var isLocating = false;
+
+    Future<void> useCurrentLocation(StateSetter setSheetState) async {
+      setSheetState(() => isLocating = true);
+      try {
+        final location = await _locationService.getCurrentLocation();
+        if (!mounted) return;
+        setSheetState(() {
+          selectedLocation = location;
+          if (location.city?.isNotEmpty == true) {
+            cityController.text = location.city!;
+          }
+          if (location.neighborhood?.isNotEmpty == true) {
+            neighborhoodController.text = location.neighborhood!;
+          }
+        });
+      } catch (e) {
+        if (!mounted) return;
+        _showError(e.toString().replaceFirst('Exception: ', ''));
+      } finally {
+        if (mounted) setSheetState(() => isLocating = false);
+      }
+    }
+
+    final result = await showModalBottomSheet<_LocationUpdate>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (sheetContext, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.fromLTRB(
+                20,
+                18,
+                20,
+                MediaQuery.of(sheetContext).viewInsets.bottom + 22,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Mettre a jour ma localisation',
+                    style: TextStyle(
+                      color: AppColors.navy,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: cityController,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(
+                      labelText: 'Ville',
+                      prefixIcon: Icon(Icons.location_city),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: neighborhoodController,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Quartier ou adresse',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.teal.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: AppColors.teal.withValues(alpha: 0.18),
+                      ),
+                    ),
+                    child: Text(
+                      selectedLocation == null
+                          ? 'Aucune position GPS enregistree'
+                          : 'GPS: ${selectedLocation!.coordinatesLabel}',
+                      style: const TextStyle(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: isLocating
+                        ? null
+                        : () => useCurrentLocation(setSheetState),
+                    icon: isLocating
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              color: AppColors.teal,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(Icons.gps_fixed),
+                    label: Text(
+                      isLocating
+                          ? 'Recherche de position...'
+                          : 'Utiliser ma position actuelle',
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextButton(
+                          onPressed: () => Navigator.pop(sheetContext),
+                          child: const Text('Annuler'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(
+                              sheetContext,
+                              _LocationUpdate(
+                                city: cityController.text.trim().isEmpty
+                                    ? null
+                                    : cityController.text.trim(),
+                                neighborhood:
+                                    neighborhoodController.text.trim().isEmpty
+                                        ? null
+                                        : neighborhoodController.text.trim(),
+                                latitude: selectedLocation?.latitude,
+                                longitude: selectedLocation?.longitude,
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.teal,
+                          ),
+                          child: const Text(
+                            'Enregistrer',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    cityController.dispose();
+    neighborhoodController.dispose();
+    return result;
   }
 
   Future<void> _editHourlyRate(double? current) async {
@@ -265,6 +468,13 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     final totalReviews = _toInt(_dashboardStats?['totalReviews']) ?? 0;
     final totalMissions = (_toInt(_dashboardStats?['pendingBookings']) ?? 0) +
         (_toInt(_dashboardStats?['confirmedBookings']) ?? 0);
+    final location = [
+      if (user?.city?.isNotEmpty == true) user!.city,
+      if (user?.neighborhood?.isNotEmpty == true) user!.neighborhood,
+    ].whereType<String>().join(', ');
+    final coordinates = user?.latitude != null && user?.longitude != null
+        ? 'GPS: ${user!.latitude!.toStringAsFixed(5)}, ${user.longitude!.toStringAsFixed(5)}'
+        : null;
 
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
@@ -299,17 +509,24 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                 ),
                 const SizedBox(height: 26),
                 _ManagementCard(
-                  specialty: profile?.specialty ?? 'Non renseignee',
                   hourlyRate: profile?.hourlyRate,
                   available: available,
                   isUpdatingProfile: auth.isUpdatingProfile,
                   isUpdatingAvailability: auth.isUpdatingAvailability,
-                  onEditSpecialty: () =>
-                      _editSpecialty(profile?.specialty ?? ''),
                   onEditHourlyRate: () => _editHourlyRate(profile?.hourlyRate),
                   onAvailabilityChanged: auth.isUpdatingAvailability
                       ? null
                       : _handleAvailabilityChange,
+                ),
+                const SizedBox(height: 26),
+                _LocationCard(
+                  location:
+                      location.isEmpty ? 'Localisation non renseignee' : location,
+                  details: coordinates ??
+                      user?.neighborhood ??
+                      'Utilisez votre position actuelle',
+                  isUpdating: auth.isUpdatingProfile,
+                  onUpdate: _updateLocation,
                 ),
                 const SizedBox(height: 26),
                 _PortfolioSection(
@@ -682,22 +899,18 @@ class _StatCard extends StatelessWidget {
 }
 
 class _ManagementCard extends StatelessWidget {
-  final String specialty;
   final double? hourlyRate;
   final bool available;
   final bool isUpdatingProfile;
   final bool isUpdatingAvailability;
-  final VoidCallback onEditSpecialty;
   final VoidCallback onEditHourlyRate;
   final ValueChanged<bool>? onAvailabilityChanged;
 
   const _ManagementCard({
-    required this.specialty,
     required this.hourlyRate,
     required this.available,
     required this.isUpdatingProfile,
     required this.isUpdatingAvailability,
-    required this.onEditSpecialty,
     required this.onEditHourlyRate,
     required this.onAvailabilityChanged,
   });
@@ -723,13 +936,6 @@ class _ManagementCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          _ManagementItem(
-            label: 'Ma Specialite',
-            value: specialty,
-            isLoading: isUpdatingProfile,
-            onTap: onEditSpecialty,
-          ),
-          const Divider(height: 26, color: Color(0x1A0C2C55)),
           _ManagementItem(
             label: 'Tarif Horaire',
             value: '${hourlyRate?.toStringAsFixed(0) ?? '0'} MAD / h',
@@ -840,6 +1046,132 @@ class _ManagementItem extends StatelessWidget {
               : const Icon(Icons.edit, color: AppColors.teal, size: 20),
         ),
       ],
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  final String location;
+  final String details;
+  final bool isUpdating;
+  final VoidCallback onUpdate;
+
+  const _LocationCard({
+    required this.location,
+    required this.details,
+    required this.isUpdating,
+    required this.onUpdate,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Ma localisation',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _LocationIconBox(icon: Icons.location_on_outlined),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      location,
+                      style: const TextStyle(
+                        color: Color(0xFF1D1B20),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      details,
+                      style: const TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: OutlinedButton.icon(
+              onPressed: isUpdating ? null : onUpdate,
+              icon: isUpdating
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        color: AppColors.teal,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.map_outlined),
+              label: const Text('Mettre a jour sur la carte'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.teal,
+                backgroundColor: AppColors.teal.withValues(alpha: 0.05),
+                side: BorderSide(
+                  color: AppColors.teal.withValues(alpha: 0.3),
+                  width: 2,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LocationIconBox extends StatelessWidget {
+  final IconData icon;
+
+  const _LocationIconBox({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.teal.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: AppColors.teal, size: 22),
     );
   }
 }

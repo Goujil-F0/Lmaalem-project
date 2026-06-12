@@ -28,21 +28,95 @@ class _ReviewScreenState extends State<ReviewScreen> {
 
   void _handleRatingChanged(double value) {
     setState(() => _rating = value);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        const SnackBar(
-          content: Text('Évaluation enregistrée'),
-          backgroundColor: AppColors.teal,
-          duration: Duration(seconds: 1),
-        ),
-      );
+  }
+
+  Future<void> _showThankYouDialog() async {
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          elevation: 10,
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 76,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFB300).withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: const Color(0xFFFFB300).withValues(alpha: 0.24),
+                      width: 2.5,
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.star_rounded,
+                    color: Color(0xFFFFB300),
+                    size: 46,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Avis Enregistré !',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.navy,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Merci pour votre évaluation de ${_rating.toInt()} étoiles. Votre avis aide la communauté à choisir le bon artisan et permet à ${widget.artisanName} de s\'améliorer.',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: AppColors.textGrey,
+                    height: 1.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.teal,
+                      foregroundColor: AppColors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      textStyle: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    child: const Text('Fermer'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   Future<void> _submitReview() async {
     if (_rating == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Veuillez sélectionner une note')),
+        const SnackBar(
+          content: Text('Veuillez sélectionner une note en cliquant ou faisant glisser'),
+          backgroundColor: Colors.redAccent,
+        ),
       );
       return;
     }
@@ -64,18 +138,18 @@ class _ReviewScreenState extends State<ReviewScreen> {
       );
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Votre avis est enregistré. Merci !'),
-            backgroundColor: AppColors.teal,
-          ),
-        );
-        Navigator.pop(context, true);
+        await _showThankYouDialog();
+        if (mounted) {
+          Navigator.pop(context, true);
+        }
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erreur : $e')),
+          SnackBar(
+            content: Text('Erreur : $e'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
@@ -95,112 +169,173 @@ class _ReviewScreenState extends State<ReviewScreen> {
       backgroundColor: AppColors.beige,
       appBar: AppBar(
         title: Text('Avis sur ${widget.artisanName}'),
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.white,
+        centerTitle: true,
+        elevation: 0,
+        backgroundColor: AppColors.beige,
+        foregroundColor: AppColors.navy,
+        titleTextStyle: const TextStyle(
+          color: AppColors.navy,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(22),
           decoration: BoxDecoration(
             color: AppColors.white,
-            borderRadius: BorderRadius.circular(14),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: AppColors.navy.withValues(alpha: 0.06),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: AppColors.navy.withValues(alpha: 0.04),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
               ),
             ],
+            border: Border.all(
+              color: AppColors.navy.withValues(alpha: 0.04),
+              width: 1,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.lightBlue.withValues(alpha: 0.2),
-                child:
-                    const Icon(Icons.handyman, size: 44, color: AppColors.teal),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.teal.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.teal.withValues(alpha: 0.12),
+                    width: 2.5,
+                  ),
+                ),
+                child: const Icon(
+                  Icons.handyman_rounded,
+                  size: 36,
+                  color: AppColors.teal,
+                ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               Text(
                 'Évaluer ${widget.artisanName}',
                 style: const TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: AppColors.navy,
+                  letterSpacing: -0.5,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 8),
               const Text(
-                'Votre avis aide les prochains clients à choisir le bon maalem.',
+                'Votre avis aide la communauté à choisir le bon maalem et valorise son travail.',
                 style: TextStyle(
                   color: AppColors.textGrey,
                   height: 1.4,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 28),
               StarRatingInput(
                 initialRating: _rating,
                 onRatingChanged: _handleRatingChanged,
-                size: 48,
+                size: 46,
               ),
-              const SizedBox(height: 10),
-              Text(
-                _rating == 0 ? 'Sélectionnez une note' : _ratingLabel(),
-                style: const TextStyle(
-                  color: AppColors.teal,
-                  fontWeight: FontWeight.w800,
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _rating == 0
+                      ? Colors.grey.shade100
+                      : const Color(0xFFFFB300).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  _rating == 0 ? 'Faites glisser ou touchez les étoiles' : _ratingLabel(),
+                  style: TextStyle(
+                    color: _rating == 0
+                        ? AppColors.textGrey
+                        : const Color(0xFFD68A00),
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13,
+                  ),
                 ),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: 32),
               TextField(
                 controller: _commentController,
                 maxLines: 4,
                 maxLength: 500,
+                style: const TextStyle(
+                  color: AppColors.navy,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
                 decoration: InputDecoration(
-                  hintText: 'Décrivez la qualité, le respect du délai...',
+                  hintText: 'Décrivez la qualité du travail, le respect du délai, la propreté...',
+                  hintStyle: TextStyle(
+                    color: AppColors.textGrey.withValues(alpha: 0.5),
+                    fontSize: 13,
+                  ),
                   filled: true,
-                  fillColor: AppColors.beige.withValues(alpha: 0.45),
+                  fillColor: AppColors.beige.withValues(alpha: 0.25),
+                  counterStyle: const TextStyle(
+                    color: AppColors.textGrey,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  contentPadding: const EdgeInsets.all(16),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: AppColors.teal.withValues(alpha: 0.15),
+                    ),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(
+                      color: AppColors.teal.withValues(alpha: 0.15),
+                    ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: const BorderSide(color: AppColors.teal),
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: const BorderSide(color: AppColors.teal, width: 2),
                   ),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
                   onPressed: _isLoading ? null : _submitReview,
                   icon: _isLoading
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
                             color: AppColors.white,
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                           ),
                         )
-                      : const Icon(Icons.send_outlined),
-                  label: const Text('Envoyer l\'avis'),
+                      : const Icon(Icons.check_circle_outline_rounded, size: 20),
+                  label: const Text('Soumettre mon avis'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.teal,
+                    backgroundColor: AppColors.navy,
                     foregroundColor: AppColors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
+                    elevation: 4,
+                    shadowColor: AppColors.navy.withValues(alpha: 0.25),
                     textStyle: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                 ),
@@ -213,10 +348,10 @@ class _ReviewScreenState extends State<ReviewScreen> {
   }
 
   String _ratingLabel() {
-    if (_rating >= 5) return 'Excellent';
-    if (_rating >= 4) return 'Très bien';
-    if (_rating >= 3) return 'Correct';
-    if (_rating >= 2) return 'À améliorer';
-    return 'Mauvaise expérience';
+    if (_rating >= 5) return 'Excellent (5/5)';
+    if (_rating >= 4) return 'Très bien (4/5)';
+    if (_rating >= 3) return 'Correct (3/5)';
+    if (_rating >= 2) return 'À améliorer (2/5)';
+    return 'Mauvaise expérience (1/5)';
   }
 }

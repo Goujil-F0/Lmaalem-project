@@ -83,8 +83,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       SnackBar(
         content: Text(
           nextValue
-              ? 'Artisan ajoute aux favoris'
-              : 'Artisan retire des favoris',
+              ? 'Artisan ajouté aux favoris'
+              : 'Artisan retiré des favoris',
         ),
       ),
     );
@@ -143,7 +143,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         'email': user.email,
         'phone': user.phone,
         'city': user.city,
-        'speciality': profile?.specialty ?? 'Artisan general',
+        'speciality': profile?.specialty ?? 'Artisan général',
         'bio': profile?.description,
         'hourly_rate': profile?.hourlyRate,
         'is_available': profile?.isAvailable ?? true,
@@ -216,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadDashboard,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
@@ -233,17 +233,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildOwnDashboard() {
+    final authUser = context.watch<AuthProvider>().user;
     return RefreshIndicator(
       color: AppColors.teal,
       onRefresh: _loadDashboard,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(
+              "Bonjour,",
+              style: TextStyle(
+                color: AppColors.textGrey.withValues(alpha: 0.6),
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            Text(
+              "${authUser?.fullName ?? 'Artisan'}",
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
+              ),
+            ),
+            const SizedBox(height: 18),
             _buildDashboardSummary(),
-            const SizedBox(height: 14),
+            const SizedBox(height: 18),
             _buildDashboardSections(),
           ],
         ),
@@ -257,12 +276,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       onRefresh: _loadDashboard,
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildProfileHeader(context),
-            const SizedBox(height: 18),
+            const SizedBox(height: 20),
             _buildStats(false),
             const SizedBox(height: 24),
             _buildRecentReviews(false),
@@ -275,17 +294,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildDashboardSections() {
     final sections = [
       (
-        icon: Icons.calendar_month_outlined,
+        icon: Icons.calendar_month_rounded,
         label: 'Agenda',
         content: _buildCalendar(),
       ),
       (
-        icon: Icons.rate_review_outlined,
+        icon: Icons.rate_review_rounded,
         label: 'Avis',
         content: _buildRecentReviews(true),
       ),
       (
-        icon: Icons.handyman_outlined,
+        icon: Icons.handyman_rounded,
         label: 'Travaux',
         content: _buildRecentBookings(),
       ),
@@ -295,37 +314,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.teal.withValues(alpha: 0.10)),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.07),
-            blurRadius: 18,
+            color: AppColors.navy.withValues(alpha: 0.04),
+            blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.08)),
       ),
       child: Column(
         children: [
-          Row(
-            children: List.generate(sections.length, (index) {
-              final section = sections[index];
-              return Expanded(
-                child: _DashboardSectionTab(
-                  icon: section.icon,
-                  label: section.label,
-                  isSelected: _dashboardSectionIndex == index,
-                  isFirst: index == 0,
-                  isLast: index == sections.length - 1,
-                  onTap: () {
-                    setState(() => _dashboardSectionIndex = index);
-                  },
-                ),
-              );
-            }),
+          Container(
+            margin: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: AppColors.beige.withValues(alpha: 0.35),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(
+              children: List.generate(sections.length, (index) {
+                final section = sections[index];
+                return Expanded(
+                  child: _DashboardSectionTab(
+                    icon: section.icon,
+                    label: section.label,
+                    isSelected: _dashboardSectionIndex == index,
+                    onTap: () {
+                      setState(() => _dashboardSectionIndex = index);
+                    },
+                  ),
+                );
+              }),
+            ),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+            padding: const EdgeInsets.fromLTRB(16, 6, 16, 18),
             child: sections[_dashboardSectionIndex].content,
           ),
         ],
@@ -346,15 +371,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(22),
+        gradient: const LinearGradient(
+          colors: [AppColors.navy, Color(0xFF153F6F)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.22),
-            blurRadius: 26,
-            offset: const Offset(0, 14),
+            color: AppColors.navy.withValues(alpha: 0.18),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
@@ -364,14 +393,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: AppColors.white.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.dashboard_customize_outlined,
+                  Icons.dashboard_customize_rounded,
                   color: AppColors.white,
                   size: 20,
                 ),
@@ -391,27 +420,29 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                     SizedBox(height: 2),
                     Text(
-                      'Suivi rapide de votre activite',
+                      'Suivi rapide de votre activité',
                       style: TextStyle(
                         color: AppColors.lightBlue,
                         fontSize: 11,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: (canAcceptBookings ? AppColors.teal : AppColors.lightBlue)
                       .withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(999),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.white.withValues(alpha: 0.15),
+                  ),
                 ),
                 child: Text(
-                  canAcceptBookings ? 'ACTIF' : 'A RECHARGER',
-                  style: TextStyle(
+                  canAcceptBookings ? 'ACTIF' : 'À RECHARGER',
+                  style: const TextStyle(
                     color: AppColors.white,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
@@ -420,7 +451,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
@@ -432,45 +463,45 @@ class _DashboardScreenState extends State<DashboardScreen> {
               _SummaryMetricTile(
                 label: 'Wallet',
                 value: '${balance.toStringAsFixed(0)} MAD',
-                icon: Icons.account_balance_wallet_outlined,
+                icon: Icons.account_balance_wallet_rounded,
               ),
               _SummaryMetricTile(
                 label: 'En attente',
                 value: '$pendingBookings',
-                icon: Icons.pending_actions_outlined,
+                icon: Icons.pending_actions_rounded,
               ),
               _SummaryMetricTile(
-                label: 'Confirmes',
+                label: 'Confirmés',
                 value: '$confirmedBookings',
-                icon: Icons.task_alt_outlined,
+                icon: Icons.task_alt_rounded,
               ),
               _SummaryMetricTile(
                 label: 'Commission',
                 value: '${expectedCommission.toStringAsFixed(0)} MAD',
-                icon: Icons.percent_outlined,
+                icon: Icons.percent_rounded,
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           Row(
             children: [
               Expanded(
                 child: Container(
-                  height: 44,
+                  height: 46,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                   decoration: BoxDecoration(
                     color: AppColors.white,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(
-                        Icons.rate_review_outlined,
+                        Icons.rate_review_rounded,
                         color: AppColors.navy,
-                        size: 17,
+                        size: 18,
                       ),
-                      const SizedBox(width: 7),
+                      const SizedBox(width: 8),
                       Flexible(
                         child: Text(
                           '$totalReviews avis clients',
@@ -486,63 +517,63 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: 10),
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed:
                       _isRechargingWallet ? null : () => _rechargeWallet(100),
                   icon: _isRechargingWallet
                       ? const SizedBox(
-                          width: 15,
-                          height: 15,
+                          width: 16,
+                          height: 16,
                           child: CircularProgressIndicator(
-                            strokeWidth: 2,
+                            strokeWidth: 2.5,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               AppColors.navy,
                             ),
                           ),
                         )
-                      : const Icon(Icons.credit_card_outlined, size: 16),
+                      : const Icon(Icons.credit_card_rounded, size: 16),
                   label: const Text('Recharger'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.white,
                     foregroundColor: AppColors.navy,
                     elevation: 0,
-                    padding: const EdgeInsets.symmetric(vertical: 13),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     textStyle: const TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 12,
                     ),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
               ),
-              const SizedBox(width: 9),
+              const SizedBox(width: 10),
               IconButton(
                 tooltip: 'Actualiser',
                 onPressed: _isLoading ? null : _loadDashboard,
-                icon: const Icon(Icons.refresh, size: 18),
+                icon: const Icon(Icons.refresh_rounded, size: 18),
                 color: AppColors.white,
                 style: IconButton.styleFrom(
-                  fixedSize: const Size(44, 44),
-                  backgroundColor: AppColors.white.withValues(alpha: 0.11),
+                  fixedSize: const Size(46, 46),
+                  backgroundColor: AppColors.white.withValues(alpha: 0.12),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
               ),
             ],
           ),
           if (!canAcceptBookings) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(11),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: AppColors.lightBlue.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: AppColors.lightBlue.withValues(alpha: 0.22),
                 ),
@@ -565,29 +596,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildErrorState() {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(
-              Icons.signal_wifi_statusbar_connected_no_internet_4_outlined,
+              Icons.signal_wifi_statusbar_connected_no_internet_4_rounded,
               color: AppColors.teal,
-              size: 44,
+              size: 48,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             Text(
               _error ?? 'Erreur de chargement',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.navy),
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w800,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             ElevatedButton.icon(
               onPressed: _loadDashboard,
-              icon: const Icon(Icons.refresh),
+              icon: const Icon(Icons.refresh_rounded),
               label: const Text('Réessayer'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.teal,
                 foregroundColor: AppColors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ],
@@ -599,26 +637,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildStats(bool isOwnDashboard) {
     final cards = <Widget>[
       StatsCard(
-        icon: Icons.star,
+        icon: Icons.star_rounded,
         title: 'Note Moyenne',
         value: '${_dashboardData!['averageRating'] ?? 0}',
       ),
       StatsCard(
-        icon: Icons.rate_review,
+        icon: Icons.rate_review_rounded,
         title: 'Total Avis',
         value: '${_dashboardData!['totalReviews'] ?? 0}',
-          color: AppColors.lightBlue,
-        ),
+        color: AppColors.lightBlue,
+      ),
       if (isOwnDashboard)
         StatsCard(
-          icon: Icons.pending_actions,
+          icon: Icons.pending_actions_rounded,
           title: 'En attente',
           value: '${_dashboardData!['pendingBookings'] ?? 0}',
           color: AppColors.lightBlue,
         ),
       if (isOwnDashboard)
         StatsCard(
-          icon: Icons.check_circle_outline,
+          icon: Icons.check_circle_outline_rounded,
           title: 'Confirmées',
           value: '${_dashboardData!['confirmedBookings'] ?? 0}',
           color: AppColors.teal,
@@ -639,7 +677,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           const Text(
             'Vue d\'ensemble',
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
               color: AppColors.navy,
             ),
@@ -666,10 +704,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _SectionTitle(
-          icon: Icons.handyman_outlined,
+          icon: Icons.handyman_rounded,
           title: 'Travaux récents',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (bookings.isEmpty)
           _buildEmptyBox('Aucune commande pour le moment')
         else
@@ -694,7 +732,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Wallet recharge de ${amount.toStringAsFixed(0)} MAD'),
+          content: Text('Wallet rechargé de ${amount.toStringAsFixed(0)} MAD'),
           backgroundColor: AppColors.teal,
         ),
       );
@@ -703,7 +741,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString().replaceFirst('Exception: ', '')),
-          backgroundColor: AppColors.textGrey,
+          backgroundColor: Colors.redAccent,
         ),
       );
     } finally {
@@ -720,18 +758,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final commissionDebited = _toDouble(wallet['commissionDebited']) ?? 0;
     final expectedCommission = _toDouble(wallet['expectedCommission']) ?? 0;
     final canAcceptBookings = wallet['canAcceptBookings'] == true;
-    final statusColor = canAcceptBookings ? AppColors.lightBlue : AppColors.white;
+    final statusColor = canAcceptBookings ? Colors.greenAccent : Colors.orangeAccent;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(18),
+        gradient: const LinearGradient(
+          colors: [AppColors.navy, Color(0xFF1B4E7A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
             color: AppColors.navy.withValues(alpha: 0.18),
-            blurRadius: 18,
+            blurRadius: 24,
             offset: const Offset(0, 10),
           ),
         ],
@@ -740,96 +782,101 @@ class _DashboardScreenState extends State<DashboardScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Container(
-                width: 46,
-                height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFD8B45D),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.credit_card,
-                  color: AppColors.navy,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Text(
-                  'Wallet crédits',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.white.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.credit_card_rounded,
+                      color: AppColors.white,
+                      size: 20,
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    'Wallet Maalem',
+                    style: TextStyle(
+                      color: AppColors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.white.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: statusColor.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                 ),
                 child: Text(
-                  canAcceptBookings ? 'Actif' : 'A recharger',
+                  canAcceptBookings ? 'Actif' : 'À recharger',
                   style: TextStyle(
                     color: statusColor,
                     fontWeight: FontWeight.w900,
-                    fontSize: 12,
+                    fontSize: 11,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           Text(
             '${balance.toStringAsFixed(0)} MAD',
             style: const TextStyle(
               color: AppColors.white,
-              fontSize: 34,
+              fontSize: 36,
               fontWeight: FontWeight.w900,
+              letterSpacing: -0.5,
             ),
           ),
+          const SizedBox(height: 4),
           Text(
             'Crédits disponibles pour accepter les missions',
             style: TextStyle(
-              color: AppColors.white.withValues(alpha: 0.72),
+              color: AppColors.white.withValues(alpha: 0.65),
+              fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           Row(
             children: [
               Expanded(
                 child: _WalletMetric(
-                  icon: Icons.point_of_sale_outlined,
+                  icon: Icons.payments_outlined,
                   label: 'Cash encaissé',
                   value: '${grossCash.toStringAsFixed(0)} MAD',
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 12),
               Expanded(
                 child: _WalletMetric(
-                  icon: Icons.percent,
-                  label: 'Commissions',
+                  icon: Icons.percent_rounded,
+                  label: 'Commissions payées',
                   value: '${commissionDebited.toStringAsFixed(0)} MAD',
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _WalletMetric(
             icon: Icons.pending_actions_outlined,
             label: 'Commission prévue sur les missions en cours',
             value: '${expectedCommission.toStringAsFixed(0)} MAD',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 20),
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: ElevatedButton.icon(
                   onPressed: _isRechargingWallet
                       ? null
                       : () => _rechargeWallet(100),
@@ -837,18 +884,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ? const SizedBox(
                           width: 16,
                           height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.navy),
                         )
-                      : const Icon(Icons.add_card_outlined),
+                      : const Icon(Icons.add_circle_outline_rounded, size: 18),
                   label: const Text('Recharger 100 MAD'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.white,
-                    side: BorderSide(
-                      color: AppColors.white.withValues(alpha: 0.28),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.white,
+                    foregroundColor: AppColors.navy,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    elevation: 0,
+                    textStyle: const TextStyle(fontWeight: FontWeight.w900, fontSize: 13),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                 ),
@@ -858,10 +905,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 tooltip: 'Recharger 200 MAD',
                 onPressed:
                     _isRechargingWallet ? null : () => _rechargeWallet(200),
-                icon: const Icon(Icons.add_circle_outline),
+                icon: const Icon(Icons.add_rounded),
                 color: AppColors.white,
                 style: IconButton.styleFrom(
                   backgroundColor: AppColors.white.withValues(alpha: 0.12),
+                  fixedSize: const Size(48, 48),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                 ),
               ),
             ],
@@ -874,17 +925,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildMessagingSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.05),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: AppColors.navy.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.04)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -895,11 +947,11 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AppColors.teal.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: AppColors.teal.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
-                  Icons.mail_outlined,
+                  Icons.mail_rounded,
                   color: AppColors.teal,
                   size: 20,
                 ),
@@ -919,59 +971,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: Colors.green.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(6),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Text(
                   'LIVE ACTIVE',
                   style: TextStyle(
                     color: Colors.green,
-                    fontSize: 10,
+                    fontSize: 9,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Center(
             child: Text(
-              '${_dashboardData?['unreadMessages'] ?? 120} ',
+              '${_dashboardData?['unreadMessages'] ?? 0} ',
               style: const TextStyle(
                 color: AppColors.navy,
-                fontSize: 28,
+                fontSize: 32,
                 fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           const Center(
             child: Text(
-              'Messages en attente',
+              'Messages non lus',
               style: TextStyle(
                 color: AppColors.textGrey,
                 fontSize: 13,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 18),
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () {
-                // Navigate to messaging
+                // Naviguer vers messagerie (géré par Samir)
               },
-              icon: const Icon(Icons.chat_bubble_outline),
+              icon: const Icon(Icons.chat_bubble_outline_rounded),
               label: const Text('Voir les messages'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.teal,
                 foregroundColor: AppColors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                elevation: 0,
                 textStyle: const TextStyle(
                   fontWeight: FontWeight.w900,
-                  fontSize: 13,
+                  fontSize: 13.5,
                 ),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
               ),
             ),
@@ -1012,15 +1067,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             const Expanded(
               child: _SectionTitle(
-                icon: Icons.calendar_month_outlined,
+                icon: Icons.calendar_month_rounded,
                 title: 'Calendrier',
               ),
             ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
-                color: AppColors.teal.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(999),
+                color: AppColors.teal.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: Text(
                 '${bookings.length} RDV',
@@ -1033,137 +1088,136 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Align(
           alignment: Alignment.centerLeft,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(18),
-                border:
-                    Border.all(color: AppColors.teal.withValues(alpha: 0.10)),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.navy.withValues(alpha: 0.08),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        tooltip: 'Mois précédent',
-                        onPressed: () {
-                          setState(() {
-                            _calendarMonth = DateTime(
-                              _calendarMonth.year,
-                              _calendarMonth.month - 1,
-                            );
-                            _selectedCalendarDate = null;
-                          });
-                        },
-                        icon: const Icon(Icons.chevron_left),
-                        color: AppColors.navy,
-                        style: IconButton.styleFrom(
-                          backgroundColor:
-                              AppColors.beige.withValues(alpha: 0.7),
-                        ),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.white,
+              borderRadius: BorderRadius.circular(20),
+              border:
+                  Border.all(color: AppColors.teal.withValues(alpha: 0.08)),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.navy.withValues(alpha: 0.03),
+                  blurRadius: 18,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Mois précédent',
+                      onPressed: () {
+                        setState(() {
+                          _calendarMonth = DateTime(
+                            _calendarMonth.year,
+                            _calendarMonth.month - 1,
+                          );
+                          _selectedCalendarDate = null;
+                        });
+                      },
+                      icon: const Icon(Icons.chevron_left_rounded),
+                      color: AppColors.navy,
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            AppColors.beige.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                       ),
-                      Expanded(
-                        child: Text(
-                          _monthLabel(_calendarMonth),
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: AppColors.navy,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: 'Mois suivant',
-                        onPressed: () {
-                          setState(() {
-                            _calendarMonth = DateTime(
-                              _calendarMonth.year,
-                              _calendarMonth.month + 1,
-                            );
-                            _selectedCalendarDate = null;
-                          });
-                        },
-                        icon: const Icon(Icons.chevron_right),
-                        color: AppColors.navy,
-                        style: IconButton.styleFrom(
-                          backgroundColor:
-                              AppColors.beige.withValues(alpha: 0.7),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  const Row(
-                    children: [
-                      _WeekdayLabel('L'),
-                      _WeekdayLabel('M'),
-                      _WeekdayLabel('M'),
-                      _WeekdayLabel('J'),
-                      _WeekdayLabel('V'),
-                      _WeekdayLabel('S'),
-                      _WeekdayLabel('D'),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: days.length,
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
-                      mainAxisSpacing: 6,
-                      crossAxisSpacing: 6,
-                      childAspectRatio: 1.08,
                     ),
-                    itemBuilder: (context, index) {
-                      final day = days[index];
-                      final isCurrentMonth = day.month == _calendarMonth.month;
-                      final key = DateTime(day.year, day.month, day.day);
-                      final dayBookings = markedDays[key] ?? const [];
-                      final hasBooking = dayBookings.isNotEmpty;
-                      final hasPriority =
-                          dayBookings.any((b) => b['status'] == 'accepted');
-                      final isSelected = selectedKey == key;
-
-                      return _CalendarDayCell(
-                        day: day,
-                        isCurrentMonth: isCurrentMonth,
-                        hasBooking: hasBooking,
-                        hasPriority: hasPriority,
-                        isSelected: isSelected,
-                        count: dayBookings.length,
-                        onTap: hasBooking
-                            ? () => setState(() => _selectedCalendarDate = key)
-                            : null,
-                      );
-                    },
+                    Expanded(
+                      child: Text(
+                        _monthLabel(_calendarMonth),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: AppColors.navy,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: 'Mois suivant',
+                      onPressed: () {
+                        setState(() {
+                          _calendarMonth = DateTime(
+                            _calendarMonth.year,
+                            _calendarMonth.month + 1,
+                          );
+                          _selectedCalendarDate = null;
+                        });
+                      },
+                      icon: const Icon(Icons.chevron_right_rounded),
+                      color: AppColors.navy,
+                      style: IconButton.styleFrom(
+                        backgroundColor:
+                            AppColors.beige.withValues(alpha: 0.5),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                const Row(
+                  children: [
+                    _WeekdayLabel('L'),
+                    _WeekdayLabel('M'),
+                    _WeekdayLabel('M'),
+                    _WeekdayLabel('J'),
+                    _WeekdayLabel('V'),
+                    _WeekdayLabel('S'),
+                    _WeekdayLabel('D'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: days.length,
+                  gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 7,
+                    mainAxisSpacing: 6,
+                    crossAxisSpacing: 6,
+                    childAspectRatio: 1.08,
                   ),
-                ],
-              ),
+                  itemBuilder: (context, index) {
+                    final day = days[index];
+                    final isCurrentMonth = day.month == _calendarMonth.month;
+                    final key = DateTime(day.year, day.month, day.day);
+                    final dayBookings = markedDays[key] ?? const [];
+                    final hasBooking = dayBookings.isNotEmpty;
+                    final hasPriority =
+                        dayBookings.any((b) => b['status'] == 'accepted');
+                    final isSelected = selectedKey == key;
+
+                    return _CalendarDayCell(
+                      day: day,
+                      isCurrentMonth: isCurrentMonth,
+                      hasBooking: hasBooking,
+                      hasPriority: hasPriority,
+                      isSelected: isSelected,
+                      count: dayBookings.length,
+                      onTap: hasBooking
+                          ? () => setState(() => _selectedCalendarDate = key)
+                          : null,
+                    );
+                  },
+                ),
+              ],
             ),
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         if (bookings.isEmpty)
-          _buildEmptyBox('Aucun rendez-vous à prioriser')
+          _buildEmptyBox('Aucun rendez-vous planifié')
         else if (selectedBookings.isEmpty)
-          _buildEmptyBox('Touchez une date marquée pour voir les rendez-vous')
+          _buildEmptyBox('Sélectionnez une date avec badge pour voir les rendez-vous')
         else
           ...selectedBookings.map(_buildCalendarAppointment),
       ],
@@ -1181,15 +1235,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       margin: const EdgeInsets.only(bottom: 12),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(
           color: (isPriority ? Colors.green : Colors.orange)
-              .withValues(alpha: 0.18),
+              .withValues(alpha: 0.15),
+          width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.05),
-            blurRadius: 12,
+            color: AppColors.navy.withValues(alpha: 0.03),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -1200,15 +1255,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: (isPriority ? Colors.green : Colors.orange)
-                    .withValues(alpha: 0.12),
+                    .withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
-                isPriority ? Icons.priority_high : Icons.schedule,
+                isPriority ? Icons.priority_high_rounded : Icons.schedule_rounded,
                 color: isPriority ? Colors.green : Colors.orange,
               ),
             ),
@@ -1225,6 +1280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           style: const TextStyle(
                             color: AppColors.navy,
                             fontWeight: FontWeight.w900,
+                            fontSize: 14.5,
                           ),
                         ),
                       ),
@@ -1239,6 +1295,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     style: const TextStyle(
                       color: AppColors.teal,
                       fontWeight: FontWeight.w800,
+                      fontSize: 13,
                     ),
                   ),
                   if ((booking['description'] ?? '')
@@ -1250,16 +1307,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       '${booking['description']}',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: AppColors.textGrey),
+                      style: const TextStyle(
+                        color: AppColors.textGrey,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ],
                   if (price != null) ...[
-                    const SizedBox(height: 6),
-                    Text(
-                      '${price.toStringAsFixed(0)} MAD',
-                      style: const TextStyle(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w700,
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: AppColors.beige.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '${price.toStringAsFixed(0)} MAD',
+                        style: const TextStyle(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
                       ),
                     ),
                   ],
@@ -1303,9 +1372,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final status = '${booking['status'] ?? 'pending'}';
     final price = _toDouble(booking['agreed_price']);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1313,12 +1393,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Row(
               children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppColors.teal.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.person_outline_rounded, color: AppColors.teal, size: 20),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     '${booking['client_name'] ?? 'Client'}',
                     style: const TextStyle(
                       color: AppColors.navy,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14.5,
                     ),
                   ),
                 ),
@@ -1326,20 +1417,33 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ],
             ),
             if ((booking['description'] ?? '').toString().isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               Text(
                 '${booking['description']}',
-                style: const TextStyle(color: AppColors.textGrey),
+                style: const TextStyle(
+                  color: AppColors.textGrey,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  height: 1.4,
+                ),
               ),
             ],
-            const SizedBox(height: 10),
-            Text(
-              price == null
-                  ? 'Prix non confirmé'
-                  : 'Prix confirmé: ${price.toStringAsFixed(0)} MAD',
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w700,
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.beige.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                price == null
+                    ? 'Prix non confirmé'
+                    : 'Montant: ${price.toStringAsFixed(0)} MAD',
+                style: const TextStyle(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 12.5,
+                ),
               ),
             ),
           ],
@@ -1355,10 +1459,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _SectionTitle(
-          icon: Icons.rate_review_outlined,
+          icon: Icons.rate_review_rounded,
           title: isOwnDashboard ? 'Derniers avis reçus' : 'Avis clients',
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (reviews.isEmpty)
           _buildEmptyBox('Aucun avis pour le moment')
         else
@@ -1370,9 +1474,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildReviewCard(dynamic item) {
     final review = item is Map ? item : const {};
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.05)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.03),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1381,25 +1496,53 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  review['client_name'] ?? 'Client',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.navy,
-                  ),
+                Row(
+                  children: [
+                    Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: AppColors.teal.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.rate_review_rounded, color: AppColors.teal, size: 16),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      review['client_name'] ?? 'Client',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        color: AppColors.navy,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
                 StarRatingWidget(
                   rating: _toDouble(review['rating']) ?? 0,
-                  size: 18,
+                  size: 16,
                 ),
               ],
             ),
             if (review['comment'] != null &&
                 review['comment'].toString().trim().isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Text(
-                review['comment'],
-                style: const TextStyle(color: Colors.grey),
+              const SizedBox(height: 10),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: AppColors.beige.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  review['comment'],
+                  style: const TextStyle(
+                    color: AppColors.textGrey,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
+                  ),
+                ),
               ),
             ],
           ],
@@ -1411,14 +1554,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget _buildEmptyBox(String text) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.04)),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(color: AppColors.textGrey),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, color: AppColors.teal, size: 22),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(
+                color: AppColors.textGrey,
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1441,7 +1597,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? artisan!.speciality
         : dashboardProfile['speciality'] ??
             ownProfile?.specialty ??
-            'Specialite non renseignee';
+            'Spécialité non renseignée';
     final description = artisan?.bio?.trim().isNotEmpty == true
         ? artisan!.bio!.trim()
         : dashboardProfile['bio']?.toString().trim().isNotEmpty == true
@@ -1482,14 +1638,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(
-            color: AppColors.navy.withValues(alpha: 0.10),
+            color: AppColors.navy.withValues(alpha: 0.08),
             blurRadius: 28,
-            offset: const Offset(0, 14),
+            offset: const Offset(0, 10),
           ),
         ],
+        border: Border.all(color: AppColors.navy.withValues(alpha: 0.03)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1526,8 +1683,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        AppColors.navy.withValues(alpha: 0.10),
-                        AppColors.navy.withValues(alpha: 0.82),
+                        AppColors.navy.withValues(alpha: 0.05),
+                        AppColors.navy.withValues(alpha: 0.75),
                       ],
                     ),
                   ),
@@ -1552,7 +1709,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           borderRadius: BorderRadius.circular(22),
                           border: Border.all(
                             color: AppColors.white,
-                            width: 3,
+                            width: 3.5,
                           ),
                           image: imageUrl == null
                               ? null
@@ -1584,7 +1741,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               fullName,
                               style: const TextStyle(
                                 color: AppColors.white,
-                                fontSize: 23,
+                                fontSize: 22,
                                 fontWeight: FontWeight.w900,
                               ),
                               maxLines: 2,
@@ -1594,8 +1751,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             Text(
                               specialty,
                               style: TextStyle(
-                                color: AppColors.white.withValues(alpha: 0.84),
+                                color: AppColors.white.withValues(alpha: 0.88),
                                 fontWeight: FontWeight.w800,
+                                fontSize: 13,
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -1610,7 +1768,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(18),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -1627,7 +1785,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _ProfileInfoTile(
-                        icon: Icons.reviews_outlined,
+                        icon: Icons.reviews_rounded,
                         label: 'Avis',
                         value: '$totalReviews',
                         color: AppColors.teal,
@@ -1636,7 +1794,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SizedBox(width: 10),
                     Expanded(
                       child: _ProfileInfoTile(
-                        icon: Icons.payments_outlined,
+                        icon: Icons.payments_rounded,
                         label: 'Tarif',
                         value: hourlyRate == null
                             ? '--'
@@ -1646,10 +1804,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 14),
+                const SizedBox(height: 16),
                 Row(
                   children: [
-                    StarRatingWidget(rating: averageRating, size: 19),
+                    StarRatingWidget(rating: averageRating, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
@@ -1658,7 +1816,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             : '$totalReviews avis clients',
                         style: const TextStyle(
                           color: AppColors.textGrey,
-                          fontWeight: FontWeight.w700,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -1668,6 +1827,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         style: const TextStyle(
                           color: AppColors.navy,
                           fontWeight: FontWeight.w900,
+                          fontSize: 14.5,
                         ),
                       ),
                   ],
@@ -1678,6 +1838,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   style: const TextStyle(
                     color: AppColors.textGrey,
                     height: 1.45,
+                    fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1690,22 +1851,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       icon: Icons.location_on_outlined,
                       label: city?.toString().trim().isNotEmpty == true
                           ? city.toString()
-                          : 'Ville non renseignee',
+                          : 'Ville non renseignée',
                     ),
                     if (phone?.toString().trim().isNotEmpty == true)
                       _ProfilePill(
-                        icon: Icons.call_outlined,
+                        icon: Icons.call_rounded,
                         label: phone.toString(),
                       ),
                     _ProfilePill(
-                      icon: Icons.verified_user_outlined,
+                      icon: Icons.verified_user_rounded,
                       label:
-                          isAvailable ? 'Pret a intervenir' : 'Non disponible',
+                          isAvailable ? 'Disponible pour intervention' : 'Non disponible',
                     ),
                   ],
                 ),
                 if (!isOwnDashboard) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
@@ -1721,49 +1882,60 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                         );
                       },
-                      icon: const Icon(Icons.calendar_month_outlined),
-                      label: const Text('Reserver cet artisan'),
+                      icon: const Icon(Icons.calendar_month_rounded),
+                      label: const Text('Réserver cet artisan'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.navy,
                         foregroundColor: AppColors.white,
                         elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 15),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         textStyle: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                          borderRadius: BorderRadius.circular(16),
                         ),
                       ),
                     ),
                   ),
                 ],
                 if (portfolioImages.length > 1) ...[
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 20),
                   const Text(
-                    'Travaux realises',
+                    'Réalisations',
                     style: TextStyle(
                       color: AppColors.navy,
                       fontWeight: FontWeight.w900,
-                      fontSize: 16,
+                      fontSize: 15.5,
                     ),
                   ),
                   const SizedBox(height: 10),
                   SizedBox(
-                    height: 92,
+                    height: 96,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       itemCount: portfolioImages.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(14),
-                          child: Image.network(
-                            portfolioImages[index],
-                            width: 116,
-                            height: 92,
-                            fit: BoxFit.cover,
+                        return Container(
+                          decoration: BoxDecoration(
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.05),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: Image.network(
+                              portfolioImages[index],
+                              width: 120,
+                              height: 96,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         );
                       },
@@ -1802,69 +1974,45 @@ class _DashboardSectionTab extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isSelected;
-  final bool isFirst;
-  final bool isLast;
   final VoidCallback onTap;
 
   const _DashboardSectionTab({
     required this.icon,
     required this.label,
     required this.isSelected,
-    required this.isFirst,
-    required this.isLast,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.only(
-      topLeft: Radius.circular(isFirst ? 18 : 0),
-      topRight: Radius.circular(isLast ? 18 : 0),
-    );
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: radius,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          height: 64,
-          decoration: BoxDecoration(
-            color: isSelected ? AppColors.teal : AppColors.white,
-            borderRadius: radius,
-            border: Border(
-              right: isLast
-                  ? BorderSide.none
-                  : BorderSide(
-                      color: AppColors.teal.withValues(alpha: 0.10),
-                    ),
-              bottom: BorderSide(
-                color: AppColors.teal.withValues(alpha: 0.10),
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeInOut,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.teal : Colors.transparent,
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? AppColors.white : AppColors.navy,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? AppColors.white : AppColors.navy,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
               ),
             ),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                icon,
-                color: isSelected ? AppColors.white : AppColors.navy,
-                size: 19,
-              ),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isSelected ? AppColors.white : AppColors.navy,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-            ],
-          ),
+          ],
         ),
       ),
     );
@@ -1885,24 +2033,24 @@ class _SummaryMetricTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.white.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
         border: Border.all(color: AppColors.white.withValues(alpha: 0.08)),
       ),
       child: Row(
         children: [
           Container(
-            width: 28,
-            height: 28,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: AppColors.white.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(10),
             ),
-            child: Icon(icon, color: AppColors.white, size: 16),
+            child: Icon(icon, color: AppColors.white, size: 17),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Expanded(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -1914,7 +2062,7 @@ class _SummaryMetricTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: AppColors.white.withValues(alpha: 0.64),
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -1925,7 +2073,7 @@ class _SummaryMetricTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: AppColors.white,
-                    fontSize: 12,
+                    fontSize: 13,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
@@ -1954,10 +2102,11 @@ class _ProfileInfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(14),
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.12)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2003,16 +2152,16 @@ class _ProfilePill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
       decoration: BoxDecoration(
-        color: AppColors.teal.withValues(alpha: 0.10),
+        color: AppColors.teal.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(color: AppColors.teal.withValues(alpha: 0.12)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: AppColors.teal, size: 15),
+          Icon(icon, color: AppColors.teal, size: 14),
           const SizedBox(width: 6),
           ConstrainedBox(
             constraints: BoxConstraints(
@@ -2131,20 +2280,21 @@ class _AvailabilityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isAvailable ? AppColors.lightBlue : Colors.orange;
+    final color = isAvailable ? AppColors.lightBlue : Colors.orangeAccent;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.22),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
       ),
       child: Text(
         isAvailable ? 'Disponible' : 'Indisponible',
         style: const TextStyle(
           color: AppColors.white,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );
@@ -2165,10 +2315,11 @@ class _WalletMetric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(10),
+        color: AppColors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -2178,9 +2329,9 @@ class _WalletMetric extends StatelessWidget {
           Text(
             label,
             style: TextStyle(
-              color: AppColors.white.withValues(alpha: 0.72),
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
+              color: AppColors.white.withValues(alpha: 0.65),
+              fontSize: 11.5,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
@@ -2189,6 +2340,7 @@ class _WalletMetric extends StatelessWidget {
             style: const TextStyle(
               color: AppColors.white,
               fontWeight: FontWeight.w900,
+              fontSize: 13,
             ),
           ),
         ],
@@ -2242,16 +2394,16 @@ class _CalendarDayCell extends StatelessWidget {
     final bgColor = isSelected
         ? AppColors.navy
         : hasPriority
-            ? Colors.green.withValues(alpha: 0.14)
+            ? Colors.green.withValues(alpha: 0.12)
             : hasBooking
-                ? AppColors.teal.withValues(alpha: 0.13)
+                ? AppColors.teal.withValues(alpha: 0.08)
                 : Colors.transparent;
     final borderColor = isSelected
         ? AppColors.navy
         : hasPriority
-            ? Colors.green
+            ? Colors.green.withValues(alpha: 0.3)
             : hasBooking
-                ? AppColors.teal
+                ? AppColors.teal.withValues(alpha: 0.2)
                 : Colors.grey.shade300;
     final textColor = isSelected
         ? AppColors.white
@@ -2261,12 +2413,13 @@ class _CalendarDayCell extends StatelessWidget {
 
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
+      borderRadius: BorderRadius.circular(12),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
           color: bgColor,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: borderColor),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: borderColor, width: 1),
         ),
         child: Stack(
           children: [
@@ -2276,6 +2429,7 @@ class _CalendarDayCell extends StatelessWidget {
                 style: TextStyle(
                   color: textColor,
                   fontWeight: FontWeight.w900,
+                  fontSize: 13,
                 ),
               ),
             ),
@@ -2284,25 +2438,23 @@ class _CalendarDayCell extends StatelessWidget {
                 right: 4,
                 bottom: 4,
                 child: Container(
-                  width: count > 1 ? 16 : 7,
-                  height: 7,
+                  width: count > 1 ? 14 : 6,
+                  height: count > 1 ? 14 : 6,
                   decoration: BoxDecoration(
                     color: isSelected
                         ? AppColors.white
                         : hasPriority
                             ? Colors.green
                             : AppColors.teal,
-                    borderRadius: BorderRadius.circular(999),
+                    shape: BoxShape.circle,
                   ),
                   child: count > 1
                       ? Center(
                           child: Text(
                             '$count',
                             style: TextStyle(
-                              color: isSelected
-                                  ? AppColors.navy
-                                  : AppColors.white,
-                              fontSize: 7,
+                              color: isSelected ? AppColors.navy : AppColors.white,
+                              fontSize: 8,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
@@ -2331,20 +2483,20 @@ class _SectionTitle extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 34,
-          height: 34,
+          width: 36,
+          height: 36,
           decoration: BoxDecoration(
-            color: AppColors.teal.withValues(alpha: 0.12),
+            color: AppColors.teal.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(10),
           ),
-          child: Icon(icon, color: AppColors.teal, size: 19),
+          child: Icon(icon, color: AppColors.teal, size: 18),
         ),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             title,
             style: const TextStyle(
-              fontSize: 18,
+              fontSize: 16,
               fontWeight: FontWeight.w900,
               color: AppColors.navy,
             ),
@@ -2375,8 +2527,8 @@ class _StatusBadge extends StatelessWidget {
         label,
         style: TextStyle(
           color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );

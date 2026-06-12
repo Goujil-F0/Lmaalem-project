@@ -16,15 +16,28 @@ const createBooking = async (clientId, artisanId, description, agreedPrice, book
 const getBookingsByUser = async (userId, role) => {
     let query = '';
     
-    // Si c'est un client, on cherche ses réservations
     if (role === 'client') {
-        query = `SELECT * FROM bookings WHERE client_id = $1 ORDER BY created_at DESC;`;
-    } 
-    // Si c'est un artisan, on cherche les siennes
-    else if (role === 'artisan') {
-        query = `SELECT * FROM bookings WHERE artisan_id = $1 ORDER BY created_at DESC;`;
-    } else {
-        throw new Error("Rôle invalide");
+        // On récupère les infos de l'artisan (table users 'a')
+        query = `
+            SELECT b.*, 
+                   a.full_name AS other_party_name,
+                   (SELECT COUNT(*) FROM messages m WHERE m.booking_id = b.id AND m.sender_id != $1 AND m.is_read = FALSE) AS unread_count
+            FROM bookings b 
+            JOIN users a ON b.artisan_id = a.id
+            WHERE b.client_id = $1 
+            ORDER BY b.created_at DESC;
+        `;
+    } else if (role === 'artisan') {
+        // On récupère les infos du client (table users 'c')
+        query = `
+            SELECT b.*, 
+                   c.full_name AS other_party_name,
+                   (SELECT COUNT(*) FROM messages m WHERE m.booking_id = b.id AND m.sender_id != $1 AND m.is_read = FALSE) AS unread_count
+            FROM bookings b 
+            JOIN users c ON b.client_id = c.id
+            WHERE b.artisan_id = $1 
+            ORDER BY b.created_at DESC;
+        `;
     }
 
     const { rows } = await pool.query(query, [userId]);

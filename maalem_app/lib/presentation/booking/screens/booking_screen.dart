@@ -101,7 +101,12 @@ class _BookingScreenState extends State<BookingScreen> {
       );
 
       // On retourne à la page principale pour voir le suivi
-      Navigator.pop(context);
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const HistoryScreen(),
+        ),
+      );
     } else {
       print("⚠️ Le backend a refusé la réservation !");
       ScaffoldMessenger.of(context).showSnackBar(

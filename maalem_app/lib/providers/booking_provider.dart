@@ -53,6 +53,8 @@ class BookingProvider with ChangeNotifier {
             status: newStatus,
             description: oldBooking.description,
             agreedPrice: oldBooking.agreedPrice,
+            unreadCount: oldBooking.unreadCount,
+            otherPartyName: oldBooking.otherPartyName,
           );
           notifyListeners(); // 🔄 Met à jour l'écran instantanément
         }

@@ -13,4 +13,12 @@ const getChatHistory = async (req, res) => {
     }
 };
 
-module.exports = { getChatHistory };
+const markMessagesRead = async (req, res) => {
+    try {
+        await MessageModel.markAsRead(req.params.bookingId, req.params.userId);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        res.status(500).json({ success: false });
+    }
+};
+module.exports = { getChatHistory, markMessagesRead }; // Export mis à jour

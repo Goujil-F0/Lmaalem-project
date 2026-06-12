@@ -1,16 +1,13 @@
 // lib/presentation/booking/screens/history_screen.dart
 
 import 'package:flutter/material.dart';
+import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
-<<<<<<< HEAD
-import '../../search/screens/map_screen.dart';
-=======
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
 import 'chat_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 
@@ -296,9 +293,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
       statusColor = Colors.green;
       statusIcon = Icons.check_circle;
     } else if (booking.status == 'completed' || booking.status == 'paid_cash') {
-      statusText = booking.status == 'paid_cash'
-          ? 'Payé en espèces'
-          : 'Projet terminé';
+      statusText =
+          booking.status == 'paid_cash' ? 'Payé en espèces' : 'Projet terminé';
       statusColor = Colors.blue;
       statusIcon = booking.status == 'paid_cash'
           ? Icons.qr_code_scanner
@@ -395,23 +391,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return GestureDetector(
       onTap: () {
-<<<<<<< HEAD
-        final currentUserId = context.read<AuthProvider>().user?.id;
-        if (booking.id == null || currentUserId == null) return;
-
-        // Navigation fluide vers le chat au clic sur la carte
-=======
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
-<<<<<<< HEAD
-              currentUserId: currentUserId,
-=======
               currentUserId: authProvider.user!.id,
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
             ),
           ),
         );
@@ -487,22 +472,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       }
                       // Action : Payer
                       if (value == 'pay_cash') {
-<<<<<<< HEAD
-                        final messenger = ScaffoldMessenger.of(context);
-                        // 1. Appel du Provider pour passer au statut "completed"
-                        await Provider.of<BookingProvider>(context,
-=======
                         final ok = await Provider.of<BookingProvider>(context,
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'paid_cash');
 
                         if (!mounted) return;
-<<<<<<< HEAD
-
-                        // 2. Affichage d'un petit message de succès en bas de l'écran
-                        messenger.showSnackBar(
-=======
                         if (!ok) {
                           final error = Provider.of<BookingProvider>(context,
                                   listen: false)
@@ -516,10 +490,9 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           return;
                         }
                         ScaffoldMessenger.of(context).showSnackBar(
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
                           const SnackBar(
-                            content:
-                                Text("Paiement cash confirmé. Commission déduite du wallet."),
+                            content: Text(
+                                "Paiement cash confirmé. Commission déduite du wallet."),
                             backgroundColor: Colors.green,
                           ),
                         );

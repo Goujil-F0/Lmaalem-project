@@ -54,45 +54,13 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
   void _submitBooking() async {
-<<<<<<< HEAD
-    // 1. On récupère le VRAI ID grâce au provider
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
-
-    // 2. Vérifications de sécurité
-    if (myUserId <= 0 || widget.artisanId <= 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Session ou artisan invalide. Reconnectez-vous.'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
-    if (myUserId == widget.artisanId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vous ne pouvez pas reserver votre propre profil.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    // 3. Vérification du formulaire
-=======
     // 1. On vérifie que les champs sont remplis
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     if (_selectedDate == null) {
-<<<<<<< HEAD
-=======
       print("❌ Erreur : La date n'a pas été sélectionnée.");
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Veuillez choisir une date.'),
@@ -102,13 +70,25 @@ class _BookingScreenState extends State<BookingScreen> {
       return;
     }
 
+    // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
+    final int? userId = Provider.of<AuthProvider>(context, listen: false).user?.id;
+    if (userId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Utilisateur non connecté. Veuillez vous reconnecter.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     print(
-        "✅ Formulaire valide ! Préparation de l'envoi pour le client ID : $myUserId");
+        "✅ Formulaire valide ! Préparation de l'envoi pour le client ID : $userId");
 
     // 4. On appelle le Provider
     final success =
         await Provider.of<BookingProvider>(context, listen: false).addBooking(
-      myUserId,
+      userId,
       widget.artisanId,
       _descriptionController.text,
       widget.hourlyRate,
@@ -148,7 +128,6 @@ class _BookingScreenState extends State<BookingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 4. RÉCUPÉRATION DU VRAI USER ID VIA L'AUTHPROVIDER
     const Color primaryDarkBlue = Color(0xFF0C2C55);
     const Color primaryTeal = Color(0xFF296374);
     const Color bgColor = Color(0xFFF1F3E1);

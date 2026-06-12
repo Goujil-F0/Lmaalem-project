@@ -3,10 +3,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/booking_model.dart';
-<<<<<<< HEAD
-=======
-import '../../core/constants/api_endpoints.dart';
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
 import 'api_client.dart';
 
 class BookingService {
@@ -75,28 +71,8 @@ class BookingService {
         }),
       );
 
-<<<<<<< HEAD
-      if (response.statusCode == 201) {
-        return true; // 201 = Created
-      }
-
-      String message = 'Erreur serveur: ${response.statusCode}';
-      try {
-        final body = json.decode(response.body);
-        if (body is Map && body['message'] != null) {
-          message = body['message'].toString();
-        }
-      } catch (_) {
-        if (response.body.trim().isNotEmpty) {
-          message = response.body.trim();
-        }
-      }
-
-      throw Exception(message);
-=======
       if (response.statusCode == 201) return true;
       throw Exception(_errorMessage(response));
->>>>>>> origin/feature/wissal-avis-dashboard-reclamations
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la création de la réservation: $e');

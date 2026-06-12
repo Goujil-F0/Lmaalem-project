@@ -580,6 +580,65 @@ class _HistoryScreenState extends State<HistoryScreen> {
               ),
             ],
           ),
+          if (!isClient && booking.status == 'pending') ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => _acceptBookingWithWalletCheck(booking),
+                      icon: const Icon(Icons.check, color: Colors.white),
+                      label: const Text('Accepter',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        final provider = Provider.of<BookingProvider>(
+                            context,
+                            listen: false);
+                        final ok = await provider.changeBookingStatus(booking.id!, 'rejected');
+                        if (!mounted) return;
+                        if (ok) {
+                          _showSuccess("Réservation refusée.");
+                        } else {
+                          _showError(provider.errorMessage);
+                        }
+                      },
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      label: const Text('Refuser',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

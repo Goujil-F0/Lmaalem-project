@@ -35,7 +35,8 @@ class BookingService {
 
   // 2. Mettre à jour le statut d'une réservation (Accepter/Refuser)
   Future<bool> updateBookingStatus(int bookingId, String newStatus) async {
-    final url = Uri.parse('${ApiClient.baseUrl}/api/bookings/$bookingId/status');
+    final url =
+        Uri.parse('${ApiClient.baseUrl}/api/bookings/$bookingId/status');
 
     try {
       final response = await http.patch(

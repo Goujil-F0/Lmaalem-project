@@ -905,8 +905,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ownProfile?.isAvailable ??
         true;
     final imageSource = isOwnDashboard
-        ? authUser?.photoUrl ?? dashboardProfile['profile_image'] ?? artisan?.profileImage
-        : artisan?.profileImage ?? dashboardProfile['profile_image'] ?? authUser?.photoUrl;
+        ? authUser?.photoUrl ??
+            dashboardProfile['profile_image'] ??
+            artisan?.profileImage
+        : artisan?.profileImage ??
+            dashboardProfile['profile_image'] ??
+            authUser?.photoUrl;
     final portfolioImages = (artisan?.portfolioImages.isNotEmpty == true
             ? artisan!.portfolioImages
             : _toStringList(dashboardProfile['portfolio_images']).isNotEmpty
@@ -1290,9 +1294,8 @@ class _CalendarDayCell extends StatelessWidget {
                           child: Text(
                             '$count',
                             style: TextStyle(
-                              color: isSelected
-                                  ? AppColors.navy
-                                  : AppColors.white,
+                              color:
+                                  isSelected ? AppColors.navy : AppColors.white,
                               fontSize: 7,
                               fontWeight: FontWeight.w900,
                             ),

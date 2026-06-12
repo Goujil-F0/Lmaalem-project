@@ -271,9 +271,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final userRole =
         authProvider.user?.role ?? 'client'; // 'client' ou 'artisan'
-    final personName = userRole == 'artisan'
-        ? booking.clientName
-        : booking.artisanName;
+    final personName =
+        userRole == 'artisan' ? booking.clientName : booking.artisanName;
     final cardTitle = personName != null && personName.trim().isNotEmpty
         ? personName.trim()
         : 'Service #${booking.id}';

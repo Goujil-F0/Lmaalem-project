@@ -143,10 +143,9 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                   children: [
                     // Specialty Filter
                     DropdownButtonFormField<String>(
-                      initialValue:
-                          provider.allSpecialties.contains(
-                            provider.selectedCategory,
-                          )
+                      initialValue: provider.allSpecialties.contains(
+                        provider.selectedCategory,
+                      )
                           ? provider.selectedCategory
                           : null,
                       isExpanded: true,
@@ -193,8 +192,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                     DropdownButtonFormField<String>(
                       initialValue:
                           provider.cities.contains(provider.selectedCity)
-                          ? provider.selectedCity
-                          : null,
+                              ? provider.selectedCity
+                              : null,
                       isExpanded: true,
                       decoration: InputDecoration(
                         hintText: 'Choisir une ville',
@@ -568,7 +567,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
       ),
     );
   }
-
 }
 
 class _ServiceCard extends StatelessWidget {
@@ -610,12 +608,11 @@ class _ServiceCard extends StatelessWidget {
     final displayIcon = _getIconForCategory(label);
 
     return GestureDetector(
-      onTap:
-          onTap ??
+      onTap: onTap ??
           () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const MapScreen()),
-          ),
+                context,
+                MaterialPageRoute(builder: (_) => const MapScreen()),
+              ),
       child: Container(
         decoration: BoxDecoration(
           color: AppColors.white,

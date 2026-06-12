@@ -10,7 +10,6 @@ import '../../../data/services/dashboard_service.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
 import 'chat_screen.dart';
-import 'package:maalem_app/presentation/main_shell.dart';
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});
@@ -73,14 +72,25 @@ class _HistoryScreenState extends State<HistoryScreen> {
             children: [
               const SizedBox(height: 20),
 
-              // 1. Titre "Mon suivi"
-              const Text(
-                'Mon suivi',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  color: primaryDarkBlue,
-                ),
+              // 1. Titre "Mon suivi" (+ bouton de retour/sortie si standalone)
+              Row(
+                children: [
+                  if (Navigator.canPop(context)) ...[
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: primaryDarkBlue, size: 28),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  const Text(
+                    'Mon suivi',
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: primaryDarkBlue,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 20),
 

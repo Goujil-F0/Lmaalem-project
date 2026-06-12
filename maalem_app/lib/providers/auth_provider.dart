@@ -85,6 +85,10 @@ class AuthProvider with ChangeNotifier {
 
   Future<Map<String, dynamic>> register(Map<String, dynamic> userData) async {
     _isLoading = true;
+    _token = null;
+    _user = null;
+    _pendingCinToken = null;
+    await StorageHelper.clearToken();
     notifyListeners();
 
     try {

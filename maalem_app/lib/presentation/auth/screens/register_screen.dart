@@ -118,13 +118,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    _showSnackBar('Inscription reussie. Connectez-vous maintenant.');
+    _showSnackBar('Inscription reussie. Connectez-vous maintenant.', isError: false);
     _openLogin();
-  }
+}
 
-  void _showSnackBar(String message) {
+  void _showSnackBar(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.redAccent),
+      SnackBar(
+        content: Text(message),
+        backgroundColor: isError ? Colors.redAccent : Colors.green,
+      ),
     );
   }
 

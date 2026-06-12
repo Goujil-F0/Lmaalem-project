@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
+import '../../../data/services/dashboard_service.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
 import 'chat_screen.dart';
@@ -439,28 +440,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     onSelected: (value) async {
                       // --- NOUVELLES ACTIONS ARTISAN ---
                       if (value == 'accept_booking') {
-                        final ok = await Provider.of<BookingProvider>(context,
-                                listen: false)
-                            .changeBookingStatus(booking.id!, 'accepted');
-                        if (!mounted) return;
-                        if (!ok) {
-                          final error = Provider.of<BookingProvider>(context,
-                                  listen: false)
-                              .errorMessage;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(error),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text(
-                                  "Réservation acceptée ! L'artisan est en route ✅"),
-                              backgroundColor: Colors.green),
-                        );
+                        await _acceptBookingWithWalletCheck(booking);
                       } else if (value == 'reject_booking') {
                         final ok = await Provider.of<BookingProvider>(context,
                                 listen: false)
@@ -600,6 +580,202 @@ class _HistoryScreenState extends State<HistoryScreen> {
           bookingId: booking.id!,
           artisanId: booking.artisanId,
         ),
+      ),
+    );
+  }
+
+  Future<void> _acceptBookingWithWalletCheck(Booking booking) async {
+    final provider = Provider.of<BookingProvider>(context, listen: false);
+    final ok = await provider.changeBookingStatus(booking.id!, 'accepted');
+
+    if (!mounted) return;
+    if (ok) {
+      _showSuccess("Réservation acceptée ! L'artisan est en route.");
+      return;
+    }
+
+    final error = provider.errorMessage;
+    if (!_isWalletError(error)) {
+      _showError(error);
+      return;
+    }
+
+    final recharged = await _showWalletRechargeDialog(
+      artisanId: booking.artisanId,
+      message: error,
+    );
+
+    if (!mounted || recharged != true) return;
+
+    final retryOk = await provider.changeBookingStatus(booking.id!, 'accepted');
+    if (!mounted) return;
+
+    if (retryOk) {
+      _showSuccess('Wallet rechargé. Réservation acceptée !');
+    } else {
+      _showError(provider.errorMessage);
+    }
+  }
+
+  bool _isWalletError(String message) {
+    final normalized = message.toLowerCase();
+    return normalized.contains('wallet') &&
+        (normalized.contains('insuffisant') ||
+            normalized.contains('recharge'));
+  }
+
+  Future<bool?> _showWalletRechargeDialog({
+    required int artisanId,
+    required String message,
+  }) async {
+    final amountController = TextEditingController(text: '100');
+    final token = Provider.of<AuthProvider>(context, listen: false).token;
+
+    if (token == null || token.isEmpty) {
+      _showError('Utilisateur non connecté.');
+      amountController.dispose();
+      return false;
+    }
+
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        var isRecharging = false;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            Future<void> recharge(double amount) async {
+              if (amount <= 0) {
+                _showError('Montant de recharge invalide.');
+                return;
+              }
+
+              setDialogState(() => isRecharging = true);
+
+              try {
+                final service = DashboardService(token: token);
+                await service.rechargeWallet(artisanId, amount);
+
+                Navigator.of(dialogContext).pop(true);
+              } catch (e) {
+                if (!mounted) return;
+                _showError(e.toString().replaceFirst('Exception: ', ''));
+                setDialogState(() => isRecharging = false);
+              }
+            }
+
+            return AlertDialog(
+              title: const Text('Recharge wallet requise'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(message),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: amountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Montant',
+                        suffixText: 'MAD',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      spacing: 8,
+                      children: [
+                        ChoiceChip(
+                          label: const Text('50 MAD'),
+                          selected: amountController.text == '50',
+                          onSelected: isRecharging
+                              ? null
+                              : (_) {
+                                  setDialogState(() {
+                                    amountController.text = '50';
+                                  });
+                                },
+                        ),
+                        ChoiceChip(
+                          label: const Text('100 MAD'),
+                          selected: amountController.text == '100',
+                          onSelected: isRecharging
+                              ? null
+                              : (_) {
+                                  setDialogState(() {
+                                    amountController.text = '100';
+                                  });
+                                },
+                        ),
+                        ChoiceChip(
+                          label: const Text('200 MAD'),
+                          selected: amountController.text == '200',
+                          onSelected: isRecharging
+                              ? null
+                              : (_) {
+                                  setDialogState(() {
+                                    amountController.text = '200';
+                                  });
+                                },
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: isRecharging
+                      ? null
+                      : () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Annuler'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: isRecharging
+                      ? null
+                      : () {
+                          final amount =
+                              double.tryParse(amountController.text.trim()) ??
+                                  0;
+                          recharge(amount);
+                        },
+                  icon: isRecharging
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.account_balance_wallet_outlined),
+                  label: Text(
+                      isRecharging ? 'Recharge...' : 'Recharger et accepter'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+
+    amountController.dispose();
+    return result;
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
       ),
     );
   }

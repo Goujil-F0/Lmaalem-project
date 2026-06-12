@@ -38,7 +38,8 @@ class User {
       neighborhood: json['neighborhood'],
       latitude: _toDouble(json['latitude']),
       longitude: _toDouble(json['longitude']),
-      photoUrl: json['photo_url'] ?? json['photoUrl'],
+      photoUrl:
+          json['photo_url'] ?? json['photoUrl'] ?? json['profile_photo_url'],
       profile: json['profile'] != null
           ? ArtisanProfile.fromJson(json['profile'])
           : null,

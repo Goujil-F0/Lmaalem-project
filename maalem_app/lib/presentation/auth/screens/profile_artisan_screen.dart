@@ -86,6 +86,21 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
     }
   }
 
+  Future<void> _replacePortfolioImage(int index) async {
+    final auth = context.read<AuthProvider>();
+    final image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image == null) return;
+
+    final result = await auth.replacePortfolioImage(index, image);
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      _showSuccess(_successMessage('Image portfolio mise a jour', result));
+    } else {
+      _showError(result['error'] ?? 'Erreur modification portfolio');
+    }
+  }
+
   Future<void> _openSupport() async {
     final uri = context.read<AuthProvider>().contactSupportUri();
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
@@ -300,6 +315,7 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   images: profile?.portfolioImages ?? const [],
                   isUploading: auth.isUploadingPortfolio,
                   onAdd: _pickPortfolioImage,
+                  onReplace: _replacePortfolioImage,
                 ),
                 const SizedBox(height: 26),
                 _BioSection(
@@ -823,11 +839,13 @@ class _PortfolioSection extends StatelessWidget {
   final List<String> images;
   final bool isUploading;
   final VoidCallback onAdd;
+  final ValueChanged<int> onReplace;
 
   const _PortfolioSection({
     required this.images,
     required this.isUploading,
     required this.onAdd,
+    required this.onReplace,
   });
 
   @override
@@ -878,9 +896,14 @@ class _PortfolioSection extends StatelessWidget {
           mainAxisSpacing: 12,
           children: images.isEmpty
               ? List.generate(4, (_) => const _PortfolioPlaceholder())
-              : images
-                  .map((image) => _PortfolioImageTile(image: image))
-                  .toList(),
+              : List.generate(
+                  images.length,
+                  (index) => _PortfolioImageTile(
+                    image: images[index],
+                    isLoading: isUploading,
+                    onReplace: () => onReplace(index),
+                  ),
+                ),
         ),
       ],
     );
@@ -889,8 +912,14 @@ class _PortfolioSection extends StatelessWidget {
 
 class _PortfolioImageTile extends StatelessWidget {
   final String image;
+  final bool isLoading;
+  final VoidCallback onReplace;
 
-  const _PortfolioImageTile({required this.image});
+  const _PortfolioImageTile({
+    required this.image,
+    required this.isLoading,
+    required this.onReplace,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -909,7 +938,28 @@ class _PortfolioImageTile extends StatelessWidget {
         ),
         child: imageProvider == null
             ? const _PortfolioPlaceholder()
-            : const SizedBox.expand(),
+            : Stack(
+                children: [
+                  const SizedBox.expand(),
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Material(
+                      color: Colors.black.withValues(alpha: 0.48),
+                      borderRadius: BorderRadius.circular(14),
+                      child: IconButton(
+                        tooltip: 'Modifier',
+                        onPressed: isLoading ? null : onReplace,
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.white,
+                          size: 18,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

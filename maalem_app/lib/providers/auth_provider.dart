@@ -312,13 +312,16 @@ class AuthProvider with ChangeNotifier {
         final mockPhotoUrl =
             result['success'] == true ? null : await _imageToDataUrl(image);
         final responseUser = _userFromResponse(result);
-        final resolvedPhotoUrl =
-            photoUrl ?? mockPhotoUrl ?? await _imageToDataUrl(image);
+        final resolvedPhotoUrl = _versionedImageUrl(
+          photoUrl ?? mockPhotoUrl ?? await _imageToDataUrl(image),
+        );
         _user = responseUser != null
             ? _mergeProfileUpdate(
                 _user!,
                 responseUser.copyWith(
-                  photoUrl: responseUser.photoUrl ?? resolvedPhotoUrl,
+                  photoUrl: _versionedImageUrl(
+                    responseUser.photoUrl ?? resolvedPhotoUrl,
+                  ),
                 ),
               )
             : _user!.copyWith(photoUrl: resolvedPhotoUrl);
@@ -364,6 +367,56 @@ class AuthProvider with ChangeNotifier {
                 imageUrl,
               ],
             ),
+          );
+          await _persistUser();
+          await _persistMockUser();
+        }
+        if (result['success'] != true) return _mockedSuccess();
+      }
+
+      return result;
+    } finally {
+      _isUploadingPortfolio = false;
+      notifyListeners();
+    }
+  }
+
+  Future<Map<String, dynamic>> replacePortfolioImage(
+    int index,
+    XFile image,
+  ) async {
+    if (_token == null) {
+      return {'success': false, 'error': 'Session expiree'};
+    }
+
+    final currentImages = _user?.profile?.portfolioImages ?? const [];
+    if (index < 0 || index >= currentImages.length) {
+      return {'success': false, 'error': 'Image portfolio introuvable'};
+    }
+
+    _isUploadingPortfolio = true;
+    notifyListeners();
+
+    try {
+      final result = await _authService.replacePortfolioImage(
+        token: _token!,
+        index: index,
+        image: image,
+      );
+
+      if (result['success'] == true || _shouldMockProfileSuccess(result)) {
+        final updatedUser = _userFromResponse(result);
+        if (updatedUser != null) {
+          _user =
+              _user == null ? updatedUser : _mergeProfileUpdate(_user!, updatedUser);
+          await _persistUser();
+          await _persistMockUser();
+        } else if (_user != null) {
+          final imageUrl = await _imageToDataUrl(image);
+          final updatedImages = List<String>.from(currentImages);
+          updatedImages[index] = imageUrl;
+          _user = _user!.copyWith(
+            profile: _updatedArtisanProfile(portfolioImages: updatedImages),
           );
           await _persistUser();
           await _persistMockUser();
@@ -542,5 +595,11 @@ class AuthProvider with ChangeNotifier {
             ? 'image/webp'
             : 'image/jpeg';
     return 'data:$mimeType;base64,${base64Encode(bytes)}';
+  }
+
+  String _versionedImageUrl(String value) {
+    if (value.startsWith('data:image')) return value;
+    final separator = value.contains('?') ? '&' : '?';
+    return '$value${separator}v=${DateTime.now().millisecondsSinceEpoch}';
   }
 }

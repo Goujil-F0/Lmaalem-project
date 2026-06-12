@@ -264,6 +264,37 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> replacePortfolioImage({
+    required String token,
+    required int index,
+    required XFile image,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'PATCH',
+        Uri.parse('$baseUrl/auth/artisan/portfolio/$index'),
+      );
+      request.headers['Authorization'] = 'Bearer $token';
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'portfolio_image',
+          await image.readAsBytes(),
+          filename: image.name,
+          contentType: _contentTypeFor(image.name),
+        ),
+      );
+
+      final response = await http.Response.fromStream(await request.send());
+      return _handleResponse(
+        response,
+        successStatuses: const [200],
+        fallbackError: 'Erreur lors de la modification du portfolio',
+      );
+    } catch (e) {
+      return _networkError('modification portfolio', e);
+    }
+  }
+
   Map<String, dynamic> _handleResponse(
     http.Response response, {
     required List<int> successStatuses,

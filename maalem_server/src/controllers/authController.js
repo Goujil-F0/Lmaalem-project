@@ -339,6 +339,46 @@ const uploadPortfolioHandler = async (req, res) => {
   }
 };
 
+const replacePortfolioImageHandler = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image portfolio obligatoire' });
+    }
+
+    const imageIndex = Number.parseInt(req.params.index, 10);
+    if (!Number.isInteger(imageIndex) || imageIndex < 0) {
+      return res.status(400).json({ error: 'Index portfolio invalide' });
+    }
+
+    const imageUrl = `/uploads/portfolio/${req.user.id}/${req.file.filename}`;
+    const postgresIndex = imageIndex + 1;
+
+    const result = await db.query(
+      `UPDATE artisan_profiles
+       SET portfolio_images[$2] = $3
+       WHERE user_id = $1
+         AND portfolio_images IS NOT NULL
+         AND array_length(portfolio_images, 1) >= $2
+       RETURNING portfolio_images`,
+      [req.user.id, postgresIndex, imageUrl]
+    );
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'Image portfolio introuvable' });
+    }
+
+    const user = await getUserWithProfile(req.user.id);
+    res.status(200).json({
+      message: 'Image portfolio mise a jour',
+      image_url: imageUrl,
+      user,
+    });
+  } catch (error) {
+    console.error('Replace portfolio image error:', error.message);
+    res.status(500).json({ error: 'Erreur serveur' });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -348,5 +388,6 @@ module.exports = {
   updateArtisanProfile,
   uploadProfilePhotoHandler,
   uploadPortfolioHandler,
+  replacePortfolioImageHandler,
   getUserWithProfile,
 };

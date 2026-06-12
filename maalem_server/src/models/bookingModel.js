@@ -68,6 +68,60 @@ const ensureWallet = async (client, artisanId) => {
     return rows[0];
 };
 
+const calculateCommission = (booking) => {
+    const agreedPrice = parseFloat(booking.agreed_price || 0);
+    const commissionPct = parseFloat(booking.commission_pct || 10);
+    return Math.round((agreedPrice * commissionPct / 100) * 100) / 100;
+};
+
+const hasCommissionTransaction = async (client, walletId, bookingId) => {
+    const { rows } = await client.query(
+        `SELECT id
+         FROM transactions
+         WHERE wallet_id = $1
+           AND type = 'commission'
+           AND description LIKE $2
+         LIMIT 1`,
+        [walletId, `%reservation #${bookingId}%`]
+    );
+    return rows.length > 0;
+};
+
+const debitBookingCommission = async (client, wallet, booking, reason) => {
+    const alreadyDebited = await hasCommissionTransaction(client, wallet.id, booking.id);
+    if (alreadyDebited) return 0;
+
+    const commission = calculateCommission(booking);
+    const balance = parseFloat(wallet.balance || 0);
+
+    if (commission <= 0) return 0;
+
+    if (balance < commission) {
+        const error = new Error(`Solde wallet insuffisant. Commission requise: ${commission.toFixed(2)} MAD. Solde actuel: ${balance.toFixed(2)} MAD.`);
+        error.statusCode = 409;
+        throw error;
+    }
+
+    await client.query(
+        `UPDATE wallets
+         SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [commission, wallet.id]
+    );
+
+    await client.query(
+        `INSERT INTO transactions (wallet_id, amount, type, description)
+         VALUES ($1, $2, 'commission', $3)`,
+        [
+            wallet.id,
+            -commission,
+            `${reason} reservation #${booking.id}`
+        ]
+    );
+
+    return commission;
+};
+
 const updateBookingStatus = async (bookingId, newStatus) => {
     const client = await pool.connect();
 
@@ -87,13 +141,7 @@ const updateBookingStatus = async (bookingId, newStatus) => {
 
         if (newStatus === 'accepted') {
             const wallet = await ensureWallet(client, booking.artisan_id);
-            const balance = parseFloat(wallet.balance || 0);
-
-            if (balance <= 0) {
-                const error = new Error('Solde wallet insuffisant. Rechargez votre compte pour accepter de nouvelles missions.');
-                error.statusCode = 409;
-                throw error;
-            }
+            await debitBookingCommission(client, wallet, booking, 'Commission acceptation');
         }
 
         if (newStatus === 'paid_cash') {
@@ -111,33 +159,7 @@ const updateBookingStatus = async (bookingId, newStatus) => {
             }
 
             const wallet = await ensureWallet(client, booking.artisan_id);
-            const agreedPrice = parseFloat(booking.agreed_price || 0);
-            const commissionPct = parseFloat(booking.commission_pct || 10);
-            const commission = Math.round((agreedPrice * commissionPct / 100) * 100) / 100;
-            const balance = parseFloat(wallet.balance || 0);
-
-            if (balance < commission) {
-                const error = new Error(`Solde wallet insuffisant pour déclarer le paiement cash. Commission requise: ${commission.toFixed(2)} MAD. Solde actuel: ${balance.toFixed(2)} MAD.`);
-                error.statusCode = 409;
-                throw error;
-            }
-
-            await client.query(
-                `UPDATE wallets
-                 SET balance = balance - $1, updated_at = CURRENT_TIMESTAMP
-                 WHERE id = $2`,
-                [commission, wallet.id]
-            );
-
-            await client.query(
-                `INSERT INTO transactions (wallet_id, amount, type, description)
-                 VALUES ($1, $2, 'commission', $3)`,
-                [
-                    wallet.id,
-                    -commission,
-                    `Commission paiement cash reservation #${booking.id}`
-                ]
-            );
+            await debitBookingCommission(client, wallet, booking, 'Commission paiement cash');
         }
 
         const { rows } = await client.query(

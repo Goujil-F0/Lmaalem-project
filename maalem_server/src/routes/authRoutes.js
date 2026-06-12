@@ -14,6 +14,7 @@ router.post('/login', authController.login);
 router.post('/upload-cin', verifyToken, verifyArtisan, uploadCin, authController.uploadCinHandler);
 router.post('/profile/photo', verifyToken, uploadProfilePhoto, authController.uploadProfilePhotoHandler);
 router.post('/artisan/portfolio', verifyToken, verifyArtisan, uploadPortfolioImage, authController.uploadPortfolioHandler);
+router.patch('/artisan/portfolio/:index', verifyToken, verifyArtisan, uploadPortfolioImage, authController.replacePortfolioImageHandler);
 router.patch('/availability', verifyToken, verifyArtisan, authController.updateAvailability);
 router.patch('/profile', verifyToken, authController.updateClientProfile);
 router.patch('/artisan/profile', verifyToken, verifyArtisan, authController.updateArtisanProfile);

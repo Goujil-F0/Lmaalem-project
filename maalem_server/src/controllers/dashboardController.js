@@ -18,19 +18,32 @@ const getArtisanDashboard = async (req, res) => {
         COUNT(*) FILTER (WHERE status = 'pending') as pending_bookings,
         COUNT(*) FILTER (WHERE status = 'accepted') as confirmed_bookings,
         COUNT(*) FILTER (WHERE status IN ('cancelled', 'rejected')) as cancelled_bookings,
-        COALESCE(SUM(agreed_price) FILTER (WHERE status = 'completed'), 0) as completed_revenue,
-        COALESCE(SUM(agreed_price) FILTER (WHERE status IN ('pending', 'accepted')), 0) as expected_revenue
+        COALESCE(SUM(agreed_price) FILTER (WHERE status IN ('completed', 'paid_cash')), 0) as completed_revenue,
+        COALESCE(SUM((agreed_price * commission_pct) / 100) FILTER (WHERE status IN ('completed', 'paid_cash')), 0) as paid_commission,
+        COALESCE(SUM((agreed_price * commission_pct) / 100) FILTER (WHERE status IN ('pending', 'accepted')), 0) as expected_commission
        FROM bookings
        WHERE artisan_id = $1`,
       [artisanId]
     );
 
     const walletQuery = await pool.query(
-      `SELECT balance
+      `SELECT id, balance
        FROM wallets
        WHERE user_id = $1`,
       [artisanId]
     );
+
+    const walletId = walletQuery.rows[0]?.id;
+    const transactionsQuery = walletId
+      ? await pool.query(
+          `SELECT amount, type, description, created_at
+           FROM transactions
+           WHERE wallet_id = $1
+           ORDER BY created_at DESC
+           LIMIT 5`,
+          [walletId]
+        )
+      : { rows: [] };
 
     const recentReviewsQuery = await pool.query(
       `SELECT r.*, u.full_name as client_name 
@@ -95,8 +108,11 @@ const getArtisanDashboard = async (req, res) => {
       cancelledBookings: parseInt(bookingStatsQuery.rows[0].cancelled_bookings || 0),
       wallet: {
         balance: parseFloat(walletQuery.rows[0]?.balance || 0),
-        received: parseFloat(bookingStatsQuery.rows[0].completed_revenue || 0),
-        expected: parseFloat(bookingStatsQuery.rows[0].expected_revenue || 0),
+        grossCash: parseFloat(bookingStatsQuery.rows[0].completed_revenue || 0),
+        commissionDebited: parseFloat(bookingStatsQuery.rows[0].paid_commission || 0),
+        expectedCommission: parseFloat(bookingStatsQuery.rows[0].expected_commission || 0),
+        canAcceptBookings: parseFloat(walletQuery.rows[0]?.balance || 0) > 0,
+        recentTransactions: transactionsQuery.rows,
       },
       recentBookings: recentBookingsQuery.rows,
       upcomingBookings: upcomingBookingsQuery.rows,
@@ -139,4 +155,49 @@ const getAdminDashboard = async (req, res) => {
   }
 };
 
-module.exports = { getArtisanDashboard, getAdminDashboard };
+const rechargeArtisanWallet = async (req, res) => {
+  try {
+    const artisanId = parseInt(req.params.id, 10);
+    const amount = parseFloat(req.body.amount);
+
+    if (!amount || amount <= 0) {
+      return res.status(400).json({ message: 'Montant de recharge invalide.' });
+    }
+
+    if (req.user.role !== 'admin' && req.user.id !== artisanId) {
+      return res.status(403).json({ message: 'Action non autorisée.' });
+    }
+
+    const walletQuery = await pool.query(
+      `INSERT INTO wallets (user_id, balance)
+       VALUES ($1, 0)
+       ON CONFLICT (user_id) DO UPDATE SET user_id = EXCLUDED.user_id
+       RETURNING id, balance`,
+      [artisanId]
+    );
+
+    const wallet = walletQuery.rows[0];
+    const updatedWallet = await pool.query(
+      `UPDATE wallets
+       SET balance = balance + $1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $2
+       RETURNING balance`,
+      [amount, wallet.id]
+    );
+
+    await pool.query(
+      `INSERT INTO transactions (wallet_id, amount, type, description)
+       VALUES ($1, $2, 'recharge', $3)`,
+      [wallet.id, amount, `Recharge wallet artisan #${artisanId}`]
+    );
+
+    res.status(200).json({
+      message: 'Wallet recharge avec succes.',
+      balance: parseFloat(updatedWallet.rows[0].balance || 0),
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Erreur serveur', error: error.message });
+  }
+};
+
+module.exports = { getArtisanDashboard, getAdminDashboard, rechargeArtisanWallet };

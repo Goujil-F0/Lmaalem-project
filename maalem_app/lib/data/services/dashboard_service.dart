@@ -32,4 +32,26 @@ class DashboardService {
       throw Exception('Erreur lors du chargement du dashboard admin');
     }
   }
+
+  Future<double> rechargeWallet(int artisanId, double amount) async {
+    final response = await http.post(
+      Uri.parse(
+        '${ApiClient.baseUrl}/api/dashboard/artisan/$artisanId/wallet/recharge',
+      ),
+      headers: ApiClient.getHeaders(token),
+      body: jsonEncode({'amount': amount}),
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return double.tryParse('${data['balance']}') ?? 0;
+    }
+
+    try {
+      final data = jsonDecode(response.body);
+      throw Exception(data['message'] ?? 'Erreur lors de la recharge');
+    } catch (_) {
+      throw Exception('Erreur lors de la recharge');
+    }
+  }
 }

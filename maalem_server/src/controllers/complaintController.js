@@ -22,7 +22,7 @@ const createComplaint = async (req, res) => {
       return res.status(404).json({ message: 'Réservation introuvable pour ce client et cet artisan.' });
     }
 
-    if (!['accepted', 'completed'].includes(booking.rows[0].status)) {
+    if (!['accepted', 'completed', 'paid_cash'].includes(booking.rows[0].status)) {
       return res.status(400).json({
         message: "Vous pouvez déposer une réclamation seulement après l'acceptation de l'artisan.",
       });

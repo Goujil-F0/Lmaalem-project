@@ -47,8 +47,7 @@ class BookingService {
       if (response.statusCode == 200) return true;
       throw Exception(_errorMessage(response));
     } catch (e) {
-      throw Exception(
-          'Erreur de connexion lors de la mise à jour du statut: $e');
+      throw Exception(e.toString().replaceFirst('Exception: ', ''));
     }
   }
 
@@ -71,23 +70,8 @@ class BookingService {
         }),
       );
 
-      if (response.statusCode == 201) {
-        return true; // 201 = Created
-      }
-
-      String message = 'Erreur serveur: ${response.statusCode}';
-      try {
-        final body = json.decode(response.body);
-        if (body is Map && body['message'] != null) {
-          message = body['message'].toString();
-        }
-      } catch (_) {
-        if (response.body.trim().isNotEmpty) {
-          message = response.body.trim();
-        }
-      }
-
-      throw Exception(message);
+      if (response.statusCode == 201) return true;
+      throw Exception(_errorMessage(response));
     } catch (e) {
       throw Exception(
           'Erreur de connexion lors de la création de la réservation: $e');

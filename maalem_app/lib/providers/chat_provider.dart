@@ -1,5 +1,3 @@
-// lib/providers/chat_provider.dart
-
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -10,6 +8,7 @@ import '../core/constants/api_endpoints.dart';
 class ChatProvider with ChangeNotifier {
   List<Message> _messages = [];
   bool _isLoading = false;
+  bool _isConnected = false;
   socket_io.Socket? _socket;
 
   List<Message> get messages => _messages;
@@ -23,7 +22,7 @@ class ChatProvider with ChangeNotifier {
     // On met à jour l'interface pour afficher le chargement
     Future.microtask(() => notifyListeners());
 
-    // A. On charge l'historique de la BDD via HTTP
+    // A. Charger l'historique via HTTP
     try {
       final url = Uri.parse('${ApiEndpoints.messages}/$bookingId');
       final response = await http.get(url);
@@ -32,30 +31,24 @@ class ChatProvider with ChangeNotifier {
         final decoded = json.decode(response.body);
         final List<dynamic> data = decoded['data'];
         _messages = data.map((m) => Message.fromJson(m)).toList();
-      } else {
-        print("⚠️ Erreur API Messages: ${response.statusCode}");
       }
     } catch (e) {
-      print("❌ Erreur de connexion au serveur pour l'historique: $e");
+      debugPrint("❌ Erreur historique messages: $e");
     } finally {
-      // --- CETTE PARTIE EST CRUCIALE ---
-      // Le bloc "finally" s'exécute TOUJOURS, même si le backend a planté.
-      // Ça garantit que l'écran ne restera jamais bloqué sur un chargement infini !
       _isLoading = false;
       notifyListeners();
     }
 
-    // B. On se connecte au Socket en temps réel (en arrière-plan)
-    // B. On se connecte au Socket en temps réel (en arrière-plan)
+    // B. Connexion Socket
     try {
-      // 1. On déconnecte l'ancien socket s'il existe
       if (_socket != null) {
-        _socket!.disconnect();
-        _socket!
-            .clearListeners(); // 🧹 LA LIGNE MAGIQUE QUI TUE LE BUG DE L'ÉCHO !
+        try {
+          _socket!.disconnect();
+        } catch (_) {}
+        _socket!.clearListeners();
+        _socket = null;
       }
 
-      // 2. On crée la nouvelle connexion
       _socket = socket_io.io(
           ApiEndpoints.socketUrl,
           socket_io.OptionBuilder()
@@ -63,39 +56,121 @@ class ChatProvider with ChangeNotifier {
               .enableAutoConnect()
               .build());
 
-      // 3. On remet NOS oreilles toutes neuves (une seule fois)
       _socket!.onConnect((_) {
-        print("🔌 Connecté au serveur Socket !");
+        _isConnected = true;
+        notifyListeners();
         _socket!.emit('join_chat', bookingId);
       });
 
+      _socket!.onDisconnect((_) {
+        _isConnected = false;
+        notifyListeners();
+      });
+
+      _socket!.onConnectError((_) {
+        _isConnected = false;
+        notifyListeners();
+      });
+
       _socket!.on('receive_message', (data) {
-        final newMessage = Message.fromJson(data);
-        _messages.add(newMessage);
-        notifyListeners(); // Met à jour l'écran
+        final serverMsg = Message.fromJson(data);
+        final existingIndex = _messages.indexWhere(
+          (m) =>
+              m.id < 0 &&
+              m.senderId == serverMsg.senderId &&
+              m.content == serverMsg.content &&
+              m.timestamp.isAfter(DateTime.now().subtract(
+                const Duration(seconds: 10),
+              )),
+        );
+        if (existingIndex >= 0) {
+          _messages[existingIndex] = serverMsg;
+        } else {
+          _messages.add(serverMsg);
+        }
+        notifyListeners();
       });
     } catch (e) {
-      print("Erreur d'initialisation du Socket: $e");
+      debugPrint("❌ Erreur initialisation Socket: $e");
     }
   }
 
-  // 2. Envoyer un message
   void sendMessage(int bookingId, int senderId, String content) {
     if (content.trim().isEmpty) return;
 
-    final data = {
-      'bookingId': bookingId,
-      'senderId': senderId,
-      'content': content.trim(),
-    };
+    final trimmed = content.trim();
 
-    // On l'envoie au serveur Node.js
-    _socket?.emit('send_message', data);
+    // Ajout optimiste : le message apparaît immédiatement
+    final localMessage = Message(
+      id: -DateTime.now().microsecondsSinceEpoch,
+      bookingId: bookingId,
+      senderId: senderId,
+      content: trimmed,
+      timestamp: DateTime.now(),
+    );
+    _messages.add(localMessage);
+    notifyListeners();
+
+    if (_socket != null && _isConnected) {
+      _socket!.emitWithAck('send_message', {
+        'bookingId': bookingId,
+        'senderId': senderId,
+        'content': trimmed,
+      }, ack: (ack) {
+        if (ack != null && ack['success'] == true) {
+          final serverMsg = Message.fromJson(ack['message']);
+          final idx = _messages.indexWhere((m) => m.id == localMessage.id);
+          if (idx >= 0) {
+            _messages[idx] = serverMsg;
+            notifyListeners();
+          }
+        } else {
+          _sendViaHttp(bookingId, senderId, trimmed, localMessage);
+        }
+      });
+    } else {
+      _sendViaHttp(bookingId, senderId, trimmed, localMessage);
+    }
   }
 
-  // 3. Déconnexion (quand on quitte l'écran)
+  Future<void> _sendViaHttp(
+    int bookingId,
+    int senderId,
+    String content,
+    Message localMessage,
+  ) async {
+    try {
+      final url = Uri.parse(ApiEndpoints.messages);
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({
+          'booking_id': bookingId,
+          'sender_id': senderId,
+          'content': content,
+        }),
+      );
+      if (response.statusCode == 201) {
+        final serverMsg = Message.fromJson(json.decode(response.body)['data']);
+        final idx = _messages.indexWhere((m) => m.id == localMessage.id);
+        if (idx >= 0) {
+          _messages[idx] = serverMsg;
+          notifyListeners();
+        }
+      }
+    } catch (e) {
+      debugPrint("❌ Erreur envoi HTTP message: $e");
+    }
+  }
+
   void disconnectChat() {
-    _socket?.disconnect();
-    _socket?.dispose();
+    if (_socket != null) {
+      try {
+        _socket!.disconnect();
+        _socket!.dispose();
+      } catch (_) {}
+      _socket = null;
+    }
+    _isConnected = false;
   }
 }

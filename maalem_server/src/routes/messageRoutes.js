@@ -1,9 +1,8 @@
-// routes/messageRoutes.js
 const express = require('express');
 const router = express.Router();
-const { getChatHistory } = require('../controllers/messageController');
+const { getChatHistory, sendMessage } = require('../controllers/messageController');
 
-// Route: GET /api/messages/:bookingId
 router.get('/:bookingId', getChatHistory);
+router.post('/', sendMessage);
 
 module.exports = router;

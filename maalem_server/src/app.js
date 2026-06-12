@@ -4,7 +4,7 @@ const path = require('path');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
-const MessageModel = require('./models/messageModel'); // Pour sauvegarder les messages dans la BDD
+const { createMessage } = require('./controllers/messageController');
 
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
@@ -66,19 +66,22 @@ io.on('connection', (socket) => {
         console.log(`👤 L'utilisateur a rejoint le chat de la réservation #`+ bookingId);
     });
 
-    // 2. L'utilisateur envoie un message
-    socket.on('send_message', async (data) => {
+    // 2. L'utilisateur envoie un message (avec ACK)
+    socket.on('send_message', async (data, ack) => {
         console.log("💬 Nouveau message reçu :", data.content);
 
         try {
-            const savedMessage = await MessageModel.saveMessage(
-                data.bookingId,
-                data.senderId,
-                data.content
-            );
-            io.to(data.bookingId.toString()).emit('receive_message', savedMessage);
+            const savedMessage = await createMessage(data);
+            socket.to(savedMessage.booking_id.toString()).emit('receive_message', savedMessage);
+            if (typeof ack === 'function') ack({ success: true, message: savedMessage });
         } catch (error) {
             console.error("Erreur de sauvegarde du message:", error);
+            if (typeof ack === 'function') {
+                ack({
+                    success: false,
+                    error: error.statusCode ? error.message : "Erreur de sauvegarde"
+                });
+            }
         }
     });
 

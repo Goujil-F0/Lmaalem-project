@@ -1,6 +1,16 @@
 // models/messageModel.js
 const pool = require('./db'); // Assure-toi que le chemin est correct (celui que tu utilises dans bookingController)
 
+const getBookingById = async (bookingId) => {
+    const { rows } = await pool.query(
+        `SELECT id, client_id, artisan_id
+         FROM bookings
+         WHERE id = $1`,
+        [bookingId]
+    );
+    return rows[0] || null;
+};
+
 // 1. Sauvegarder un nouveau message
 const saveMessage = async (bookingId, senderId, content) => {
     const query = `
@@ -24,6 +34,7 @@ const getMessagesByBooking = async (bookingId) => {
 };
 
 module.exports = {
+    getBookingById,
     saveMessage,
     getMessagesByBooking
 };

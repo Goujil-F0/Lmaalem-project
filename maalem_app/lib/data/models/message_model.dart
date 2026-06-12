@@ -17,9 +17,9 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id'],
-      bookingId: json['booking_id'],
-      senderId: json['sender_id'],
+      id: _toInt(json['id']),
+      bookingId: _toInt(json['booking_id'] ?? json['bookingId']),
+      senderId: _toInt(json['sender_id'] ?? json['senderId']),
       content: json['content'],
       // PostgreSQL renvoie souvent la date sous forme de String, on la convertit en DateTime
       timestamp: DateTime.parse(json['timestamp']),
@@ -32,5 +32,11 @@ class Message {
       'sender_id': senderId,
       'content': content,
     };
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.parse(value.toString());
   }
 }

@@ -1,5 +1,22 @@
-// models/messageModel.js
-const pool = require('./db'); // Assure-toi que le chemin est correct (celui que tu utilises dans bookingController)
+const pool = require('./db');
+
+let timestampColumn;
+
+const getTimestampColumn = async () => {
+    if (timestampColumn) return timestampColumn;
+
+    const { rows } = await pool.query(
+        `SELECT column_name
+         FROM information_schema.columns
+         WHERE table_name = 'messages'
+           AND column_name IN ('timestamp', 'created_at')`
+    );
+
+    timestampColumn = rows.some((row) => row.column_name === 'timestamp')
+        ? 'timestamp'
+        : 'created_at';
+    return timestampColumn;
+};
 
 const getBookingById = async (bookingId) => {
     const { rows } = await pool.query(
@@ -11,25 +28,26 @@ const getBookingById = async (bookingId) => {
     return rows[0] || null;
 };
 
-// 1. Sauvegarder un nouveau message
 const saveMessage = async (bookingId, senderId, content) => {
-    const query = `
-        INSERT INTO messages (booking_id, sender_id, content, timestamp)
-        VALUES ($1, $2, $3, NOW())
-        RETURNING *;
-    `;
-    const { rows } = await pool.query(query, [bookingId, senderId, content]);
+    const messageTimestampColumn = await getTimestampColumn();
+    const { rows } = await pool.query(
+        `INSERT INTO messages (booking_id, sender_id, content, ${messageTimestampColumn})
+         VALUES ($1, $2, $3, NOW())
+         RETURNING *, ${messageTimestampColumn} AS timestamp`,
+        [bookingId, senderId, content]
+    );
     return rows[0];
 };
 
-// 2. Récupérer tout l'historique d'un chat
 const getMessagesByBooking = async (bookingId) => {
-    const query = `
-        SELECT * FROM messages 
-        WHERE booking_id = $1 
-        ORDER BY timestamp ASC;
-    `;
-    const { rows } = await pool.query(query, [bookingId]);
+    const messageTimestampColumn = await getTimestampColumn();
+    const { rows } = await pool.query(
+        `SELECT *, ${messageTimestampColumn} AS timestamp
+         FROM messages
+         WHERE booking_id = $1
+         ORDER BY ${messageTimestampColumn} ASC`,
+        [bookingId]
+    );
     return rows;
 };
 

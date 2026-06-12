@@ -462,15 +462,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       }
                       // Action : Payer
                       if (value == 'pay_cash') {
-                        final ok = await Provider.of<BookingProvider>(context,
-                                listen: false)
-                            .changeBookingStatus(booking.id!, 'paid_cash');
+                        final bookingProvider =
+                            Provider.of<BookingProvider>(context, listen: false);
+                        final authProvider =
+                            Provider.of<AuthProvider>(context, listen: false);
+                        final ok = await bookingProvider.changeBookingStatus(
+                          booking.id!,
+                          'paid_cash',
+                        );
 
                         if (!mounted) return;
                         if (!ok) {
-                          final error = Provider.of<BookingProvider>(context,
-                                  listen: false)
-                              .errorMessage;
+                          final error = bookingProvider.errorMessage;
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(error),
@@ -479,6 +482,12 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           );
                           return;
                         }
+                        await bookingProvider.fetchBookingHistory(
+                          authProvider.user!.id,
+                          authProvider.user!.role,
+                        );
+                        if (!mounted) return;
+                        setState(() => _selectedTab = 'Terminé');
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
                             content: Text(

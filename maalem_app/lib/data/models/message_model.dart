@@ -22,7 +22,9 @@ class Message {
       senderId: _toInt(json['sender_id'] ?? json['senderId']),
       content: json['content'],
       // PostgreSQL renvoie souvent la date sous forme de String, on la convertit en DateTime
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: DateTime.parse(
+        (json['timestamp'] ?? json['created_at']).toString(),
+      ),
     );
   }
 

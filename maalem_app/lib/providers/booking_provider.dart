@@ -11,6 +11,7 @@ class BookingProvider with ChangeNotifier {
   List<Booking> _bookings = [];
   bool _isLoading = false;
   String _errorMessage = '';
+  int _historyRequestId = 0;
 
   // Getters (pour que l'interface puisse lire ces variables)
   List<Booking> get bookings => _bookings;
@@ -19,17 +20,25 @@ class BookingProvider with ChangeNotifier {
 
   // Fonction pour charger l'historique
   Future<void> fetchBookingHistory(int userId, String role) async {
+    final requestId = ++_historyRequestId;
     _isLoading = true;
     _errorMessage = '';
     notifyListeners(); // 🔄 Déclenche l'affichage du chargement sur l'écran
 
     try {
-      _bookings = await _bookingService.getBookingHistory(userId, role);
+      final bookings = await _bookingService.getBookingHistory(userId, role);
+      if (requestId == _historyRequestId) {
+        _bookings = bookings;
+      }
     } catch (e) {
-      _errorMessage = e.toString();
+      if (requestId == _historyRequestId) {
+        _errorMessage = e.toString();
+      }
     } finally {
-      _isLoading = false;
-      notifyListeners(); // 🔄 Cache le chargement et affiche les données (ou l'erreur)
+      if (requestId == _historyRequestId) {
+        _isLoading = false;
+        notifyListeners();
+      }
     }
   }
 
@@ -40,6 +49,8 @@ class BookingProvider with ChangeNotifier {
           await _bookingService.updateBookingStatus(bookingId, newStatus);
 
       if (success) {
+        _historyRequestId++;
+        _isLoading = false;
         // Met à jour la liste locale sans avoir à refaire une requête au serveur
         final index = _bookings.indexWhere((b) => b.id == bookingId);
         if (index != -1) {

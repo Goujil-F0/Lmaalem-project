@@ -7,6 +7,7 @@ import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
+import '../../search/screens/map_screen.dart';
 import 'chat_screen.dart';
 import 'package:maalem_app/presentation/main_shell.dart';
 
@@ -239,12 +240,10 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                         onPressed: () {
-                          // Retourne à la page principale (Accueil) et vide l'historique de navigation
-                          Navigator.pushAndRemoveUntil(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => const MainShell()),
-                            (route) => false,
+                                builder: (_) => const MapScreen()),
                           );
                         },
                         icon: const Icon(Icons.add_circle, color: Colors.white),
@@ -386,12 +385,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return GestureDetector(
       onTap: () {
+        final currentUserId = context.read<AuthProvider>().user?.id;
+        if (booking.id == null || currentUserId == null) return;
+
+        // Navigation fluide vers le chat au clic sur la carte
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ChatScreen(
               bookingId: booking.id!,
-              currentUserId: authProvider.user!.id,
+              currentUserId: currentUserId,
             ),
           ),
         );
@@ -404,7 +407,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
@@ -454,12 +457,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
                       }
                       // Action : Payer
                       if (value == 'pay_cash') {
+                        final messenger = ScaffoldMessenger.of(context);
+                        // 1. Appel du Provider pour passer au statut "completed"
                         await Provider.of<BookingProvider>(context,
                                 listen: false)
                             .changeBookingStatus(booking.id!, 'completed');
 
                         if (!mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
+
+                        // 2. Affichage d'un petit message de succès en bas de l'écran
+                        messenger.showSnackBar(
                           const SnackBar(
                             content:
                                 Text("Paiement validé. Projet terminé ! ✅"),

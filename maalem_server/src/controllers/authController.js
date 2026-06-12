@@ -53,6 +53,7 @@ const register = async (req, res) => {
       password,
       role,
       phone,
+      specialty,
       city,
       neighborhood,
       latitude,
@@ -86,6 +87,23 @@ const register = async (req, res) => {
       latitude,
       longitude
     );
+
+    if (role === 'artisan' && specialty && specialty.trim()) {
+      const specialtyResult = await db.query(
+        `INSERT INTO specialties (group_id, name)
+         VALUES ((SELECT id FROM category_groups ORDER BY id LIMIT 1), $1)
+         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+         RETURNING id`,
+        [specialty.trim()]
+      );
+
+      await db.query(
+        `UPDATE artisan_profiles
+         SET specialty_id = $1
+         WHERE user_id = $2`,
+        [specialtyResult.rows[0].id, user.id]
+      );
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
@@ -330,4 +348,5 @@ module.exports = {
   updateArtisanProfile,
   uploadProfilePhotoHandler,
   uploadPortfolioHandler,
+  getUserWithProfile,
 };

@@ -70,6 +70,7 @@ class BookingProvider with ChangeNotifier {
   Future<bool> addBooking(int clientId, int artisanId, String description,
       double price, DateTime date) async {
     _isLoading = true;
+    _errorMessage = '';
     notifyListeners();
 
     try {
@@ -78,9 +79,14 @@ class BookingProvider with ChangeNotifier {
 
       if (success) {
         // Si ça a marché, on recharge l'historique pour que la nouvelle réservation apparaisse !
-        await fetchBookingHistory(clientId, 'client');
+        try {
+          await fetchBookingHistory(clientId, 'client');
+        } catch (_) {
+          // La reservation est deja creee. L'historique pourra etre recharge plus tard.
+        }
         return true;
       }
+      _errorMessage = 'Erreur lors de la creation de la reservation';
       return false;
     } catch (e) {
       _errorMessage = e.toString().replaceFirst('Exception: ', '');

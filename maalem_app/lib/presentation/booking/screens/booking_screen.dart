@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
+import 'history_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final int artisanId; // L'artisan qu'on veut réserver
@@ -53,35 +54,53 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // 2. MODIFICATION DE LA FONCTION : Elle accepte maintenant le vrai userId
   void _submitBooking() async {
-    // 1. On vérifie que les champs sont remplis
-    if (!_formKey.currentState!.validate()) {
-      print("❌ Erreur : Le champ description est vide.");
-      return;
-    }
-    if (_selectedDate == null) {
-      print("❌ Erreur : La date n'a pas été sélectionnée.");
+    // 1. On récupère le VRAI ID grâce au provider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
+
+    // 2. Vérifications de sécurité
+    if (myUserId <= 0 || widget.artisanId <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Veuillez choisir une date.'),
-            backgroundColor: Colors.orange),
+          content: Text('Session ou artisan invalide. Reconnectez-vous.'),
+          backgroundColor: Colors.red,
+        ),
       );
       return;
     }
 
-    print("✅ Formulaire valide ! Préparation de l'envoi...");
+    if (myUserId == widget.artisanId) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vous ne pouvez pas reserver votre propre profil.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    // 2. On récupère ton VRAI ID grâce au provider de Fatima
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    // 3. Vérification du formulaire
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-    // Si tu testes l'écran directement sans être connecté, on met 1 par défaut, sinon on prend ton vrai ID
-    final int myUserId = authProvider.user != null ? authProvider.user!.id : 1;
+    if (_selectedDate == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Veuillez choisir une date.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
 
-    print("👤 Tentative de réservation pour le client ID : $myUserId");
+    print(
+        "✅ Formulaire valide ! Préparation de l'envoi pour le client ID : $myUserId");
 
-    // 3. On envoie au backend
+    // 4. On appelle le Provider
     final success =
         await Provider.of<BookingProvider>(context, listen: false).addBooking(
-      myUserId, // Ton vrai ID
+      myUserId,
       widget.artisanId,
       _descriptionController.text,
       widget.hourlyRate,
@@ -90,34 +109,31 @@ class _BookingScreenState extends State<BookingScreen> {
 
     if (!mounted) return;
 
-    // 4. On gère le résultat
+    // 5. Résultat
     if (success) {
-      print("🎉 Réservation réussie dans la BDD !");
-      await showDialog<void>(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Réservation enregistrée'),
-          content: const Text(
-            "Votre réservation a été envoyée. Elle reste en attente jusqu'à l'acceptation de l'artisan.",
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('OK'),
-            ),
-          ],
-        ),
-      );
-
-      // On retourne à la page principale pour voir le suivi
-      if (!mounted) return;
-      Navigator.pop(context);
-    } else {
-      print("⚠️ Le backend a refusé la réservation !");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-            content: Text('Erreur serveur lors de la réservation ❌'),
-            backgroundColor: Colors.red),
+            content: Text('Réservation envoyée avec succès ! ✅'),
+            backgroundColor: Colors.green),
+      );
+
+      // On remplace l'écran actuel par l'historique
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const HistoryScreen()),
+      );
+    } else {
+      final errorMessage =
+          Provider.of<BookingProvider>(context, listen: false).errorMessage;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            errorMessage.isEmpty
+                ? 'Erreur lors de la réservation ❌'
+                : errorMessage,
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -155,7 +171,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     CircleAvatar(
                       radius: 30,
-                      backgroundColor: primaryTeal.withOpacity(0.2),
+                      backgroundColor: primaryTeal.withValues(alpha: 0.2),
                       child: const Icon(Icons.person,
                           size: 30, color: primaryTeal),
                     ),

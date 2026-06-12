@@ -11,6 +11,20 @@ const createNewBooking = async (req, res) => {
             return res.status(400).json({ success: false, message: "Veuillez fournir les informations obligatoires." });
         }
 
+        if (Number(client_id) === Number(artisan_id)) {
+            return res.status(400).json({ success: false, message: "Vous ne pouvez pas reserver votre propre profil." });
+        }
+
+        const client = await BookingModel.getUserById(client_id);
+        if (!client || client.role !== 'client') {
+            return res.status(400).json({ success: false, message: "Compte client invalide. Reconnectez-vous avec un compte client." });
+        }
+
+        const artisan = await BookingModel.getUserById(artisan_id);
+        if (!artisan || artisan.role !== 'artisan') {
+            return res.status(400).json({ success: false, message: "Artisan introuvable ou invalide." });
+        }
+
         const newBooking = await BookingModel.createBooking(
             client_id, artisan_id, description, agreed_price, booking_date
         );

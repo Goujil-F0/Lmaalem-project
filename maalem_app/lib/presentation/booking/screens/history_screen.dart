@@ -402,7 +402,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
                 radius: 24,
@@ -441,19 +441,6 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   ],
                 ),
               ),
-              // Badge Statut
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                    color: statusBgColor,
-                    borderRadius: BorderRadius.circular(12)),
-                child: Text(statusText,
-                    style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12)),
-              ),
               // Menu 3 petits points (s'affiche uniquement s'il y a des options)
               if (menuOptions.isNotEmpty)
                 PopupMenuButton<String>(
@@ -489,6 +476,20 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   itemBuilder: (BuildContext context) => menuOptions,
                 ),
             ],
+          ),
+          const SizedBox(height: 12),
+          // Badge Statut
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+                color: statusBgColor,
+                borderRadius: BorderRadius.circular(12)),
+            child: Text(statusText,
+                style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
           ),
           const SizedBox(height: 12),
           Text(booking.description, style: const TextStyle(fontSize: 15)),

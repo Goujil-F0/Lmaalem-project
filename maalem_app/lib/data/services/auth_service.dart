@@ -105,6 +105,55 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> registerArtisanWithCin({
+    required Map<String, dynamic> userData,
+    required XFile rectoFile,
+    required XFile versoFile,
+  }) async {
+    try {
+      final request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/auth/register-artisan'),
+      );
+      request.fields.addAll({
+        'full_name': (userData['full_name'] ?? '').toString(),
+        'email': (userData['email'] ?? '').toString(),
+        'password': (userData['password'] ?? '').toString(),
+        'phone': (userData['phone'] ?? '').toString(),
+        'specialty': (userData['specialty'] ?? '').toString(),
+        'city': (userData['city'] ?? '').toString(),
+        'neighborhood': (userData['neighborhood'] ?? '').toString(),
+        'latitude': (userData['latitude'] ?? '').toString(),
+        'longitude': (userData['longitude'] ?? '').toString(),
+      });
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'cin_recto',
+          await rectoFile.readAsBytes(),
+          filename: rectoFile.name,
+          contentType: _contentTypeFor(rectoFile.name),
+        ),
+      );
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'cin_verso',
+          await versoFile.readAsBytes(),
+          filename: versoFile.name,
+          contentType: _contentTypeFor(versoFile.name),
+        ),
+      );
+
+      final response = await http.Response.fromStream(await request.send());
+      return _handleResponse(
+        response,
+        successStatuses: const [201],
+        fallbackError: "Erreur lors de l'inscription artisan",
+      );
+    } catch (e) {
+      return _networkError('inscription artisan', e);
+    }
+  }
+
   Future<Map<String, dynamic>> updateAvailability({
     required bool isAvailable,
     required String token,

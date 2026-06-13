@@ -161,6 +161,31 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
+  Future<Map<String, dynamic>> registerArtisanWithCin(
+    Map<String, dynamic> userData,
+    XFile recto,
+    XFile verso,
+  ) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      return await _authService.registerArtisanWithCin(
+        userData: userData,
+        rectoFile: recto,
+        versoFile: verso,
+      );
+    } catch (e) {
+      return {
+        'success': false,
+        'error': 'Erreur inscription artisan : $e',
+      };
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<Map<String, dynamic>> updateAvailability(bool isAvailable) async {
     if (_token == null) {
       return {'success': false, 'error': 'Token manquant'};

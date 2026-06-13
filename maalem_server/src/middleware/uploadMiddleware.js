@@ -40,6 +40,15 @@ const uploadCin = multer({
   { name: 'cin_verso', maxCount: 1 },
 ]);
 
+const uploadCinRegistration = multer({
+  storage: multer.memoryStorage(),
+  fileFilter,
+  limits: { fileSize: 5 * 1024 * 1024 },
+}).fields([
+  { name: 'cin_recto', maxCount: 1 },
+  { name: 'cin_verso', maxCount: 1 },
+]);
+
 const uploadProfilePhoto = multer({
   storage: createStorage('profile'),
   fileFilter,
@@ -52,4 +61,9 @@ const uploadPortfolioImage = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 }).single('portfolio_image');
 
-module.exports = { uploadCin, uploadProfilePhoto, uploadPortfolioImage };
+module.exports = {
+  uploadCin,
+  uploadCinRegistration,
+  uploadProfilePhoto,
+  uploadPortfolioImage,
+};

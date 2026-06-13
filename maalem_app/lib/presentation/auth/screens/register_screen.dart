@@ -73,8 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    final authProvider = context.read<AuthProvider>();
-    final result = await authProvider.register({
+    final userData = <String, dynamic>{
       'full_name': _nameController.text.trim(),
       'email': _emailController.text.trim(),
       'password': _passwordController.text,
@@ -89,21 +88,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
           : _neighborhoodController.text.trim(),
       'latitude': _selectedLocation?.latitude,
       'longitude': _selectedLocation?.longitude,
-    });
-
-    if (!mounted) return;
-
-    if (result['success'] != true) {
-      _showSnackBar(result['error'] ?? 'Une erreur est survenue');
-      return;
-    }
+    };
 
     if (isArtisan) {
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
           transitionDuration: const Duration(milliseconds: 600),
-          pageBuilder: (_, __, ___) => const UploadCinScreen(),
+          pageBuilder: (_, __, ___) => UploadCinScreen(
+            registrationData: userData,
+          ),
           transitionsBuilder: (_, animation, __, child) {
             final slideUp = Tween<Offset>(
               begin: const Offset(0, 1),
@@ -118,9 +112,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
       return;
     }
 
-    _showSnackBar('Inscription reussie. Connectez-vous maintenant.', isError: false);
+    final result = await context.read<AuthProvider>().register(userData);
+    if (!mounted) return;
+
+    if (result['success'] != true) {
+      _showSnackBar(result['error'] ?? 'Une erreur est survenue');
+      return;
+    }
+
+    _showSnackBar('Inscription reussie. Connectez-vous maintenant.',
+        isError: false);
     _openLogin();
-}
+  }
 
   void _showSnackBar(String message, {bool isError = true}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -195,7 +198,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 isPasswordVisible: _isConfirmPasswordVisible,
                 onTogglePasswordVisibility: () {
                   setState(
-                    () => _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
+                    () =>
+                        _isConfirmPasswordVisible = !_isConfirmPasswordVisible,
                   );
                 },
               ),
@@ -236,7 +240,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   items: _artisanSpecialties,
                 ),
                 const SizedBox(height: 16),
-                const _UploadCinBox(),
               ],
               const SizedBox(height: 34),
               isLoading
@@ -498,38 +501,6 @@ class _RegisterDropdown extends StatelessWidget {
   }
 }
 
-class _UploadCinBox extends StatelessWidget {
-  const _UploadCinBox();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 104,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.navy.withValues(alpha: 0.08)),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_upload,
-              color: AppColors.navy.withValues(alpha: 0.72)),
-          const SizedBox(height: 8),
-          Text(
-            'Upload CIN Recto / Verso apres inscription',
-            style: TextStyle(
-              color: AppColors.navy.withValues(alpha: 0.72),
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _LocationPickerBox extends StatelessWidget {
   final bool isArtisan;
   final bool isLocating;
@@ -611,9 +582,7 @@ class _LocationPickerBox extends StatelessWidget {
                     )
                   : const Icon(Icons.gps_fixed),
               label: Text(
-                isLocating
-                    ? 'Recherche de position...'
-                    : action,
+                isLocating ? 'Recherche de position...' : action,
               ),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.teal,

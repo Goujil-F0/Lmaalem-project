@@ -71,4 +71,25 @@ const sendMessage = async (req, res) => {
     }
 };
 
-module.exports = { getChatHistory, sendMessage, createMessage };
+const markMessagesRead = async (req, res) => {
+    try {
+        const bookingId = Number(req.params.bookingId);
+        const userId = Number(req.params.userId);
+        if (!Number.isInteger(bookingId) || !Number.isInteger(userId)) {
+            return res.status(400).json({ success: false, message: 'Parametres invalides' });
+        }
+
+        await MessageModel.markAsRead(bookingId, userId);
+        res.status(200).json({ success: true });
+    } catch (error) {
+        console.error('Erreur lecture messages:', error);
+        res.status(500).json({ success: false, message: 'Erreur serveur' });
+    }
+};
+
+module.exports = {
+    getChatHistory,
+    sendMessage,
+    createMessage,
+    markMessagesRead
+};

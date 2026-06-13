@@ -10,7 +10,12 @@ import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 
 class UploadCinScreen extends StatefulWidget {
-  const UploadCinScreen({super.key});
+  final Map<String, dynamic> registrationData;
+
+  const UploadCinScreen({
+    super.key,
+    required this.registrationData,
+  });
 
   @override
   State<UploadCinScreen> createState() => _UploadCinScreenState();
@@ -75,7 +80,11 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
     Map<String, dynamic> result;
     try {
       final auth = context.read<AuthProvider>();
-      result = await auth.uploadCin(_rectoFile!, _versoFile!);
+      result = await auth.registerArtisanWithCin(
+        widget.registrationData,
+        _rectoFile!,
+        _versoFile!,
+      );
     } catch (e) {
       result = {
         'success': false,
@@ -151,27 +160,26 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.navy),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Lmaalem',
-          style: TextStyle(
-            color: AppColors.navy,
-            fontWeight: FontWeight.w900,
-            fontStyle: FontStyle.italic,
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
+        backgroundColor: AppColors.beige,
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          title: const Text(
+            'Lmaalem',
+            style: TextStyle(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w900,
+              fontStyle: FontStyle.italic,
+            ),
           ),
+          centerTitle: true,
         ),
-        centerTitle: true,
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
+        body: SafeArea(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
@@ -284,6 +292,7 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),

@@ -3,6 +3,7 @@ const authController = require('../controllers/authController');
 const { verifyToken, verifyArtisan } = require('../middleware/authMiddleware');
 const {
   uploadCin,
+  uploadCinRegistration,
   uploadProfilePhoto,
   uploadPortfolioImage,
 } = require('../middleware/uploadMiddleware');
@@ -10,6 +11,11 @@ const {
 const router = express.Router();
 
 router.post('/register', authController.register);
+router.post(
+  '/register-artisan',
+  uploadCinRegistration,
+  authController.registerArtisanWithCin
+);
 router.post('/login', authController.login);
 router.post('/upload-cin', verifyToken, verifyArtisan, uploadCin, authController.uploadCinHandler);
 router.post('/profile/photo', verifyToken, uploadProfilePhoto, authController.uploadProfilePhotoHandler);

@@ -16,6 +16,9 @@ pool.connect()
       await client.query(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS profile_photo_url TEXT'
       );
+      await client.query(
+        'ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE'
+      );
       console.log('Connecte a PostgreSQL');
     } finally {
       client.release();

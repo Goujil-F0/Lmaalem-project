@@ -67,6 +67,8 @@ class BookingProvider with ChangeNotifier {
             artisanName: oldBooking.artisanName,
             clientName: oldBooking.clientName,
             hasReview: oldBooking.hasReview,
+            unreadCount: oldBooking.unreadCount,
+            otherPartyName: oldBooking.otherPartyName,
           );
           notifyListeners(); // 🔄 Met à jour l'écran instantanément
         }
@@ -126,6 +128,8 @@ class BookingProvider with ChangeNotifier {
       artisanName: oldBooking.artisanName,
       clientName: oldBooking.clientName,
       hasReview: true,
+      unreadCount: oldBooking.unreadCount,
+      otherPartyName: oldBooking.otherPartyName,
     );
     notifyListeners();
   }

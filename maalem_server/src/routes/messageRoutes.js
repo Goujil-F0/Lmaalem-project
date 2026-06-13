@@ -5,4 +5,6 @@ const { getChatHistory, sendMessage } = require('../controllers/messageControlle
 router.get('/:bookingId', getChatHistory);
 router.post('/', sendMessage);
 
+router.patch('/read/:bookingId/:userId', markMessagesRead);
+
 module.exports = router;

@@ -3,6 +3,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/chat_provider.dart';
+import '../../../providers/auth_provider.dart';
+import '../../../providers/booking_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -17,22 +19,33 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  late ChatProvider _chatProvider;
   final TextEditingController _messageController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    // On initialise le chat quand on ouvre l'écran
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<ChatProvider>(context, listen: false)
-          .initChat(widget.bookingId);
+    _chatProvider = Provider.of<ChatProvider>(context, listen: false);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // 1. Ouvre le chat
+      _chatProvider.initChat(widget.bookingId);
+
+      // 2. Marque les messages comme "lus" dans la BDD
+      await _chatProvider.markMessagesAsRead(
+          widget.bookingId, widget.currentUserId);
+
+      // 3. Demande à l'écran d'historique de se rafraîchir pour faire disparaître la pastille rouge
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      Provider.of<BookingProvider>(context, listen: false)
+          .fetchBookingHistory(auth.user!.id, auth.user!.role);
     });
   }
 
   @override
   void dispose() {
     // On coupe la connexion Socket quand on fait retour arrière
-    Provider.of<ChatProvider>(context, listen: false).disconnectChat();
+    _chatProvider.disconnectChat();
     _messageController.dispose();
     super.dispose();
   }

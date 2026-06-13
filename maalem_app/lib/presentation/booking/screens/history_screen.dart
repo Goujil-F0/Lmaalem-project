@@ -1,8 +1,8 @@
 // lib/presentation/booking/screens/history_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart'; // Pour l'appel téléphonique
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../data/models/booking_model.dart';
@@ -19,24 +19,22 @@ class HistoryScreen extends StatefulWidget {
 }
 
 class _HistoryScreenState extends State<HistoryScreen> {
-  // Gère l'onglet sélectionné
+  // Les deux nouveaux onglets de la maquette
   String _selectedTab = 'En cours';
 
   @override
   void initState() {
     super.initState();
-    // On charge l'historique au démarrage
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final authProvider = Provider.of<AuthProvider>(context, listen: false);
-      final userId = authProvider.user!.id; // Le vrai ID
-      final userRole = authProvider.user!.role; // 'client' ou 'artisan'
-
-      Provider.of<BookingProvider>(context, listen: false)
-          .fetchBookingHistory(userId, userRole);
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      if (auth.user != null) {
+        Provider.of<BookingProvider>(context, listen: false)
+            .fetchBookingHistory(auth.user!.id, auth.user!.role);
+      }
     });
   }
 
-  // Fonction mise à jour avec les statuts exacts de Wissal
+  // Filtrage simplifié pour les onglets de la maquette
   List<Booking> _getFilteredBookings(List<Booking> allBookings) {
     if (_selectedTab == 'En cours') {
       return allBookings
@@ -57,13 +55,16 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Les couleurs exactes de votre maquette
-    const Color bgColor = Color(0xFFF1F3E1); // Le beige clair du fond
-    const Color primaryDarkBlue = Color(0xFF0C2C55); // Le bleu nuit du texte
-    const Color primaryTeal = Color(0xFF296374); // Le bleu canard des boutons
+    const Color bgColor = Color(0xFFF1F3E1); // Beige de la maquette
+    const Color primaryDarkBlue = Color(0xFF0C2C55);
+    const Color primaryTeal = Color(0xFF296374);
+
+    final authProvider = Provider.of<AuthProvider>(context);
+    final userRole = authProvider.user?.role ?? 'client';
 
     return Scaffold(
       backgroundColor: bgColor,
+      // On masque l'appBar classique pour créer la notre, plus moderne
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -139,22 +140,19 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           child: CircularProgressIndicator(color: primaryTeal));
                     }
 
-                    // On filtre la liste selon l'onglet choisi
-                    final filteredBookings =
-                        _getFilteredBookings(provider.bookings);
+                  final filteredBookings =
+                      _getFilteredBookings(provider.bookings);
 
-                    // S'il n'y a pas de projet dans cet onglet (L'état vide de ta maquette)
-                    if (filteredBookings.isEmpty) {
-                      return _buildEmptyState(primaryDarkBlue, primaryTeal);
-                    }
+                  if (filteredBookings.isEmpty) {
+                    return _buildEmptyState(primaryDarkBlue, primaryTeal);
+                  }
 
-                    // S'il y a des projets, on affiche de jolies cartes
                     return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: filteredBookings.length,
                       itemBuilder: (context, index) {
-                        final booking = filteredBookings[index];
-                        return _buildBookingCard(
-                            booking, primaryDarkBlue, primaryTeal);
+                        return _buildBookingCard(filteredBookings[index],
+                            userRole, primaryDarkBlue, primaryTeal);
                       },
                     );
                   },
@@ -167,9 +165,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // --- WIDGETS REUTILISABLES POUR CET ECRAN --- //
-
-  // Création d'un bouton d'onglet (Tab)
+  // --- WIDGETS REUTI  // Création d'un bouton d'onglet (Tab)
   Widget _buildTabButton(String title, Color activeColor) {
     bool isActive = _selectedTab == title;
     return Expanded(
@@ -253,11 +249,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                           ),
                         ),
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => const MapScreen()),
-                          );
+                          Navigator.of(context).popUntil((route) => route.isFirst);
                         },
                         icon: const Icon(Icons.add_circle, color: Colors.white),
                         label: const Text(
@@ -276,51 +268,45 @@ class _HistoryScreenState extends State<HistoryScreen> {
     );
   }
 
-  // Version finale de la carte avec Navigation ET Paiement Espèces
-  // Version Finale avec gestion des Rôles (Client / Artisan)
+  // La Carte de réservation (Design Maquette avec vos fonctionnalités de réclamation/avis/wallet)
   Widget _buildBookingCard(
-      Booking booking, Color titleColor, Color priceColor) {
-    // 1. On récupère le rôle de la personne connectée
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final userRole =
-        authProvider.user?.role ?? 'client'; // 'client' ou 'artisan'
-    final personName =
-        userRole == 'artisan' ? booking.clientName : booking.artisanName;
-    final cardTitle = personName != null && personName.trim().isNotEmpty
-        ? personName.trim()
-        : 'Service #${booking.id}';
+      Booking booking, String role, Color titleColor, Color buttonColor) {
+    bool isClient = role == 'client';
+
+    String displayName = booking.otherPartyName;
+    if (displayName.isEmpty || displayName == 'Utilisateur Inconnu') {
+      final personName = isClient ? booking.artisanName : booking.clientName;
+      displayName = personName ?? 'Service #${booking.id}';
+    }
+    String tagLabel = isClient ? 'PLOMBERIE' : 'DEMANDE CLIENT';
 
     // --- GESTION DU VISUEL DES STATUTS ---
     String statusText = '';
     Color statusColor = Colors.grey;
-    IconData statusIcon = Icons.info;
+    Color statusBgColor = Colors.grey.withOpacity(0.1);
 
     if (booking.status == 'pending') {
-      statusText = 'En attente de l\'artisan';
+      statusText = 'En attente';
       statusColor = Colors.orange;
-      statusIcon = Icons.access_time;
+      statusBgColor = Colors.orange.withOpacity(0.1);
     } else if (booking.status == 'accepted') {
       statusText = 'Artisan en route / En cours';
       statusColor = Colors.green;
-      statusIcon = Icons.check_circle;
+      statusBgColor = Colors.green.withOpacity(0.1);
     } else if (booking.status == 'completed' || booking.status == 'paid_cash') {
-      statusText =
-          booking.status == 'paid_cash' ? 'Payé en espèces' : 'Projet terminé';
+      statusText = booking.status == 'paid_cash' ? 'Payé en espèces' : 'Projet terminé';
       statusColor = Colors.blue;
-      statusIcon = booking.status == 'paid_cash'
-          ? Icons.qr_code_scanner
-          : Icons.done_all;
+      statusBgColor = Colors.blue.withOpacity(0.1);
     } else {
       statusText = 'Projet annulé/refusé';
       statusColor = Colors.red;
-      statusIcon = Icons.cancel;
+      statusBgColor = Colors.red.withOpacity(0.1);
     }
 
     // --- CRÉATION DU MENU (Les 3 petits points) SELON LE RÔLE ---
     List<PopupMenuEntry<String>> menuOptions = [];
 
-    // Option A : L'ARTISAN valide le paiement (seulement si le projet est en cours)
-    if (userRole == 'artisan' && booking.status == 'pending') {
+    if (!isClient && booking.status == 'pending') {
       menuOptions.add(
         const PopupMenuItem<String>(
           value: 'accept_booking',
@@ -347,8 +333,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    // Option B : L'ARTISAN valide le paiement (seulement si le projet est EN COURS)
-    if (userRole == 'artisan' && booking.status == 'accepted') {
+    if (!isClient && booking.status == 'accepted') {
       menuOptions.add(
         const PopupMenuItem<String>(
           value: 'pay_cash',
@@ -363,8 +348,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    // Option B : LE CLIENT laisse un avis (seulement si le projet est terminé)
-    if (userRole == 'client' &&
+    if (isClient &&
         (booking.status == 'completed' || booking.status == 'paid_cash') &&
         !booking.hasReview) {
       menuOptions.add(
@@ -381,8 +365,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    // Option C : LE CLIENT fait une réclamation seulement après acceptation.
-    if (userRole == 'client' &&
+    if (isClient &&
         (booking.status == 'accepted' ||
             booking.status == 'completed' ||
             booking.status == 'paid_cash')) {
@@ -400,166 +383,263 @@ class _HistoryScreenState extends State<HistoryScreen> {
       );
     }
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ChatScreen(
-              bookingId: booking.id!,
-              currentUserId: authProvider.user!.id,
-            ),
-          ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+    String dateStr = booking.bookingDate.toString().substring(0, 10);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  cardTitle,
+              offset: const Offset(0, 5)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: buttonColor.withOpacity(0.1),
+                child: Text(
+                  displayName.isNotEmpty ? displayName[0].toUpperCase() : '?',
                   style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18,
-                      color: titleColor),
+                      color: buttonColor,
+                      fontSize: 20),
                 ),
-
-                // On affiche les 3 points UNIQUEMENT si on a des options à proposer !
-                if (menuOptions.isNotEmpty)
-                  PopupMenuButton<String>(
-                    icon: Icon(Icons.more_horiz, color: Colors.grey.shade400),
-                    onSelected: (value) async {
-                      // --- NOUVELLES ACTIONS ARTISAN ---
-                      if (value == 'accept_booking') {
-                        await _acceptBookingWithWalletCheck(booking);
-                      } else if (value == 'reject_booking') {
-                        final ok = await Provider.of<BookingProvider>(context,
-                                listen: false)
-                            .changeBookingStatus(booking.id!, 'rejected');
-                        if (!mounted) return;
-                        if (!ok) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                              content: Text("Réservation refusée."),
-                              backgroundColor: Colors.red),
-                        );
-                      }
-                      // Action : Payer
-                      if (value == 'pay_cash') {
-                        final bookingProvider =
-                            Provider.of<BookingProvider>(context, listen: false);
-                        final authProvider =
-                            Provider.of<AuthProvider>(context, listen: false);
-                        final ok = await bookingProvider.changeBookingStatus(
-                          booking.id!,
-                          'paid_cash',
-                        );
-
-                        if (!mounted) return;
-                        if (!ok) {
-                          final error = bookingProvider.errorMessage;
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(error),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                          return;
-                        }
-                        await bookingProvider.fetchBookingHistory(
-                          authProvider.user!.id,
-                          authProvider.user!.role,
-                        );
-                        if (!mounted) return;
-                        setState(() => _selectedTab = 'Terminé');
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                                "Paiement cash confirmé. Commission déduite du wallet."),
-                            backgroundColor: Colors.green,
-                          ),
-                        );
-                      }
-                      // Action : Évaluer
-                      else if (value == 'review') {
-                        _openReview(booking); // Appelle la fonction de Wissal !
-                      }
-                      // Action : Réclamation
-                      else if (value == 'complaint') {
-                        _openComplaint(
-                            booking); // Appelle la fonction de Wissal !
-                      }
-                    },
-                    itemBuilder: (BuildContext context) => menuOptions,
-                  )
-                else
-                  const SizedBox(width: 24, height: 24),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(booking.description, style: const TextStyle(fontSize: 15)),
-
-            const SizedBox(height: 12),
-
-            // Le Badge
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: statusColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(displayName,
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: titleColor)),
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(8)),
+                      child: Text(tagLabel,
+                          style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                              color: titleColor)),
+                    ),
+                  ],
+                ),
+              ),
+              // Menu 3 petits points (s'affiche uniquement s'il y a des options)
+              if (menuOptions.isNotEmpty)
+                PopupMenuButton<String>(
+                  padding: EdgeInsets.zero,
+                  icon: Icon(Icons.more_vert, color: Colors.grey.shade600),
+                  onSelected: (value) async {
+                    if (value == 'complaint') {
+                      _openComplaint(booking);
+                    } else if (value == 'review') {
+                      _openReview(booking);
+                    } else if (value == 'accept_booking') {
+                      await _acceptBookingWithWalletCheck(booking);
+                    } else if (value == 'reject_booking') {
+                      final ok = await Provider.of<BookingProvider>(context, listen: false)
+                          .changeBookingStatus(booking.id!, 'rejected');
+                      if (!mounted) return;
+                      if (ok) {
+                        _showSuccess("Réservation refusée.");
+                      } else {
+                        _showError(Provider.of<BookingProvider>(context, listen: false).errorMessage);
+                      }
+                    } else if (value == 'pay_cash') {
+                      final ok = await Provider.of<BookingProvider>(context, listen: false)
+                          .changeBookingStatus(booking.id!, 'paid_cash');
+                      if (!mounted) return;
+                      if (ok) {
+                        _showSuccess("Paiement cash confirmé. Commission déduite du wallet.");
+                      } else {
+                        _showError(Provider.of<BookingProvider>(context, listen: false).errorMessage);
+                      }
+                    }
+                  },
+                  itemBuilder: (BuildContext context) => menuOptions,
+                ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          // Badge Statut
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+                color: statusBgColor,
+                borderRadius: BorderRadius.circular(12)),
+            child: Text(statusText,
+                style: TextStyle(
+                    color: statusColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
+          ),
+          const SizedBox(height: 12),
+          Text(booking.description, style: const TextStyle(fontSize: 15)),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 12),
+            child: Divider(color: Color(0xFFEEEEEE), thickness: 1),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Icon(statusIcon, color: statusColor, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    statusText,
-                    style: TextStyle(
-                        color: statusColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12),
-                  ),
+                  Icon(Icons.calendar_today_outlined, size: 20, color: titleColor),
+                  const SizedBox(width: 8),
+                  Text(dateStr, style: TextStyle(color: Colors.grey.shade700)),
+                  const SizedBox(width: 20),
+                  Icon(Icons.payments_outlined, size: 20, color: titleColor),
+                  const SizedBox(width: 8),
+                  Text('${booking.agreedPrice.toStringAsFixed(0)} MAD',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: titleColor)),
                 ],
               ),
-            ),
-
-            const SizedBox(height: 16),
-
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  booking.bookingDate.toString().substring(0, 10),
-                  style: TextStyle(color: Colors.grey.shade600),
+            ],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 50,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: buttonColor,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16)),
+                      elevation: 0,
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ChatScreen(
+                            bookingId: booking.id!,
+                            currentUserId: Provider.of<AuthProvider>(
+                                    context,
+                                    listen: false)
+                                .user!
+                                .id,
+                          ),
+                        ),
+                      );
+                    },
+                    icon: Badge(
+                      isLabelVisible: booking.unreadCount > 0,
+                      label: Text(
+                        booking.unreadCount.toString(),
+                        style: const TextStyle(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                      backgroundColor: Colors.red,
+                      child: const Icon(Icons.chat_bubble_outline,
+                          color: Colors.white),
+                    ),
+                    label: const Text('Message',
+                        style: TextStyle(color: Colors.white, fontSize: 16)),
+                  ),
                 ),
-                Text(
-                  '${booking.agreedPrice.toStringAsFixed(0)} MAD',
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: priceColor),
+              ),
+              const SizedBox(width: 12),
+              SizedBox(
+                height: 50,
+                width: 50,
+                child: OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  onPressed: () async {
+                    final Uri callUri = Uri.parse('tel:+212600000000');
+                    if (await canLaunchUrl(callUri)) await launchUrl(callUri);
+                  },
+                  child: Icon(Icons.call_outlined, color: buttonColor),
+                ),
+              ),
+            ],
+          ),
+          if (!isClient && booking.status == 'pending') ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () => _acceptBookingWithWalletCheck(booking),
+                      icon: const Icon(Icons.check, color: Colors.white),
+                      label: const Text('Accepter',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: SizedBox(
+                    height: 50,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      onPressed: () async {
+                        final provider = Provider.of<BookingProvider>(
+                            context,
+                            listen: false);
+                        final ok = await provider.changeBookingStatus(booking.id!, 'rejected');
+                        if (!mounted) return;
+                        if (ok) {
+                          _showSuccess("Réservation refusée.");
+                        } else {
+                          _showError(provider.errorMessage);
+                        }
+                      },
+                      icon: const Icon(Icons.close, color: Colors.red),
+                      label: const Text('Refuser',
+                          style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ),
                 ),
               ],
-            )
+            ),
           ],
-        ),
+        ],
       ),
     );
   }

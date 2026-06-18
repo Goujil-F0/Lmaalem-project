@@ -4,6 +4,7 @@ import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/providers/search_provider.dart';
 import 'package:maalem_app/shared/widgets/profile_avatar.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class ClientHomeScreen extends StatefulWidget {
@@ -41,41 +42,18 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        backgroundColor: AppColors.beige,
-        elevation: 0,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Bienvenue',
-              style: TextStyle(
-                color: AppColors.navy,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            Text(
-              user?.fullName ?? 'Client Lmaalem',
-              style: const TextStyle(
-                color: AppColors.navy,
-                fontSize: 18,
-                fontWeight: FontWeight.w900,
-              ),
-            ),
-          ],
-        ),
-        leading: Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: ProfileAvatar(
-            name: user?.fullName ?? 'Client Lmaalem',
-            imageUrl: user?.photoUrl,
-            size: 40,
-            backgroundColor: AppColors.navy,
-            textStyle: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
-            ),
+      appBar: MaalemAppBar(
+        title: 'Accueil',
+        subtitle: 'Bonjour, ${user?.fullName ?? 'Client'}',
+        showBackButton: false,
+        leading: ProfileAvatar(
+          name: user?.fullName ?? 'Client Lmaalem',
+          imageUrl: user?.photoUrl,
+          size: 36,
+          backgroundColor: AppColors.white.withValues(alpha: 0.2),
+          textStyle: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),

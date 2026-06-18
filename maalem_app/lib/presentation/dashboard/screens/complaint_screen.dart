@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/complaint_service.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -235,17 +236,9 @@ class _ComplaintScreenState extends State<ComplaintScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(widget.isAdmin ? 'Réclamations' : 'Déposer une réclamation'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: AppColors.beige,
-        foregroundColor: AppColors.navy,
-        titleTextStyle: const TextStyle(
-          color: AppColors.navy,
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-        ),
+      appBar: MaalemAppBar(
+        title: widget.isAdmin ? 'Réclamations' : 'Réclamer',
+        subtitle: widget.isAdmin ? 'Gestion des litiges' : 'Déposer un litige',
       ),
       body: widget.isAdmin ? _buildAdminView() : _buildClientView(),
     );

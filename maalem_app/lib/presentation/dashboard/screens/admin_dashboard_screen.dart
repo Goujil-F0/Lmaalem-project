@@ -5,6 +5,7 @@ import 'package:maalem_app/presentation/dashboard/screens/complaint_screen.dart'
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
@@ -58,15 +59,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: const Text('Dashboard Admin'),
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.white,
+      appBar: MaalemAppBar(
+        title: 'Administration',
+        subtitle: 'Tableau de bord',
         actions: [
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadDashboard,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppColors.white),
           ),
         ],
       ),

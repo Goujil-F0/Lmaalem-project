@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 import '../../../providers/booking_provider.dart';
 import '../../../providers/auth_provider.dart'; // <-- 1. IMPORT DE L'AUTHPROVIDER DE FATIMA
@@ -134,10 +135,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      appBar: AppBar(
-        title: const Text('Réserver'),
-        backgroundColor: primaryDarkBlue,
-        foregroundColor: Colors.white,
+      appBar: MaalemAppBar(
+        title: 'Réserver',
+        subtitle: widget.artisanName,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

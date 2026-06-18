@@ -5,6 +5,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/presentation/booking/screens/booking_screen.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
 import '../../../data/models/artisan_model.dart';
@@ -52,15 +53,9 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _Colors.beige,
-      appBar: AppBar(
-        backgroundColor: _Colors.navy,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Trouver un Maalem',
-          style: TextStyle(fontWeight: FontWeight.w800),
-        ),
+      appBar: const MaalemAppBar(
+        title: 'Trouver un Maalem',
+        subtitle: 'Artisans près de vous',
       ),
       body: Stack(
         children: [

@@ -9,6 +9,7 @@ import '../../../data/models/booking_model.dart';
 import '../../../data/services/dashboard_service.dart';
 import '../../dashboard/screens/complaint_screen.dart';
 import '../../dashboard/screens/review_screen.dart';
+import '../../../shared/widgets/maalem_app_bar.dart';
 import 'chat_screen.dart';
 
 class HistoryScreen extends StatefulWidget {
@@ -64,102 +65,81 @@ class _HistoryScreenState extends State<HistoryScreen> {
 
     return Scaffold(
       backgroundColor: bgColor,
-      // On masque l'appBar classique pour créer la notre, plus moderne
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
+      appBar: MaalemAppBar(
+        title: 'Mon Suivi',
+        subtitle: userRole == 'artisan' ? 'Artisan' : 'Client',
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 16),
 
-              // 1. Titre "Mon suivi" (+ bouton de retour/sortie si standalone)
-              Row(
+            // Barre de recherche
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.grey.shade300),
+              ),
+              child: const TextField(
+                decoration: InputDecoration(
+                  icon: Icon(Icons.search, color: Colors.grey),
+                  hintText: 'Rechercher un projet...',
+                  border: InputBorder.none,
+                  hintStyle: TextStyle(color: Colors.grey),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Les filtres (En cours, Terminé, Annulé)
+            Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.6),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Row(
                 children: [
-                  if (Navigator.canPop(context)) ...[
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: primaryDarkBlue, size: 28),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  const Text(
-                    'Mon suivi',
-                    style: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: primaryDarkBlue,
-                    ),
-                  ),
+                  _buildTabButton('En cours', primaryTeal),
+                  _buildTabButton('Terminé', primaryTeal),
+                  _buildTabButton('Annulé', primaryTeal),
                 ],
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-              // 2. Barre de recherche
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: const TextField(
-                  decoration: InputDecoration(
-                    icon: Icon(Icons.search, color: Colors.grey),
-                    hintText: 'Rechercher un projet...',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.grey),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-
-              // 3. Les filtres (En cours, Terminé, Annulé)
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.6),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  children: [
-                    _buildTabButton('En cours', primaryTeal),
-                    _buildTabButton('Terminé', primaryTeal),
-                    _buildTabButton('Annulé', primaryTeal),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // 4. Liste des résultats ou État vide (Connecté au Provider)
-              Expanded(
-                child: Consumer<BookingProvider>(
-                  builder: (context, provider, child) {
-                    if (provider.isLoading) {
-                      return const Center(
-                          child: CircularProgressIndicator(color: primaryTeal));
-                    }
-
-                  final filteredBookings =
-                      _getFilteredBookings(provider.bookings);
-
-                  if (filteredBookings.isEmpty) {
-                    return _buildEmptyState(primaryDarkBlue, primaryTeal);
+            // Liste des résultats ou État vide (Connecté au Provider)
+            Expanded(
+              child: Consumer<BookingProvider>(
+                builder: (context, provider, child) {
+                  if (provider.isLoading) {
+                    return const Center(
+                        child: CircularProgressIndicator(color: primaryTeal));
                   }
 
-                    return ListView.builder(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: filteredBookings.length,
-                      itemBuilder: (context, index) {
-                        return _buildBookingCard(filteredBookings[index],
-                            userRole, primaryDarkBlue, primaryTeal);
-                      },
-                    );
-                  },
-                ),
+                final filteredBookings =
+                    _getFilteredBookings(provider.bookings);
+
+                if (filteredBookings.isEmpty) {
+                  return _buildEmptyState(primaryDarkBlue, primaryTeal);
+                }
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 0),
+                    itemCount: filteredBookings.length,
+                    itemBuilder: (context, index) {
+                      return _buildBookingCard(filteredBookings[index],
+                          userRole, primaryDarkBlue, primaryTeal);
+                    },
+                  );
+                },
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

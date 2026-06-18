@@ -5,6 +5,7 @@ import 'package:maalem_app/data/services/artisan_service.dart';
 import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -84,15 +85,14 @@ class _FavoriteArtisansScreenState extends State<FavoriteArtisansScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: const Text('Artisans favoris'),
-        backgroundColor: AppColors.navy,
-        foregroundColor: AppColors.white,
+      appBar: MaalemAppBar(
+        title: 'Mes Favoris',
+        subtitle: 'Artisans sauvegardés',
         actions: [
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadFavorites,
-            icon: const Icon(Icons.refresh),
+            icon: const Icon(Icons.refresh, color: AppColors.white),
           ),
         ],
       ),

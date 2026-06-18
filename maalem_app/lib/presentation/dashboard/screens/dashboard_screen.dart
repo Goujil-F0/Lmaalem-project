@@ -7,7 +7,8 @@ import 'package:maalem_app/presentation/booking/screens/booking_screen.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
-import 'package:maalem_app/shared/widgets/profile_avatar.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart'; // used in _buildProfileHeader
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -237,18 +238,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(isOwnDashboard ? 'Mon Dashboard' : 'Profil Artisan'),
-        centerTitle: false,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        backgroundColor: AppColors.beige,
-        foregroundColor: AppColors.navy,
-        titleTextStyle: const TextStyle(
-          color: AppColors.navy,
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-        ),
+      appBar: MaalemAppBar(
+        title: isOwnDashboard ? 'Mon Dashboard' : 'Profil Artisan',
+        subtitle: isOwnDashboard ? 'Tableau de bord' : 'Détails & Réservation',
         actions: [
           if (!isOwnDashboard)
             IconButton(
@@ -257,13 +249,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: _toggleFavorite,
               icon: Icon(
                 _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: _isFavorite ? AppColors.teal : AppColors.navy,
+                color: AppColors.white,
               ),
             ),
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadDashboard,
-            icon: const Icon(Icons.refresh_rounded),
+            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
           ),
         ],
       ),

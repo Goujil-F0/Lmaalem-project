@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/auth/widgets/cin_upload_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class UploadCinScreen extends StatefulWidget {
@@ -164,19 +165,10 @@ class _UploadCinScreenState extends State<UploadCinScreen> {
       canPop: false,
       child: Scaffold(
         backgroundColor: AppColors.beige,
-        appBar: AppBar(
-          automaticallyImplyLeading: false,
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          title: const Text(
-            'Lmaalem',
-            style: TextStyle(
-              color: AppColors.navy,
-              fontWeight: FontWeight.w900,
-              fontStyle: FontStyle.italic,
-            ),
-          ),
-          centerTitle: true,
+        appBar: const MaalemAppBar(
+          title: 'Vérification CIN',
+          subtitle: 'Inscription Artisan',
+          showBackButton: false,
         ),
         body: SafeArea(
           child: SingleChildScrollView(

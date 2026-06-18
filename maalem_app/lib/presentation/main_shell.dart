@@ -8,6 +8,7 @@ import 'package:maalem_app/presentation/dashboard/screens/dashboard_screen.dart'
 import 'package:maalem_app/presentation/home/screens/client_home_screen.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:salomon_bottom_bar/salomon_bottom_bar.dart';
 import 'package:maalem_app/presentation/booking/screens/history_screen.dart';
@@ -168,11 +169,8 @@ class _ConstructionScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text(title),
-        backgroundColor: AppColors.beige,
-        foregroundColor: AppColors.navy,
-        elevation: 0,
+      appBar: MaalemAppBar(
+        title: title,
       ),
       body: const Center(
         child: Text(

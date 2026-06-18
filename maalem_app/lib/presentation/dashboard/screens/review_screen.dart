@@ -3,6 +3,7 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/data/services/review_service.dart';
 import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
 class ReviewScreen extends StatefulWidget {
@@ -167,17 +168,9 @@ class _ReviewScreenState extends State<ReviewScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.beige,
-      appBar: AppBar(
-        title: Text('Avis sur ${widget.artisanName}'),
-        centerTitle: true,
-        elevation: 0,
-        backgroundColor: AppColors.beige,
-        foregroundColor: AppColors.navy,
-        titleTextStyle: const TextStyle(
-          color: AppColors.navy,
-          fontSize: 18,
-          fontWeight: FontWeight.w900,
-        ),
+      appBar: MaalemAppBar(
+        title: 'Laisser un Avis',
+        subtitle: widget.artisanName,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),

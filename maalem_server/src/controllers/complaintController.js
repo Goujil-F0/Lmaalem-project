@@ -11,6 +11,23 @@ const createComplaint = async (req, res) => {
     const { booking_id, artisan_id, description } = req.body;
     const client_id = req.user.id;
 
+    const booking = await pool.query(
+      `SELECT id, status
+       FROM bookings
+       WHERE id = $1 AND client_id = $2 AND artisan_id = $3`,
+      [booking_id, client_id, artisan_id]
+    );
+
+    if (booking.rows.length === 0) {
+      return res.status(404).json({ message: 'Réservation introuvable pour ce client et cet artisan.' });
+    }
+
+    if (!['accepted', 'completed', 'paid_cash'].includes(booking.rows[0].status)) {
+      return res.status(400).json({
+        message: "Vous pouvez déposer une réclamation seulement après l'acceptation de l'artisan.",
+      });
+    }
+
     const result = await pool.query(
       `INSERT INTO complaints (booking_id, client_id, artisan_id, description)
        VALUES ($1, $2, $3, $4) RETURNING *`,
@@ -28,10 +45,14 @@ const getComplaints = async (req, res) => {
     const result = await pool.query(
       `SELECT c.*, 
         u1.full_name as client_name, 
-        u2.full_name as artisan_name
+        u2.full_name as artisan_name,
+        b.booking_date,
+        b.status as booking_status,
+        b.agreed_price
        FROM complaints c
        JOIN users u1 ON c.client_id = u1.id
        JOIN users u2 ON c.artisan_id = u2.id
+       JOIN bookings b ON c.booking_id = b.id
        ORDER BY c.created_at DESC`
     );
     res.status(200).json(result.rows);

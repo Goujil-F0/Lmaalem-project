@@ -55,14 +55,27 @@ CREATE TABLE IF NOT EXISTS users (
     full_name     VARCHAR(150) NOT NULL,
     email         VARCHAR(150) UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role          VARCHAR(20) NOT NULL CHECK (role IN ('client', 'artisan')),
+    role          VARCHAR(20) NOT NULL CHECK (role IN ('client', 'artisan', 'admin')),
     phone         VARCHAR(20),
     city          VARCHAR(100),
     neighborhood  VARCHAR(100),
     latitude      DOUBLE PRECISION,
     longitude     DOUBLE PRECISION,
+    profile_photo_url TEXT,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE users
+    ADD COLUMN IF NOT EXISTS profile_photo_url TEXT;
+
+-- Test Users (password: Test1234!)
+-- Hash: $2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm (bcrypt)
+INSERT INTO users (full_name, email, password_hash, role, phone, city, neighborhood)
+VALUES
+    ('Ahmed Test Client', 'ahmed@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'client', '0612345678', 'Casablanca', 'Centre'),
+    ('Fatima Test Artisan', 'fatima@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'artisan', '0698765432', 'Rabat', 'Agdal')
+ON CONFLICT (email) DO NOTHING;
+
 
 -- 4. PROFILS ARTISANS
 CREATE TABLE IF NOT EXISTS artisan_profiles (
@@ -72,10 +85,37 @@ CREATE TABLE IF NOT EXISTS artisan_profiles (
     hourly_rate    DECIMAL(10,2),
     is_available   BOOLEAN DEFAULT TRUE,
     profile_photo_url TEXT,
+    portfolio_images TEXT[] DEFAULT '{}',
     cin_url        TEXT,
     cin_verified   BOOLEAN DEFAULT FALSE,
     average_rating DECIMAL(3,2) DEFAULT 0.00
 );
+-- Link artisan to Plumbing specialty
+INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
+SELECT u.id, s.id, 150.00, true, 'Plombier experimente avec 10 ans d''experience', 4.5
+FROM users u, specialties s
+WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
+ON CONFLICT (user_id) DO NOTHING;
+
+
+ALTER TABLE artisan_profiles
+    ADD COLUMN IF NOT EXISTS portfolio_images TEXT[] DEFAULT '{}';
+
+-- Test Users (password: Test1234!)
+-- Hash: $2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm (bcrypt)
+INSERT INTO users (full_name, email, password_hash, role, phone, city, neighborhood)
+VALUES
+    ('Ahmed Test Client', 'ahmed@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'client', '0612345678', 'Casablanca', 'Centre'),
+    ('Fatima Test Artisan', 'fatima@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'artisan', '0698765432', 'Rabat', 'Agdal'),
+    ('Admin Test', 'admin@test.com', '$2b$10$TYiN7LfvZd4WrYKiR2vvgeZ1bIv/IBmWKX6j8zF7hj7ZZ.MG1fDVm', 'admin', '0600000000', 'Casablanca', 'Centre')
+ON CONFLICT (email) DO NOTHING;
+
+-- Link artisan to Plumbing specialty
+INSERT INTO artisan_profiles (user_id, specialty_id, hourly_rate, is_available, description, average_rating)
+SELECT u.id, s.id, 150.00, true, 'Plombier expérimenté avec 10 ans d''expérience', 4.5
+FROM users u, specialties s
+WHERE u.email = 'fatima@test.com' AND s.name = 'Plomberie'
+ON CONFLICT (user_id) DO NOTHING;
 
 -- 5. WALLETS (un par artisan)
 CREATE TABLE IF NOT EXISTS wallets (
@@ -103,12 +143,19 @@ CREATE TABLE IF NOT EXISTS bookings (
     artisan_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     booking_date   TIMESTAMP NOT NULL,
     status         VARCHAR(20) DEFAULT 'pending'
-                   CHECK (status IN ('pending','accepted','rejected','completed','cancelled')),
+                   CHECK (status IN ('pending','accepted','rejected','completed','paid_cash','cancelled')),
     description    TEXT,
     agreed_price   DECIMAL(10,2),
     commission_pct DECIMAL(5,2) DEFAULT 10.00,
     created_at     TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+ALTER TABLE bookings
+    DROP CONSTRAINT IF EXISTS bookings_status_check;
+
+ALTER TABLE bookings
+    ADD CONSTRAINT bookings_status_check
+    CHECK (status IN ('pending','accepted','rejected','completed','paid_cash','cancelled'));
 
 -- 8. REVIEWS
 CREATE TABLE IF NOT EXISTS reviews (
@@ -127,6 +174,7 @@ CREATE TABLE IF NOT EXISTS messages (
     booking_id INTEGER NOT NULL REFERENCES bookings(id) ON DELETE CASCADE,
     sender_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     content    TEXT NOT NULL,
+    is_read    BOOLEAN DEFAULT FALSE,
     timestamp  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 

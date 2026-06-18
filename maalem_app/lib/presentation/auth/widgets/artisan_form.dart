@@ -31,25 +31,25 @@ class ArtisanForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CustomTextField(
+        const CustomTextField(
           label: "Nom complet",
           hintText: "Ahmed Mansour",
           icon: Icons.person,
         ),
         const SizedBox(height: 16),
-        CustomTextField(
+        const CustomTextField(
           label: "Téléphone",
           hintText: "+212 6XX XX XX XX",
           icon: Icons.call,
         ),
         const SizedBox(height: 16),
-        CustomTextField(
+        const CustomTextField(
           label: "Email",
           hintText: "artisan@exemple.ma",
           icon: Icons.mail,
         ),
         const SizedBox(height: 16),
-        CustomTextField(
+        const CustomTextField(
           label: "Mot de passe",
           hintText: "••••••••",
           icon: Icons.lock,
@@ -65,7 +65,7 @@ class ArtisanForm extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             color: AppColors.beige.withValues(alpha: 0.5),
           ),
-          child: Column(
+          child: const Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(Icons.cloud_upload, color: AppColors.teal, size: 40),
@@ -76,7 +76,7 @@ class ArtisanForm extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              const Text(
+              Text(
                 "Recto / Verso",
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
@@ -86,7 +86,7 @@ class ArtisanForm extends StatelessWidget {
         const SizedBox(height: 20),
         CustomButton(
           text: "Devenir Artisan Maalem",
-          onPressed: () => _navigateTo(context,  RegisterScreen()),
+          onPressed: () => _navigateTo(context,  const RegisterScreen()),
         ),
         TextButton(
           onPressed: () => Navigator.pop(context),

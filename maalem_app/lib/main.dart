@@ -1,11 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:maalem_app/presentation/auth/screens/auth_screen.dart';
 import 'package:maalem_app/presentation/auth/screens/splash_screen.dart';
+import 'package:maalem_app/presentation/main_shell.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/providers/booking_provider.dart';
+import 'package:maalem_app/providers/chat_provider.dart';
+import 'package:maalem_app/providers/location_provider.dart';
+import 'package:maalem_app/providers/search_provider.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  // On s'assure que les widgets sont initialisés
   WidgetsFlutterBinding.ensureInitialized();
-  
-  runApp(const MaalemApp());
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SearchProvider()),
+        ChangeNotifierProvider(create: (_) => LocationProvider()),
+        ChangeNotifierProvider(
+          create: (_) => AuthProvider()..checkAuthStatus(),
+        ),
+        ChangeNotifierProvider(create: (_) => BookingProvider()),
+        ChangeNotifierProvider(create: (_) => ChatProvider()),
+      ],
+      child: const MaalemApp(),
+    ),
+  );
 }
 
 class MaalemApp extends StatelessWidget {
@@ -14,13 +34,60 @@ class MaalemApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Maalem',
-      debugShowCheckedModeBanner: false, // Enlève la bannière "Debug"
+      title: 'Lmaalem',
+      debugShowCheckedModeBanner: false,
+      themeMode: ThemeMode.light,
       theme: ThemeData(
+        fontFamily: 'Inter',
         primarySwatch: Colors.blue,
-        // Tu pourras ajouter ici ton AppTheme plus tard
+        scaffoldBackgroundColor: Colors.white,
       ),
-      home: SplashScreen(), // L'écran de départ est l'écran d'authentification
+      home: const AppGate(),
+    );
+  }
+}
+
+class AppGate extends StatefulWidget {
+  const AppGate({super.key});
+
+  @override
+  State<AppGate> createState() => AppGateState();
+}
+
+class AppGateState extends State<AppGate> {
+  bool _showSplash = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      setState(() => _showSplash = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        // 1. Display splash during initialization or manual check
+        if (_showSplash || auth.isCheckingAuth) {
+          return const SplashScreen();
+        }
+
+        // 2. Si un token est présent, l'utilisateur est connecté
+        if (auth.token != null) {
+          // On attend que les données utilisateur (profil) soient prêtes
+          if (auth.user != null) {
+            return const MainShell();
+          }
+          // Si on a le token mais pas encore le profil, on affiche le SplashScreen
+          return const SplashScreen();
+        }
+
+        // 3. Sinon, on demande la connexion
+        return const AuthScreen();
+      },
     );
   }
 }

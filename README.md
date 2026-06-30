@@ -252,4 +252,4 @@ Built by [Goujil-F0](https://github.com/Goujil-F0).
 
 ## License
 
-No license has been specified yet. Add a license before distributing or accepting external contributions.
+No license has been specified yet.

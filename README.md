@@ -32,45 +32,32 @@ The project includes a Flutter mobile app, an Express.js backend API, PostgreSQL
 
 ## Screenshots
 
-### Authentication Flow
-
 <p align="center">
-  <img src="screenshots/readme/splashScreen-phone.png" width="170" alt="Splash screen">
-  <img src="screenshots/readme/login-phone.png" width="170" alt="Login screen">
-  <img src="screenshots/readme/registerClient-phone.png" width="170" alt="Client sign up screen">
-  <img src="screenshots/readme/registerArtisan-phone.png" width="170" alt="Artisan sign up screen">
+  <img src="screenshots/features.png" width="100%" alt="Lmaalem feature screens">
 </p>
 
 <p align="center">
-  <img src="screenshots/readme/registerClient2-phone.png" width="170" alt="Client details screen">
-  <img src="screenshots/readme/registerArtisan2-phone.png" width="170" alt="Artisan details screen">
-  <img src="screenshots/readme/UploadCIN-phone.png" width="170" alt="CIN upload screen">
-  <img src="screenshots/readme/locationAcces-phone.png" width="170" alt="Location access screen">
-</p>
-
-### Client Experience
-
-<p align="center">
-  <img src="screenshots/readme/AcceuilClient-phone.png" width="170" alt="Client home screen">
-  <img src="screenshots/readme/searchArtisan-phone.png" width="170" alt="Artisan search screen">
-  <img src="screenshots/readme/map-phone.png" width="170" alt="Map search screen">
-  <img src="screenshots/readme/profileArtisan-phone.png" width="170" alt="Artisan profile screen">
+  <img src="screenshots/authScreens.png" width="100%" alt="Lmaalem authentication screens">
 </p>
 
 <p align="center">
-  <img src="screenshots/readme/favoris-phone.png" width="170" alt="Favorite artisans screen">
-  <img src="screenshots/readme/suivi-phone.png" width="170" alt="Client booking tracking screen">
-  <img src="screenshots/readme/compteClient-phone.png" width="170" alt="Client account screen">
-  <img src="screenshots/readme/chat-phone.png" width="170" alt="Real-time chat screen">
+  <img src="screenshots/sign-Up.png" width="100%" alt="Lmaalem sign up screens">
 </p>
 
-### Artisan Experience
+<p align="center">
+  <img src="screenshots/homepage.png" width="100%" alt="Lmaalem home screens">
+</p>
 
 <p align="center">
-  <img src="screenshots/readme/AcceuileArtisan-phone.png" width="170" alt="Artisan home screen">
-  <img src="screenshots/readme/suiviArtisan-phone.png" width="170" alt="Artisan request tracking screen">
-  <img src="screenshots/readme/compteArtisan-phone.png" width="170" alt="Artisan account screen">
-  <img src="screenshots/readme/compteArtisan2-phone.png" width="170" alt="Artisan profile settings screen">
+  <img src="screenshots/mapScreens.png" width="100%" alt="Lmaalem map screens">
+</p>
+
+<p align="center">
+  <img src="screenshots/suiviScreens.png" width="100%" alt="Lmaalem booking tracking screens">
+</p>
+
+<p align="center">
+  <img src="screenshots/accountpages.png" width="100%" alt="Lmaalem account screens">
 </p>
 
 ---

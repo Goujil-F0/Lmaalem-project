@@ -8,7 +8,6 @@ import 'package:maalem_app/presentation/dashboard/widgets/star_rating_widget.dar
 import 'package:maalem_app/presentation/dashboard/widgets/stats_card.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
-import 'package:maalem_app/shared/widgets/profile_avatar.dart'; // used in _buildProfileHeader
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -64,7 +63,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 imageUrl,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Center(
-                  child: Icon(Icons.broken_image, color: Colors.white, size: 48),
+                  child:
+                      Icon(Icons.broken_image, color: Colors.white, size: 48),
                 ),
               ),
             ),
@@ -72,7 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               top: 40,
               right: 20,
               child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                icon: const Icon(Icons.close_rounded,
+                    color: Colors.white, size: 30),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),
@@ -249,13 +250,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               onPressed: _toggleFavorite,
               icon: Icon(
                 _isFavorite ? Icons.favorite : Icons.favorite_border,
-                color: AppColors.white,
               ),
             ),
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadDashboard,
-            icon: const Icon(Icons.refresh_rounded, color: AppColors.white),
+            icon: const Icon(Icons.refresh_rounded),
           ),
         ],
       ),
@@ -1716,7 +1716,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     },
                     itemBuilder: (context, index) {
                       return GestureDetector(
-                        onTap: () => _openImageZoom(context, portfolioImages[index]),
+                        onTap: () =>
+                            _openImageZoom(context, portfolioImages[index]),
                         child: Image.network(
                           portfolioImages[index],
                           fit: BoxFit.cover,
@@ -1734,7 +1735,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       right: 0,
                       child: Center(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
                             color: Colors.black.withValues(alpha: 0.35),
                             borderRadius: BorderRadius.circular(10),
@@ -1744,12 +1746,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             children: List.generate(
                               portfolioImages.length,
                               (index) => Container(
-                                margin: const EdgeInsets.symmetric(horizontal: 3),
-                                width: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index) ? 8 : 6,
-                                height: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index) ? 8 : 6,
+                                margin:
+                                    const EdgeInsets.symmetric(horizontal: 3),
+                                width: (_currentHeaderImageIndex.clamp(
+                                            0, portfolioImages.length - 1) ==
+                                        index)
+                                    ? 8
+                                    : 6,
+                                height: (_currentHeaderImageIndex.clamp(
+                                            0, portfolioImages.length - 1) ==
+                                        index)
+                                    ? 8
+                                    : 6,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: (_currentHeaderImageIndex.clamp(0, portfolioImages.length - 1) == index)
+                                  color: (_currentHeaderImageIndex.clamp(
+                                              0, portfolioImages.length - 1) ==
+                                          index)
                                       ? AppColors.white
                                       : AppColors.white.withValues(alpha: 0.5),
                                 ),
@@ -2026,7 +2039,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       separatorBuilder: (_, __) => const SizedBox(width: 10),
                       itemBuilder: (context, index) {
                         return GestureDetector(
-                          onTap: () => _openImageZoom(context, portfolioImages[index]),
+                          onTap: () =>
+                              _openImageZoom(context, portfolioImages[index]),
                           child: Container(
                             decoration: BoxDecoration(
                               boxShadow: [

@@ -9,6 +9,7 @@ import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:maalem_app/main.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -490,7 +491,6 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   specialty: profile?.specialty ?? 'Specialite non renseignee',
                   photoUrl: user?.photoUrl,
                   localPhotoBytes: _localPhotoBytes,
-                  initials: _initials(user?.fullName),
                   isUploading: auth.isUploadingPhoto,
                   onEditPhoto: _pickProfilePhoto,
                 ),
@@ -520,8 +520,9 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                 ),
                 const SizedBox(height: 26),
                 _LocationCard(
-                  location:
-                      location.isEmpty ? 'Localisation non renseignee' : location,
+                  location: location.isEmpty
+                      ? 'Localisation non renseignee'
+                      : location,
                   details: coordinates ??
                       user?.neighborhood ??
                       'Utilisez votre position actuelle',
@@ -547,8 +548,10 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
                   onLogout: () async {
                     await context.read<AuthProvider>().logout();
                     if (context.mounted) {
-                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const AppGate()),
+                      Navigator.of(context, rootNavigator: true)
+                          .pushAndRemoveUntil(
+                        MaterialPageRoute(
+                            builder: (context) => const AppGate()),
                         (route) => false,
                       );
                     }
@@ -561,12 +564,6 @@ class _ProfileArtisanScreenState extends State<ProfileArtisanScreen> {
         ),
       ),
     );
-  }
-
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return 'AR';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    return parts.take(2).map((part) => part[0].toUpperCase()).join();
   }
 }
 
@@ -659,7 +656,6 @@ class _ProfileHeader extends StatelessWidget {
   final String specialty;
   final String? photoUrl;
   final Uint8List? localPhotoBytes;
-  final String initials;
   final bool isUploading;
   final VoidCallback onEditPhoto;
 
@@ -668,37 +664,14 @@ class _ProfileHeader extends StatelessWidget {
     required this.specialty,
     required this.photoUrl,
     required this.localPhotoBytes,
-    required this.initials,
     required this.isUploading,
     required this.onEditPhoto,
   });
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
-    ImageProvider? providerImage;
-    if (localPhotoBytes != null) {
-      providerImage = MemoryImage(localPhotoBytes!);
-    } else if (hasPhoto && photoUrl!.startsWith('data:image')) {
-      final commaIndex = photoUrl!.indexOf(',');
-      if (commaIndex != -1) {
-        try {
-          providerImage =
-              MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
-        } catch (_) {
-          providerImage = null;
-        }
-      }
-    } else if (hasPhoto) {
-      final resolvedPhotoUrl = _resolveImageUrl(photoUrl!);
-      if (resolvedPhotoUrl != null) {
-        providerImage = NetworkImage(resolvedPhotoUrl);
-      }
-    }
-
     return Column(
       children: [
-        // Photo Profile Container with Shadow
         Container(
           margin: const EdgeInsets.only(bottom: 28),
           child: Stack(
@@ -707,8 +680,11 @@ class _ProfileHeader extends StatelessWidget {
               Container(
                 width: 130,
                 height: 130,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  shape: BoxShape.circle,
+                  color: AppColors.white.withValues(alpha: 0.55),
+                  borderRadius: BorderRadius.circular(34),
+                  border: Border.all(color: AppColors.white, width: 3),
                   boxShadow: [
                     BoxShadow(
                       color: AppColors.teal.withValues(alpha: 0.25),
@@ -717,39 +693,26 @@ class _ProfileHeader extends StatelessWidget {
                     ),
                   ],
                 ),
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.white,
-                      width: 4,
-                    ),
-                  ),
-                  child: CircleAvatar(
-                    backgroundColor: AppColors.navy,
-                    backgroundImage: providerImage,
-                    child: providerImage != null
-                        ? null
-                        : Text(
-                            initials,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 36,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
-                            ),
-                          ),
+                child: ProfileAvatar(
+                  name: name,
+                  imageUrl: photoUrl,
+                  imageBytes: localPhotoBytes,
+                  size: 122,
+                  borderRadius: 28,
+                  backgroundColor: AppColors.navy,
+                  textStyle: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 36,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
-              // Edit Photo Button with Animation
               Material(
                 color: AppColors.teal,
-                shape: const CircleBorder(),
+                borderRadius: BorderRadius.circular(15),
                 elevation: 8,
                 child: InkWell(
-                  customBorder: const CircleBorder(),
+                  borderRadius: BorderRadius.circular(15),
                   onTap: isUploading ? null : onEditPhoto,
                   child: SizedBox(
                     width: 44,
@@ -828,16 +791,6 @@ class _ProfileHeader extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String? _resolveImageUrl(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.startsWith('data:image')) return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-    if (trimmed.startsWith('/')) return '${ApiClient.baseUrl}$trimmed';
-    return '${ApiClient.baseUrl}/$trimmed';
   }
 }
 
@@ -1289,7 +1242,8 @@ class _PortfolioImageTile extends StatelessWidget {
                 image: imageProvider,
                 fit: BoxFit.contain,
                 errorBuilder: (context, error, stackTrace) => const Center(
-                  child: Icon(Icons.broken_image, color: Colors.white, size: 48),
+                  child:
+                      Icon(Icons.broken_image, color: Colors.white, size: 48),
                 ),
               ),
             ),
@@ -1297,7 +1251,8 @@ class _PortfolioImageTile extends StatelessWidget {
               top: 40,
               right: 20,
               child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
+                icon: const Icon(Icons.close_rounded,
+                    color: Colors.white, size: 30),
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ),

@@ -92,7 +92,7 @@ class _FavoriteArtisansScreenState extends State<FavoriteArtisansScreen> {
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadFavorites,
-            icon: const Icon(Icons.refresh, color: AppColors.white),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),
@@ -263,7 +263,6 @@ class _FavoriteArtisanCard extends StatelessWidget {
       ),
     );
   }
-
 }
 
 class _EmptyFavorites extends StatelessWidget {

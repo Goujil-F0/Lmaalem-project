@@ -3,7 +3,6 @@ import 'package:maalem_app/core/constants/app_colors.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
 import 'package:maalem_app/providers/search_provider.dart';
-import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:maalem_app/shared/widgets/maalem_app_bar.dart';
 import 'package:provider/provider.dart';
 
@@ -46,16 +45,6 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
         title: 'Accueil',
         subtitle: 'Bonjour, ${user?.fullName ?? 'Client'}',
         showBackButton: false,
-        leading: ProfileAvatar(
-          name: user?.fullName ?? 'Client Lmaalem',
-          imageUrl: user?.photoUrl,
-          size: 36,
-          backgroundColor: AppColors.white.withValues(alpha: 0.2),
-          textStyle: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

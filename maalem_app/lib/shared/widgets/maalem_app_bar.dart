@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
+import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
+import 'package:provider/provider.dart';
 
-/// AppBar unifiée pour toutes les pages de l'application Lmaalem.
-///
-/// - Fond : dégradé subtil navy → teal
-/// - Logo "L" animé à gauche (ou bouton retour si [showBackButton] est true)
-/// - Titre centré avec animation de fondu au changement
-/// - Actions optionnelles à droite
-/// - Hauteur fixe kToolbarHeight + safe area
+/// AppBar unifiee pour toutes les pages de l'application Lmaalem.
 class MaalemAppBar extends StatefulWidget implements PreferredSizeWidget {
-  /// Titre affiché au centre de l'AppBar
+  static const double _height = 64;
+
+  /// Titre affiche au centre de l'AppBar.
   final String title;
 
-  /// Sous-titre optionnel (ligne plus petite sous le titre)
+  /// Sous-titre optionnel.
   final String? subtitle;
 
-  /// Widgets d'action (icônes à droite)
+  /// Widgets d'action a droite.
   final List<Widget>? actions;
 
-  /// Affiche un bouton retour si true (sinon affiche le logo "L")
+  /// Affiche un bouton retour si true, sinon affiche le logo.
   final bool showBackButton;
 
-  /// Widget personnalisé à gauche (ex: avatar utilisateur)
+  /// Widget personnalise a gauche.
   final Widget? leading;
 
-  /// Couleur de fond de la barre de statut (pour SystemOverlayStyle)
+  /// Luminosite de la barre de statut.
   final Brightness statusBarBrightness;
 
   const MaalemAppBar({
@@ -34,11 +34,11 @@ class MaalemAppBar extends StatefulWidget implements PreferredSizeWidget {
     this.actions,
     this.showBackButton = false,
     this.leading,
-    this.statusBarBrightness = Brightness.dark,
+    this.statusBarBrightness = Brightness.light,
   });
 
   @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+  Size get preferredSize => const Size.fromHeight(_height);
 
   @override
   State<MaalemAppBar> createState() => _MaalemAppBarState();
@@ -56,17 +56,17 @@ class _MaalemAppBarState extends State<MaalemAppBar>
     super.initState();
     _displayedTitle = widget.title;
     _controller = AnimationController(
-      duration: const Duration(milliseconds: 320),
+      duration: const Duration(milliseconds: 260),
       vsync: this,
     );
     _fadeAnimation = CurvedAnimation(
       parent: _controller,
-      curve: Curves.easeOut,
+      curve: Curves.easeOutCubic,
     );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.25),
+      begin: const Offset(0, 0.16),
       end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
     _controller.forward();
   }
 
@@ -89,83 +89,71 @@ class _MaalemAppBarState extends State<MaalemAppBar>
   @override
   Widget build(BuildContext context) {
     final canPop = Navigator.of(context).canPop();
-    final showBack = widget.showBackButton || (canPop && widget.leading == null);
+    final showBack =
+        widget.showBackButton || (canPop && widget.leading == null);
 
     return AppBar(
-      backgroundColor: Colors.transparent,
+      toolbarHeight: MaalemAppBar._height,
+      backgroundColor: _appBarColor,
       elevation: 0,
       scrolledUnderElevation: 0,
-      // On gère le leading manuellement
+      surfaceTintColor: Colors.transparent,
+      shadowColor: Colors.transparent,
+      systemOverlayStyle: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: widget.statusBarBrightness == Brightness.light
+            ? Brightness.dark
+            : Brightness.light,
+        statusBarBrightness: widget.statusBarBrightness,
+      ),
       automaticallyImplyLeading: false,
       flexibleSpace: _AppBarBackground(
         child: SafeArea(
           bottom: false,
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
+            padding: const EdgeInsets.fromLTRB(12, 6, 12, 8),
             child: Row(
               children: [
-                // --- LEADING ---
                 _buildLeading(context, showBack),
-                const SizedBox(width: 8),
-
-                // --- TITRE CENTRÉ ---
+                const SizedBox(width: 10),
                 Expanded(
                   child: SlideTransition(
                     position: _slideAnimation,
                     child: FadeTransition(
                       opacity: _fadeAnimation,
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            _displayedTitle,
-                            textAlign: TextAlign.center,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: AppColors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.2,
-                            ),
-                          ),
-                          if (widget.subtitle != null) ...[
-                            const SizedBox(height: 1),
-                            Text(
-                              widget.subtitle!,
-                              textAlign: TextAlign.center,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppColors.white.withValues(alpha: 0.72),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ],
+                      child: _TitleCapsule(
+                        title: _displayedTitle,
+                        subtitle: widget.subtitle,
                       ),
                     ),
                   ),
                 ),
-
-                // --- ACTIONS ---
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 if (widget.actions != null && widget.actions!.isNotEmpty)
                   Row(
                     mainAxisSize: MainAxisSize.min,
                     children: widget.actions!.map((action) {
                       return Theme(
                         data: Theme.of(context).copyWith(
-                          iconTheme: const IconThemeData(color: AppColors.white),
+                          iconTheme: const IconThemeData(
+                            color: AppColors.navy,
+                            size: 22,
+                          ),
+                          iconButtonTheme: IconButtonThemeData(
+                            style: IconButton.styleFrom(
+                              foregroundColor: AppColors.navy,
+                              backgroundColor:
+                                  AppColors.navy.withValues(alpha: 0.05),
+                              shape: const CircleBorder(),
+                            ),
+                          ),
                         ),
                         child: action,
                       );
                     }).toList(),
                   )
                 else
-                  // Espace équivalent pour centrer le titre
-                  const SizedBox(width: 48),
+                  const SizedBox(width: 44),
               ],
             ),
           ),
@@ -177,8 +165,8 @@ class _MaalemAppBarState extends State<MaalemAppBar>
   Widget _buildLeading(BuildContext context, bool showBack) {
     if (widget.leading != null) {
       return SizedBox(
-        width: 48,
-        height: 48,
+        width: 44,
+        height: 44,
         child: widget.leading,
       );
     }
@@ -191,35 +179,131 @@ class _MaalemAppBarState extends State<MaalemAppBar>
       );
     }
 
-    // Logo "L" Lmaalem
-    return _LogoBadge();
+    return const _CurrentUserAvatar();
   }
 }
 
-/// Fond dégradé de l'AppBar avec effet de brillance subtile
+final Color _appBarColor = Color.alphaBlend(
+  AppColors.white.withValues(alpha: 0.36),
+  AppColors.beige,
+);
+
+class _TitleCapsule extends StatelessWidget {
+  final String title;
+  final String? subtitle;
+
+  const _TitleCapsule({
+    required this.title,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.center,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 220),
+        padding: EdgeInsets.symmetric(
+          horizontal: subtitle == null ? 18 : 16,
+          vertical: subtitle == null ? 7 : 4,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.white.withValues(alpha: 0.38),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.white.withValues(alpha: 0.72)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.navy,
+                fontSize: 14.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            if (subtitle != null) ...[
+              const SizedBox(height: 1),
+              Text(
+                subtitle!,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: AppColors.navy.withValues(alpha: 0.58),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CurrentUserAvatar extends StatelessWidget {
+  const _CurrentUserAvatar();
+
+  @override
+  Widget build(BuildContext context) {
+    final user =
+        context.select<AuthProvider, ({String name, String? photoUrl})>(
+      (auth) => (
+        name: auth.user?.fullName ?? 'Lmaalem',
+        photoUrl: auth.user?.photoUrl,
+      ),
+    );
+
+    return Container(
+      width: 44,
+      height: 44,
+      padding: const EdgeInsets.all(2),
+      decoration: BoxDecoration(
+        color: AppColors.white.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: AppColors.teal.withValues(alpha: 0.16)),
+      ),
+      child: ProfileAvatar(
+        name: user.name,
+        imageUrl: user.photoUrl,
+        size: 40,
+        borderRadius: 12,
+        backgroundColor: AppColors.navy,
+        textStyle: const TextStyle(
+          color: AppColors.white,
+          fontSize: 14,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+}
+
 class _AppBarBackground extends StatelessWidget {
   final Widget child;
+
   const _AppBarBackground({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.navy,
-            Color(0xFF1A4A6A), // intermédiaire navy-teal
-            AppColors.teal,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          stops: [0.0, 0.6, 1.0],
+      decoration: BoxDecoration(
+        color: _appBarColor,
+        border: Border(
+          bottom: BorderSide(color: AppColors.teal.withValues(alpha: 0.12)),
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 12,
-            offset: Offset(0, 4),
+            color: AppColors.navy.withValues(alpha: 0.035),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -228,7 +312,6 @@ class _AppBarBackground extends StatelessWidget {
   }
 }
 
-/// Bouton icône adapté au thème AppBar
 class _AppBarIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback onTap;
@@ -245,44 +328,16 @@ class _AppBarIconButton extends StatelessWidget {
     return Tooltip(
       message: tooltip,
       child: Material(
-        color: Colors.transparent,
+        color: AppColors.navy.withValues(alpha: 0.05),
+        shape: const CircleBorder(),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(24),
+          customBorder: const CircleBorder(),
           child: SizedBox(
             width: 44,
             height: 44,
-            child: Icon(icon, color: AppColors.white, size: 22),
+            child: Icon(icon, color: AppColors.navy, size: 20),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Badge logo "L" stylisé Lmaalem
-class _LogoBadge extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: AppColors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.white.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      alignment: Alignment.center,
-      child: const Text(
-        'L',
-        style: TextStyle(
-          color: AppColors.white,
-          fontSize: 20,
-          fontWeight: FontWeight.w900,
-          fontStyle: FontStyle.italic,
         ),
       ),
     );

@@ -66,7 +66,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
           IconButton(
             tooltip: 'Actualiser',
             onPressed: _isLoading ? null : _loadDashboard,
-            icon: const Icon(Icons.refresh, color: AppColors.white),
+            icon: const Icon(Icons.refresh),
           ),
         ],
       ),

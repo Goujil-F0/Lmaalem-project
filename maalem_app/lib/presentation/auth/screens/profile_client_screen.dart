@@ -1,15 +1,14 @@
-import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:maalem_app/core/constants/app_colors.dart';
-import 'package:maalem_app/data/services/api_client.dart';
 import 'package:maalem_app/data/services/location_service.dart';
 import 'package:maalem_app/presentation/auth/screens/favorite_artisans_screen.dart';
 import 'package:maalem_app/main.dart';
 import 'package:maalem_app/presentation/search/screens/map_screen.dart';
 import 'package:maalem_app/providers/auth_provider.dart';
+import 'package:maalem_app/shared/widgets/profile_avatar.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -372,7 +371,6 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                 const SizedBox(height: 8),
                 _ProfileHeader(
                   fullName: fullName,
-                  initials: _initials(fullName),
                   photoUrl: user?.photoUrl,
                   localPhotoBytes: _localPhotoBytes,
                   isUploading: auth.isUploadingPhoto,
@@ -388,8 +386,9 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                 ),
                 const SizedBox(height: 16),
                 _LocationCard(
-                  location:
-                      location.isEmpty ? 'Localisation non renseignee' : location,
+                  location: location.isEmpty
+                      ? 'Localisation non renseignee'
+                      : location,
                   details: coordinates ??
                       user?.neighborhood ??
                       'Utilisez votre position actuelle',
@@ -413,8 +412,10 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
                   onLogout: () async {
                     await context.read<AuthProvider>().logout();
                     if (context.mounted) {
-                      Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (context) => const AppGate()),
+                      Navigator.of(context, rootNavigator: true)
+                          .pushAndRemoveUntil(
+                        MaterialPageRoute(
+                            builder: (context) => const AppGate()),
                         (route) => false,
                       );
                     }
@@ -435,12 +436,6 @@ class _ProfileClientScreenState extends State<ProfileClientScreen> {
         ),
       ),
     );
-  }
-
-  String _initials(String? name) {
-    if (name == null || name.trim().isEmpty) return 'CL';
-    final parts = name.trim().split(RegExp(r'\s+'));
-    return parts.take(2).map((part) => part[0].toUpperCase()).join();
   }
 }
 
@@ -606,7 +601,6 @@ class _TopBar extends StatelessWidget {
 
 class _ProfileHeader extends StatelessWidget {
   final String fullName;
-  final String initials;
   final String? photoUrl;
   final Uint8List? localPhotoBytes;
   final bool isUploading;
@@ -614,7 +608,6 @@ class _ProfileHeader extends StatelessWidget {
 
   const _ProfileHeader({
     required this.fullName,
-    required this.initials,
     required this.photoUrl,
     required this.localPhotoBytes,
     required this.isUploading,
@@ -623,27 +616,6 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasPhoto = photoUrl != null && photoUrl!.isNotEmpty;
-    ImageProvider? providerImage;
-    if (localPhotoBytes != null) {
-      providerImage = MemoryImage(localPhotoBytes!);
-    } else if (hasPhoto && photoUrl!.startsWith('data:image')) {
-      final commaIndex = photoUrl!.indexOf(',');
-      if (commaIndex != -1) {
-        try {
-          providerImage =
-              MemoryImage(base64Decode(photoUrl!.substring(commaIndex + 1)));
-        } catch (_) {
-          providerImage = null;
-        }
-      }
-    } else if (hasPhoto) {
-      final resolvedPhotoUrl = _resolveImageUrl(photoUrl!);
-      if (resolvedPhotoUrl != null) {
-        providerImage = NetworkImage(resolvedPhotoUrl);
-      }
-    }
-
     return Column(
       children: [
         Stack(
@@ -652,9 +624,11 @@ class _ProfileHeader extends StatelessWidget {
             Container(
               width: 128,
               height: 128,
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.white, width: 4),
+                color: AppColors.white.withValues(alpha: 0.55),
+                borderRadius: BorderRadius.circular(34),
+                border: Border.all(color: AppColors.white, width: 3),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.navy.withValues(alpha: 0.12),
@@ -663,27 +637,26 @@ class _ProfileHeader extends StatelessWidget {
                   ),
                 ],
               ),
-              child: CircleAvatar(
+              child: ProfileAvatar(
+                name: fullName,
+                imageUrl: photoUrl,
+                imageBytes: localPhotoBytes,
+                size: 120,
+                borderRadius: 28,
                 backgroundColor: AppColors.navy,
-                backgroundImage: providerImage,
-                child: providerImage != null
-                    ? null
-                    : Text(
-                        initials,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 36,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
+                textStyle: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 36,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
             Material(
               color: AppColors.teal,
-              shape: const CircleBorder(),
+              borderRadius: BorderRadius.circular(15),
               child: InkWell(
                 onTap: isUploading ? null : onEditPhoto,
-                customBorder: const CircleBorder(),
+                borderRadius: BorderRadius.circular(15),
                 child: SizedBox(
                   width: 42,
                   height: 42,
@@ -729,16 +702,6 @@ class _ProfileHeader extends StatelessWidget {
         ),
       ],
     );
-  }
-
-  String? _resolveImageUrl(String value) {
-    final trimmed = value.trim();
-    if (trimmed.isEmpty || trimmed.startsWith('data:image')) return null;
-    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
-      return trimmed;
-    }
-    if (trimmed.startsWith('/')) return '${ApiClient.baseUrl}$trimmed';
-    return '${ApiClient.baseUrl}/$trimmed';
   }
 }
 

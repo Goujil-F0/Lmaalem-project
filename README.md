@@ -5,7 +5,7 @@
 ### A mobile marketplace that connects clients with trusted local artisans.
 
 <p>
-  <a href="#features"><img alt="Features" src="https://img.shields.io/badge/features-client%20%7C%20artisan%20%7C%20admin-2F80ED?style=for-the-badge"></a>
+  <a href="#features"><img alt="Features" src="https://img.shields.io/badge/features-client%20%7C%20artisan-2F80ED?style=for-the-badge"></a>
   <a href="#tech-stack"><img alt="Flutter" src="https://img.shields.io/badge/mobile-Flutter-02569B?style=for-the-badge&logo=flutter&logoColor=white"></a>
   <a href="#tech-stack"><img alt="Node.js" src="https://img.shields.io/badge/backend-Node.js-339933?style=for-the-badge&logo=node.js&logoColor=white"></a>
   <a href="#tech-stack"><img alt="PostgreSQL" src="https://img.shields.io/badge/database-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white"></a>
@@ -32,80 +32,46 @@ The project includes a Flutter mobile app, an Express.js backend API, PostgreSQL
 
 ## Screenshots
 
-### Authentication
+### Authentication Flow
 
-<table>
-  <tr>
-    <td align="center"><strong>Splash</strong></td>
-    <td align="center"><strong>Login</strong></td>
-    <td align="center"><strong>Client Sign Up</strong></td>
-    <td align="center"><strong>Artisan Sign Up</strong></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/splashScreen.png" width="180" alt="Splash screen"></td>
-    <td><img src="screenshots/login.png" width="180" alt="Login screen"></td>
-    <td><img src="screenshots/registerClient.png" width="180" alt="Client registration screen"></td>
-    <td><img src="screenshots/registerArtisan.png" width="180" alt="Artisan registration screen"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Client Details</strong></td>
-    <td align="center"><strong>Artisan Details</strong></td>
-    <td align="center"><strong>CIN Upload</strong></td>
-    <td align="center"><strong>Location Access</strong></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/registerClient2.png" width="180" alt="Client registration details screen"></td>
-    <td><img src="screenshots/registerArtisan2.png" width="180" alt="Artisan registration details screen"></td>
-    <td><img src="screenshots/UploadCIN.png" width="180" alt="CIN upload screen"></td>
-    <td><img src="screenshots/locationAcces.png" width="180" alt="Location access screen"></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="screenshots/readme/splashScreen-phone.png" width="170" alt="Splash screen">
+  <img src="screenshots/readme/login-phone.png" width="170" alt="Login screen">
+  <img src="screenshots/readme/registerClient-phone.png" width="170" alt="Client sign up screen">
+  <img src="screenshots/readme/registerArtisan-phone.png" width="170" alt="Artisan sign up screen">
+</p>
+
+<p align="center">
+  <img src="screenshots/readme/registerClient2-phone.png" width="170" alt="Client details screen">
+  <img src="screenshots/readme/registerArtisan2-phone.png" width="170" alt="Artisan details screen">
+  <img src="screenshots/readme/UploadCIN-phone.png" width="170" alt="CIN upload screen">
+  <img src="screenshots/readme/locationAcces-phone.png" width="170" alt="Location access screen">
+</p>
 
 ### Client Experience
 
-<table>
-  <tr>
-    <td align="center"><strong>Home</strong></td>
-    <td align="center"><strong>Search</strong></td>
-    <td align="center"><strong>Map</strong></td>
-    <td align="center"><strong>Artisan Profile</strong></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/AcceuilClient.png" width="180" alt="Client home screen"></td>
-    <td><img src="screenshots/searchArtisan.png" width="180" alt="Artisan search screen"></td>
-    <td><img src="screenshots/map.png" width="180" alt="Map search screen"></td>
-    <td><img src="screenshots/profileArtisan.png" width="180" alt="Artisan profile screen"></td>
-  </tr>
-  <tr>
-    <td align="center"><strong>Favorites</strong></td>
-    <td align="center"><strong>Tracking</strong></td>
-    <td align="center"><strong>Client Account</strong></td>
-    <td align="center"><strong>Chat</strong></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/favoris.png" width="180" alt="Favorite artisans screen"></td>
-    <td><img src="screenshots/suivi.png" width="180" alt="Client booking tracking screen"></td>
-    <td><img src="screenshots/compteClient.png" width="180" alt="Client account screen"></td>
-    <td><img src="screenshots/chat.png" width="180" alt="Real-time chat screen"></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="screenshots/readme/AcceuilClient-phone.png" width="170" alt="Client home screen">
+  <img src="screenshots/readme/searchArtisan-phone.png" width="170" alt="Artisan search screen">
+  <img src="screenshots/readme/map-phone.png" width="170" alt="Map search screen">
+  <img src="screenshots/readme/profileArtisan-phone.png" width="170" alt="Artisan profile screen">
+</p>
+
+<p align="center">
+  <img src="screenshots/readme/favoris-phone.png" width="170" alt="Favorite artisans screen">
+  <img src="screenshots/readme/suivi-phone.png" width="170" alt="Client booking tracking screen">
+  <img src="screenshots/readme/compteClient-phone.png" width="170" alt="Client account screen">
+  <img src="screenshots/readme/chat-phone.png" width="170" alt="Real-time chat screen">
+</p>
 
 ### Artisan Experience
 
-<table>
-  <tr>
-    <td align="center"><strong>Artisan Home</strong></td>
-    <td align="center"><strong>Requests</strong></td>
-    <td align="center"><strong>Account</strong></td>
-    <td align="center"><strong>Profile Settings</strong></td>
-  </tr>
-  <tr>
-    <td><img src="screenshots/AcceuileArtisan.png" width="180" alt="Artisan home screen"></td>
-    <td><img src="screenshots/suiviArtisan.png" width="180" alt="Artisan booking tracking screen"></td>
-    <td><img src="screenshots/compteArtisan.png" width="180" alt="Artisan account screen"></td>
-    <td><img src="screenshots/compteArtisan2.png" width="180" alt="Artisan profile settings screen"></td>
-  </tr>
-</table>
+<p align="center">
+  <img src="screenshots/readme/AcceuileArtisan-phone.png" width="170" alt="Artisan home screen">
+  <img src="screenshots/readme/suiviArtisan-phone.png" width="170" alt="Artisan request tracking screen">
+  <img src="screenshots/readme/compteArtisan-phone.png" width="170" alt="Artisan account screen">
+  <img src="screenshots/readme/compteArtisan2-phone.png" width="170" alt="Artisan profile settings screen">
+</p>
 
 ---
 
@@ -119,7 +85,7 @@ The project includes a Flutter mobile app, an Express.js backend API, PostgreSQL
 - Real-time chat between clients and artisans using Socket.IO.
 - Favorite artisans list for faster future access.
 - CIN/file upload flow with backend upload handling.
-- Reviews, complaints, and dashboard-oriented backend modules.
+- Reviews and complaints backend modules.
 - Dockerized backend and PostgreSQL database setup.
 
 ---
@@ -266,7 +232,6 @@ The backend exposes modules for:
 - Messages
 - Reviews
 - Complaints
-- Dashboard data
 - Uploads
 
 Main API entry points include:
@@ -277,7 +242,6 @@ Main API entry points include:
 /api/messages
 /api/reviews
 /api/complaints
-/api/dashboard
 /api
 /uploads
 ```
@@ -288,7 +252,6 @@ Main API entry points include:
 
 - Improve artisan verification workflow.
 - Add push notifications for bookings and messages.
-- Add richer admin analytics.
 - Add automated tests for API modules and Flutter flows.
 - Prepare production deployment configuration.
 
